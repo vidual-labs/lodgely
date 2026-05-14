@@ -1,0 +1,27 @@
+# Minimal Caddy config for lodgely.
+#
+# Local development: served plain HTTP on the host port set via LODGELY_HTTP_PORT.
+# Production: replace `:80` with your real hostname (e.g. leads.example.com)
+# and Caddy will obtain a Let's Encrypt cert automatically.
+
+:80 {
+    root * /app/public
+    encode zstd gzip
+
+    php_fastcgi app:9000
+
+    file_server
+
+    # Reasonable defaults for a small B2B tool.
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "SAMEORIGIN"
+        -Server
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* Lodgely B2B palette — intentionally muted. Anything brighter must be tied
+   to functional meaning (status pill, KPI accent). */
+
+@theme {
+  --color-brand-50:  oklch(0.97 0.01 250);
+  --color-brand-500: oklch(0.55 0.10 250);
+  --color-brand-900: oklch(0.21 0.05 250);
+
+  --font-family-sans: "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Subtle defaults that pay off on data-dense screens */
+html {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+[x-cloak] { display: none !important; }
+
+/* Make Laravel pagination look at home with the rest of the UI */
+.pagination {
+  @apply flex items-center gap-1 text-sm;
+}
