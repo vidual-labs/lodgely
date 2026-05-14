@@ -21,6 +21,10 @@
                            class="px-3 py-1.5 rounded-md hover:bg-slate-100 {{ request()->routeIs('imports.email') ? 'text-slate-900 bg-slate-100 font-medium' : 'text-slate-600' }}">
                             Email (mock)
                         </a>
+                        <a href="{{ route('users') }}"
+                           class="px-3 py-1.5 rounded-md hover:bg-slate-100 {{ request()->routeIs('users') ? 'text-slate-900 bg-slate-100 font-medium' : 'text-slate-600' }}">
+                            Users
+                        </a>
                     @endif
                 @endauth
             </nav>

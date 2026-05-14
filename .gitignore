@@ -14,6 +14,21 @@
 # Runtime logs (keep the directory, drop the contents)
 /storage/logs/*.log
 
+# Compiled / cached framework artifacts (keep the directories)
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+!/storage/framework/cache/data/
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+
 # Local imports / temp uploads
 /storage/app/private/imports/*
 !/storage/app/private/imports/.gitkeep
