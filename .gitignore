@@ -11,6 +11,9 @@
 /database/database.sqlite
 /database/*.sqlite-journal
 
+# Runtime logs (keep the directory, drop the contents)
+/storage/logs/*.log
+
 # Local imports / temp uploads
 /storage/app/private/imports/*
 !/storage/app/private/imports/.gitkeep
