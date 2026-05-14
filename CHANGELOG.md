@@ -8,6 +8,31 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- In-app **user management** for operators (`/users`):
+  - List / search / filter users by role.
+  - Create and edit users (name, email, role, password, active flag).
+  - Client users get a comma-separated list of `client_name` scopes; the
+    list is reconciled on every save.
+  - Inline enable / disable action with safety rail (cannot disable self).
+  - Self-demotion from operator → client is blocked.
+  - `Generate` button produces a strong random password and surfaces a
+    one-time hint to the operator.
+  - Sensitive changes are written to the standard Laravel log
+    (`lodgely.user.*`) — promoted to a dedicated audit table later.
+
+### Changed
+
+- Topbar gains a `Users` link for operators.
+
+### Notes
+
+- `php artisan lodgely:user:create` stays available for bootstrap /
+  scripted deployments; the UI is for day-to-day work.
+
+## [0.1.0] · MVP
+
+### Added
+
 - Initial MVP scaffold:
   - Laravel 12 / PHP 8.3 modular monolith
   - Livewire 3 inbox with server-side search, filters and pagination
