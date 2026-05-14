@@ -1,7 +1,8 @@
 {
     "name": "lodgely/lodgely",
     "type": "project",
-    "description": "lodgely - an open-source lead intake hub. Collects, unifies and reviews leads from CSV, email and manual sources.",
+    "version": "0.2.0",
+    "description": "lodgely - an open-source lead intake hub. Collects, unifies and reviews leads from CSV, email, webhooks and manual sources.",
     "keywords": ["lodgely", "leads", "intake", "laravel", "livewire", "open-source"],
     "license": "MIT",
     "require": {

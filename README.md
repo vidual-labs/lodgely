@@ -1,7 +1,7 @@
 # lodgely
 
 **lodgely** is a lightweight, open-source **lead intake hub** for small teams.
-It collects leads from CSV files, email (mock today, IMAP/parser later) and
+It collects leads from CSV files, email (mock and real IMAP), webhooks and
 manual entry, normalizes them into a single schema, and gives reviewers a
 clean inbox to prioritize, deduplicate and forward.
 
@@ -27,7 +27,7 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 ---
 
-## MVP features
+## Features
 
 - 📥 **Unified lead inbox** — server-rendered table with search, filter by
   source / client / status / priority, sortable, paginated.
@@ -37,9 +37,15 @@ clean place to *triage* leads before anything else happens, you are at home.
   add notes, see the audit trail.
 - 📂 **CSV importer** — common header names recognized (`name`, `email`,
   `phone`, `message`, `client`, `campaign`). Up to 10k rows per file.
-- ✉️ **Email importer (mock)** — generates simulated email leads so the
-  full workflow can be tried end to end before a real IMAP backend is wired.
+- ✉️ **Email importer** — mock generator for demos, plus a real IMAP backend
+  (`LODGELY_EMAIL_IMPORT_DRIVER=imap`) that polls unseen messages on a
+  15-minute schedule and parses contact-form bodies automatically.
+- 🔗 **Webhook importer** — operators create signed token URLs at `/webhooks`;
+  any HTTP client can POST JSON leads and they flow through the full ingest
+  pipeline instantly.
 - ✍️ **Manual entry** — quick "new lead" modal for phone calls and walk-ins.
+- 👥 **In-app user management** — operators create, edit and enable/disable
+  users at `/users`, including client-name scoping, without needing artisan.
 - 🔐 **Multi-user logins, two roles**:
   - `operator` — agency or inhouse team. Sees every lead, can import.
   - `client` — scoped to one or more `client_name` values. Read-friendly,
@@ -52,17 +58,13 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 ---
 
-## What's intentionally out of scope (MVP)
+## What's intentionally out of scope (for now)
 
-These are **planned**, with schema/architecture seams ready, but not
-implemented in v1:
+These have architecture seams reserved but are not yet implemented:
 
 - Reporting module (Meta Ads / Google Ads ingestion, campaign rollups)
 - AI summaries / quality scoring on top of reporting data
-- Real IMAP / mail-parser backend (only `mock` driver today)
-- Webhook + form-tool importers
-- In-app user management UI (use `php artisan lodgely:user:create` for now)
-- Multi-tenancy (`tenant_id` exists everywhere; only one tenant is wired)
+- Multi-tenancy (`tenant_id` exists everywhere; only the default tenant is wired)
 
 ---
 
@@ -182,11 +184,14 @@ app/
 ├── Importers/
 │   ├── Contracts/           LeadSource interface, IncomingLead DTO
 │   ├── Csv/                 CsvLeadSource adapter
+│   ├── Email/               ImapLeadSource + MailBodyParser
 │   ├── EmailMock/           EmailMockLeadSource adapter
 │   └── Manual/              ManualLeadSource adapter
 ├── Livewire/
 │   ├── Inbox/InboxPage      the main UI
-│   └── Imports/*            CSV + Email mock import UIs
+│   ├── Imports/*            CSV + email (mock & IMAP) import UIs
+│   ├── Users/UsersPage      operator user management
+│   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
 │                            Import, UserLeadScope
 ├── Providers/AppServiceProvider
@@ -243,26 +248,29 @@ and are listed in the roadmap.
 | `APP_URL`  | Public URL of the install | `http://localhost:8080` |
 | `LODGELY_BRAND_NAME` / `LODGELY_BRAND_TAGLINE` | Optional white-label-ish strings (still under the lodgely identity) | `lodgely` / `Lead intake, unified.` |
 | `LODGELY_CSV_MAX_ROWS` | Hard cap on rows ingested per CSV | `10000` |
-| `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` (only one implemented in MVP) | `mock` |
+| `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
+| `LODGELY_IMAP_HOST` | IMAP server hostname (activates real email backend) | — |
+| `LODGELY_IMAP_PORT` | IMAP port | `993` |
+| `LODGELY_IMAP_ENCRYPTION` | `ssl`, `tls`, or `notls` | `ssl` |
+| `LODGELY_IMAP_USERNAME` / `LODGELY_IMAP_PASSWORD` | Mailbox credentials | — |
+| `LODGELY_IMAP_MAILBOX` | Folder to poll | `INBOX` |
+| `LODGELY_IMAP_MAX_MESSAGES` | Max unseen messages per pull | `50` |
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention, empty = retain | `365` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |
 
 ---
 
-## Roadmap (post-MVP, in rough order)
+## Roadmap
 
-1. **In-app user management** — invite operators / scoped clients without artisan.
-2. **Form-tool & webhook importer** — accept POSTed JSON leads at a tenant-scoped URL.
-3. **Real email backend** — IMAP + simple parser, replacing the mock.
-4. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
+1. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
    ingestion, campaign/source rollups.
-5. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
+2. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
    the reporting layer with pseudonymization / aggregation defaults.
-6. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
+3. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-7. **Bulk actions** in the inbox (mass-forward, mass-status).
-8. **Saved filters** and per-user view defaults.
+4. **Bulk actions** in the inbox (mass-forward, mass-status).
+5. **Saved filters** and per-user view defaults.
 
 ---
 
