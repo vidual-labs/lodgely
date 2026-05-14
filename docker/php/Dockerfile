@@ -7,8 +7,10 @@ ENV COMPOSER_ALLOW_SUPERUSER=1 \
 RUN apk add --no-cache \
         bash git icu-dev libpq-dev libzip-dev oniguruma-dev \
         nodejs npm postgresql-client tzdata \
+        imap-dev krb5-dev openssl-dev \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install -j$(nproc) \
-        bcmath intl mbstring opcache pdo_pgsql pgsql zip \
+        bcmath intl mbstring opcache pdo_pgsql pgsql zip imap \
     && rm -rf /var/cache/apk/*
 
 # Composer

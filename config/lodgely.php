@@ -24,8 +24,20 @@ return [
             'max_rows' => (int) env('LODGELY_CSV_MAX_ROWS', 10000),
         ],
         'email' => [
-            // 'mock' generates simulated incoming emails; 'imap' is planned post-MVP.
+            // 'mock' generates simulated leads; 'imap' connects to a real mailbox.
             'driver' => env('LODGELY_EMAIL_IMPORT_DRIVER', 'mock'),
+            'imap' => [
+                'host'                  => env('LODGELY_IMAP_HOST', ''),
+                'port'                  => (int) env('LODGELY_IMAP_PORT', 993),
+                'encryption'            => env('LODGELY_IMAP_ENCRYPTION', 'ssl'), // ssl | tls | notls
+                'validate_cert'         => (bool) env('LODGELY_IMAP_VALIDATE_CERT', true),
+                'username'              => env('LODGELY_IMAP_USERNAME', ''),
+                'password'              => env('LODGELY_IMAP_PASSWORD', ''),
+                'mailbox'               => env('LODGELY_IMAP_MAILBOX', 'INBOX'),
+                'max_messages'          => (int) env('LODGELY_IMAP_MAX_MESSAGES', 50),
+                'default_client_name'   => env('LODGELY_IMAP_DEFAULT_CLIENT', ''),
+                'default_campaign_name' => env('LODGELY_IMAP_DEFAULT_CAMPAIGN', ''),
+            ],
         ],
     ],
 
