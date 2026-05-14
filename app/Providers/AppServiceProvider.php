@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
+use App\Importers\Email\ImapLeadSource;
 use App\Importers\EmailMock\EmailMockLeadSource;
 use App\Importers\Manual\ManualLeadSource;
 use Illuminate\Pagination\Paginator;
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
     public const IMPORTERS = [
         'csv'         => CsvLeadSource::class,
         'email_mock'  => EmailMockLeadSource::class,
+        'email_imap'  => ImapLeadSource::class,
         'manual'      => ManualLeadSource::class,
     ];
 
