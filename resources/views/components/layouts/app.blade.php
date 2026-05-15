@@ -6,10 +6,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('lodgely.brand.name') }}</title>
     <script>
-        /* Apply dark class immediately to prevent flash of unstyled content */
+        /* Apply dark class immediately to prevent flash of unstyled content.
+           For authenticated users the server-known theme wins; guests fall back to localStorage / OS. */
+        @auth
+        (function () {
+            var theme = '{{ auth()->user()->ui_theme }}';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+        @else
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
+        @endauth
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
