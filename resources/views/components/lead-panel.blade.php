@@ -3,16 +3,18 @@
 <div class="fixed inset-0 z-40 flex" x-data x-trap.noscroll="true">
     <div class="flex-1 bg-slate-900/30" wire:click="closePanel"></div>
 
-    <aside class="w-full max-w-[520px] bg-white shadow-xl flex flex-col">
+    <aside role="dialog" aria-modal="true" aria-labelledby="lead-panel-title"
+           class="w-full max-w-[520px] bg-white shadow-xl flex flex-col">
         <header class="border-b border-slate-200 px-5 py-4 flex items-start justify-between">
             <div>
                 <div class="text-[11px] uppercase tracking-wider text-slate-500">Lead #{{ $lead->id }}</div>
-                <h2 class="mt-0.5 text-lg font-semibold text-slate-900">{{ $lead->full_name ?? '—' }}</h2>
+                <h2 id="lead-panel-title" class="mt-0.5 text-lg font-semibold text-slate-900">{{ $lead->full_name ?? '—' }}</h2>
                 <div class="text-xs text-slate-500">
                     {{ $lead->client_name ?? '—' }} · {{ $lead->campaign_name ?? '—' }}
                 </div>
             </div>
-            <button type="button" wire:click="closePanel" class="text-slate-400 hover:text-slate-700">✕</button>
+            <button type="button" wire:click="closePanel" aria-label="Close"
+                    class="text-slate-400 hover:text-slate-700">✕</button>
         </header>
 
         <div class="flex-1 overflow-y-auto px-5 py-4 space-y-6">
@@ -101,7 +103,9 @@
                               class="block w-full rounded-md border-slate-300 text-sm focus:border-slate-500 focus:ring-slate-500"></textarea>
                     @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     <div class="mt-2 flex justify-end">
-                        <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800">Add note</button>
+                        <button type="submit"
+                            wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
+                            class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800">Add note</button>
                     </div>
                 </form>
             </section>

@@ -30,6 +30,7 @@
         x-data="{ msg: '', show: false }"
         x-on:toast.window="msg = $event.detail.message; show = true; setTimeout(() => show = false, 3500)"
         x-cloak
+        role="status" aria-live="polite" aria-atomic="true"
         class="fixed bottom-6 right-6 z-50"
     >
         <div
