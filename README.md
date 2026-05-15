@@ -289,4 +289,4 @@ and are listed in the roadmap.
 
 ## License
 
-MIT — see `LICENSE`.
+GPL-3.0 — see `LICENSE`.
