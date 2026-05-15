@@ -61,6 +61,7 @@ clean place to *triage* leads before anything else happens, you are at home.
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded
   automatically on each inbox visit.
+- 🌙 **Dark mode** — OS preference is respected on first load; a sun/moon toggle in the topbar lets users switch manually. Choice is persisted in `localStorage`.
 
 ---
 
