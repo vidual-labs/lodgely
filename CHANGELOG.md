@@ -8,6 +8,10 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **i18n / localization infrastructure**: JSON-based translations via Laravel's `__()` helper. All user-visible strings in every Blade view are now wrapped in `__()`. Language files ship for `en` (English) and `de` (German). A `SetLocale` middleware reads the locale from session on every request. A `POST /locale` route lets the language switcher in the topbar persist the choice server-side.
+- **Language switcher** in the topbar: pill-shaped EN / DE toggle (same visual style as the dark mode switch). Works on both authenticated and guest pages.
+- **Dark / Light mode pill switch**: replaced the single icon button with a labelled two-option pill (`Light · Dark`) that clearly shows the active mode and makes both choices a single click.
+
 - **Dark mode** with OS-preference detection and manual toggle: a sun/moon button in the topbar persists the choice to `localStorage`. All pages, modals, side panels, tables, and form controls fully support `dark:` variants. The `@custom-variant dark` directive in Tailwind CSS v4 enables class-based toggling via `.dark` on `<html>`.
 - **Modernized UI**: cards and panels now use `rounded-xl` / `rounded-2xl` and carry a subtle `shadow-sm`; the topbar is sticky with a `backdrop-blur` glass effect; the brand logo uses a gradient; KPI cards have a colored top-accent bar; buttons use `transition-colors` for smooth hover feedback; focus rings use the brand color accent.
 

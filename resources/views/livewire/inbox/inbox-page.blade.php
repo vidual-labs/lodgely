@@ -3,13 +3,13 @@
     <div class="flex flex-col gap-4">
         <div class="flex items-end justify-between gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">Lead inbox</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">{{ __('Lead inbox') }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     @auth
                         @if(auth()->user()->isClient())
-                            Your leads across all configured sources.
+                            {{ __('Your leads across all configured sources.') }}
                         @else
-                            All leads across all sources for this workspace.
+                            {{ __('All leads across all sources for this workspace.') }}
                         @endif
                     @endauth
                 </p>
@@ -19,22 +19,22 @@
                 @if(auth()->user()->isOperator())
                     <button type="button" wire:click="openManualForm"
                             class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
-                        + New lead
+                        + {{ __('New lead') }}
                     </button>
                 @endif
             @endauth
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <x-kpi-card label="New"        :value="$kpis['new']"        tone="blue"  />
-            <x-kpi-card label="Duplicates" :value="$kpis['duplicates']" tone="rose"  />
-            <x-kpi-card label="Incomplete" :value="$kpis['incomplete']" tone="amber" />
-            <x-kpi-card label="Total"      :value="$kpis['total']"      tone="slate" />
+            <x-kpi-card :label="__('New')"        :value="$kpis['new']"        tone="blue"  />
+            <x-kpi-card :label="__('Duplicates')" :value="$kpis['duplicates']" tone="rose"  />
+            <x-kpi-card :label="__('Incomplete')" :value="$kpis['incomplete']" tone="amber" />
+            <x-kpi-card :label="__('Total')"      :value="$kpis['total']"      tone="slate" />
         </div>
 
         @if($kpis['by_source']->isNotEmpty())
             <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
-                <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-2">Leads by source</div>
+                <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-2">{{ __('Leads by source') }}</div>
                 <div class="flex flex-wrap gap-2">
                     @foreach($kpis['by_source'] as $row)
                         <span class="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
@@ -52,16 +52,16 @@
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div class="md:col-span-4">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">Search</label>
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Search') }}</label>
                 <input type="search" wire:model.live.debounce.300ms="search"
-                       placeholder="Search name, email, phone, message…"
+                       placeholder="{{ __('Search name, email, phone, message…') }}"
                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500">
             </div>
 
             <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">Status</label>
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Status') }}</label>
                 <select wire:model.live="status" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">All</option>
+                    <option value="">{{ __('All') }}</option>
                     @foreach($statusOptions as $o)
                         <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
                     @endforeach
@@ -69,9 +69,9 @@
             </div>
 
             <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">Priority</label>
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Priority') }}</label>
                 <select wire:model.live="priority" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">All</option>
+                    <option value="">{{ __('All') }}</option>
                     @foreach($priorityOptions as $o)
                         <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
                     @endforeach
@@ -79,9 +79,9 @@
             </div>
 
             <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">Source</label>
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Source') }}</label>
                 <select wire:model.live="source" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">All</option>
+                    <option value="">{{ __('All') }}</option>
                     @foreach($sourceOptions as $o)
                         <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
                     @endforeach
@@ -89,9 +89,9 @@
             </div>
 
             <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">Client</label>
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Client') }}</label>
                 <select wire:model.live="client" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">All</option>
+                    <option value="">{{ __('All') }}</option>
                     @foreach($clientOptions as $c)
                         <option value="{{ $c }}">{{ $c }}</option>
                     @endforeach
@@ -101,27 +101,27 @@
 
         <div class="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <div class="flex items-center gap-3">
-                <span>Sort:</span>
+                <span>{{ __('Sort:') }}</span>
                 <select wire:model.live="sort" class="rounded-lg border-slate-300 text-xs focus:border-brand-500 focus:ring-brand-500">
-                    <option value="created_desc">Newest first</option>
-                    <option value="created_asc">Oldest first</option>
-                    <option value="priority_desc">Priority (high→low)</option>
+                    <option value="created_desc">{{ __('Newest first') }}</option>
+                    <option value="created_asc">{{ __('Oldest first') }}</option>
+                    <option value="priority_desc">{{ __('Priority (high→low)') }}</option>
                 </select>
             </div>
             <div class="flex items-center gap-3">
                 @if(!$showSaveDialog)
                     <button type="button" wire:click="openSaveDialog"
-                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">Save view</button>
+                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>
                 @endif
                 <button type="button" wire:click="clearFilters"
-                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">Clear filters</button>
+                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Clear filters') }}</button>
             </div>
         </div>
 
         {{-- ── save-filter inline form ── --}}
         @if($showSaveDialog)
             <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-wrap items-center gap-2">
-                <input type="text" wire:model="newFilterName" placeholder="Filter name…"
+                <input type="text" wire:model="newFilterName" placeholder="{{ __('Filter name…') }}"
                        maxlength="100" autocomplete="off"
                        class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 w-44">
                 @error('newFilterName')
@@ -130,21 +130,21 @@
                 <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     <input type="checkbox" wire:model="newFilterIsDefault"
                            class="rounded border-slate-300 text-brand-500 focus:ring-brand-500">
-                    Default view
+                    {{ __('Default view') }}
                 </label>
                 <button type="button" wire:click="saveFilter"
                         class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">
-                    Save
+                    {{ __('Save') }}
                 </button>
                 <button type="button" wire:click="closeSaveDialog"
-                        class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">Cancel</button>
+                        class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">{{ __('Cancel') }}</button>
             </div>
         @endif
 
         {{-- ── saved filter chips ── --}}
         @if($savedFilters->isNotEmpty())
             <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-wrap items-center gap-2">
-                <span class="text-xs text-slate-400 dark:text-slate-500">Saved:</span>
+                <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Saved:') }}</span>
                 @foreach($savedFilters as $sf)
                     <span wire:key="sf-{{ $sf->id }}"
                           class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1
@@ -157,13 +157,13 @@
                             {{ $sf->name }}
                         </button>
                         <button type="button" wire:click="toggleDefaultFilter({{ $sf->id }})"
-                                title="{{ $sf->is_default ? 'Default view – click to remove' : 'Set as default view' }}"
+                                title="{{ $sf->is_default ? __('Default view') . ' – ' . __('Clear filters') : __('Default view') }}"
                                 class="{{ $sf->is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400' }} leading-none px-0.5">
                             ★
                         </button>
                         <button type="button" wire:click="deleteFilter({{ $sf->id }})"
-                                aria-label="Delete {{ $sf->name }}"
-                                title="Delete"
+                                aria-label="{{ __('Delete') }} {{ $sf->name }}"
+                                title="{{ __('Delete') }}"
                                 class="text-slate-300 dark:text-slate-600 hover:text-red-500 leading-none px-0.5">
                             ×
                         </button>
@@ -178,13 +178,13 @@
         @if(auth()->user()->isOperator() && count($bulkSelected) > 0)
             <div class="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/40 px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <span class="text-sm font-medium text-blue-800 dark:text-blue-300">
-                    {{ count($bulkSelected) }} {{ count($bulkSelected) === 1 ? 'lead' : 'leads' }} selected
+                    {{ trans_choice(':count lead selected|:count leads selected', count($bulkSelected), ['count' => count($bulkSelected)]) }}
                 </span>
 
                 <div class="flex items-center gap-2">
                     <select wire:model="bulkStatusValue"
                             class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">Set status…</option>
+                        <option value="">{{ __('Set status…') }}</option>
                         @foreach($statusOptions as $o)
                             <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
                         @endforeach
@@ -192,14 +192,14 @@
                     <button type="button" wire:click="bulkSetStatus"
                             @disabled(!$bulkStatusValue)
                             class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Apply
+                        {{ __('Apply') }}
                     </button>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <select wire:model="bulkPriorityValue"
                             class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">Set priority…</option>
+                        <option value="">{{ __('Set priority…') }}</option>
                         @foreach($priorityOptions as $o)
                             <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
                         @endforeach
@@ -207,13 +207,13 @@
                     <button type="button" wire:click="bulkSetPriority"
                             @disabled(!$bulkPriorityValue)
                             class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Apply
+                        {{ __('Apply') }}
                     </button>
                 </div>
 
                 <button type="button" wire:click="clearBulkSelection"
                         class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors ml-auto">
-                    Clear selection
+                    {{ __('Clear selection') }}
                 </button>
             </div>
         @endif
@@ -232,16 +232,16 @@
                                            wire:click="bulkToggleAll"
                                            @checked(count($bulkSelected) > 0 && count($bulkSelected) === $leads->count())
                                            class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
-                                           aria-label="Select all on this page">
+                                           aria-label="{{ __('Select all on this page') }}">
                                 </th>
                             @endif
                         @endauth
-                        <th class="px-3 py-2 w-[160px]">Received</th>
-                        <th class="px-3 py-2">Contact</th>
-                        <th class="px-3 py-2 w-[140px]">Client</th>
-                        <th class="px-3 py-2 w-[140px]">Source</th>
-                        <th class="px-3 py-2 w-[120px]">Status</th>
-                        <th class="px-3 py-2 w-[110px]">Priority</th>
+                        <th class="px-3 py-2 w-[160px]">{{ __('Received') }}</th>
+                        <th class="px-3 py-2">{{ __('Contact') }}</th>
+                        <th class="px-3 py-2 w-[140px]">{{ __('Client') }}</th>
+                        <th class="px-3 py-2 w-[140px]">{{ __('Source') }}</th>
+                        <th class="px-3 py-2 w-[120px]">{{ __('Status') }}</th>
+                        <th class="px-3 py-2 w-[110px]">{{ __('Priority') }}</th>
                         <th class="px-3 py-2 w-[80px]"></th>
                     </tr>
                 </thead>
@@ -257,7 +257,7 @@
                                                wire:model="bulkSelected"
                                                value="{{ $lead->id }}"
                                                class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
-                                               aria-label="Select lead {{ $lead->id }}">
+                                               aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
                                     </td>
                                 @endif
                             @endauth
@@ -287,7 +287,7 @@
                             </td>
                             <td class="px-3 py-2 text-right">
                                 @if($lead->duplicate_flag)
-                                    <span aria-label="Potential duplicate" title="Potential duplicate"
+                                    <span aria-label="{{ __('Potential duplicate') }}" title="{{ __('Potential duplicate') }}"
                                           class="inline-flex items-center rounded bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 ring-1 ring-rose-600/20 dark:ring-rose-500/30">DUP</span>
                                 @endif
                             </td>
@@ -296,7 +296,7 @@
                         <tr>
                             <td colspan="{{ auth()->user()?->isOperator() ? 8 : 7 }}"
                                 class="px-3 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-                                No leads match these filters yet.
+                                {{ __('No leads match these filters yet.') }}
                             </td>
                         </tr>
                     @endforelse
