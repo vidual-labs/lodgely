@@ -6,6 +6,10 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- License listed as MIT in README, composer.json, and app footer — corrected to GPL-3.0 to match the `LICENSE` file.
+
 ## [0.7.0] · 2026-05-15
 
 ### Added
