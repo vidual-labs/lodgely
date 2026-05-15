@@ -1,25 +1,43 @@
 @import "tailwindcss";
 
-/* Lodgely B2B palette — intentionally muted. Anything brighter must be tied
-   to functional meaning (status pill, KPI accent). */
+/* Class-based dark mode: add .dark to <html> to activate dark: variants */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-brand-50:  oklch(0.97 0.01 250);
+  --color-brand-100: oklch(0.93 0.03 250);
+  --color-brand-200: oklch(0.87 0.05 250);
+  --color-brand-400: oklch(0.65 0.12 250);
   --color-brand-500: oklch(0.55 0.10 250);
+  --color-brand-600: oklch(0.47 0.09 250);
   --color-brand-900: oklch(0.21 0.05 250);
 
   --font-family-sans: "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-/* Subtle defaults that pay off on data-dense screens */
 html {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Dark mode native form elements — avoids repeating dark: on every input */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.dark select,
+.dark textarea {
+  @apply bg-slate-800 border-slate-600 text-slate-100;
 }
 
 [x-cloak] { display: none !important; }
 
-/* Make Laravel pagination look at home with the rest of the UI */
 .pagination {
   @apply flex items-center gap-1 text-sm;
 }

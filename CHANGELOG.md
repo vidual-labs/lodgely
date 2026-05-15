@@ -8,6 +8,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Dark mode** with OS-preference detection and manual toggle: a sun/moon button in the topbar persists the choice to `localStorage`. All pages, modals, side panels, tables, and form controls fully support `dark:` variants. The `@custom-variant dark` directive in Tailwind CSS v4 enables class-based toggling via `.dark` on `<html>`.
+- **Modernized UI**: cards and panels now use `rounded-xl` / `rounded-2xl` and carry a subtle `shadow-sm`; the topbar is sticky with a `backdrop-blur` glass effect; the brand logo uses a gradient; KPI cards have a colored top-accent bar; buttons use `transition-colors` for smooth hover feedback; focus rings use the brand color accent.
+
+### Changed
+
+- Brand logo icon updated from flat `bg-slate-900` to `bg-gradient-to-br from-brand-500 to-brand-900` gradient throughout (topbar and login page).
+- Login card now uses `rounded-2xl` with a depth shadow; sign-in button uses brand color in dark mode.
+- All primary action buttons and filter inputs now focus with `brand-500` ring instead of plain slate.
+
+### Added
+
 - **Saved filters and per-user view defaults** (roadmap item 1):
   - Users can save any combination of search, status, priority, source, client, and sort as a named filter via a "Save view" button in the filter bar.
   - Saved filters appear as chips below the filter controls; clicking a chip instantly applies that filter set.

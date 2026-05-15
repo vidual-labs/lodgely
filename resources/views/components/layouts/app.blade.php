@@ -1,14 +1,20 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-50">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('lodgely.brand.name') }}</title>
+    <script>
+        /* Apply dark class immediately to prevent flash of unstyled content */
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="h-full text-slate-800 antialiased">
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased">
     <div class="min-h-full flex flex-col">
         <x-app.topbar />
 
@@ -18,7 +24,7 @@
             </div>
         </main>
 
-        <footer class="border-t border-slate-200 bg-white">
+        <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
             <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-3 text-xs text-slate-500 flex justify-between">
                 <span>{{ config('lodgely.brand.name') }} — {{ config('lodgely.brand.tagline') }}</span>
                 <span>Open source · MIT</span>
@@ -36,7 +42,7 @@
         <div
             x-show="show"
             x-transition.opacity
-            class="rounded-md bg-slate-900 text-slate-50 px-4 py-2 shadow-lg text-sm"
+            class="rounded-xl bg-slate-900 dark:bg-slate-700 text-slate-50 px-4 py-2.5 shadow-xl text-sm"
             x-text="msg"
         ></div>
     </div>
