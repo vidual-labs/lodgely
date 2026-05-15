@@ -20,18 +20,18 @@ return new class extends Migration
             $table->string('platform', 16)->nullable()->after('form_name');
             $table->boolean('is_organic')->nullable()->after('platform');
 
-            $table->index(['tenant_id', 'meta_lead_id']);
-            $table->index(['tenant_id', 'ad_id']);
-            $table->index(['tenant_id', 'form_id']);
+            $table->index(['tenant_id', 'meta_lead_id'], 'leads_tenant_meta_lead_id_index');
+            $table->index(['tenant_id', 'ad_id'], 'leads_tenant_ad_id_index');
+            $table->index(['tenant_id', 'form_id'], 'leads_tenant_form_id_index');
         });
     }
 
     public function down(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->dropIndex(['tenant_id', 'meta_lead_id']);
-            $table->dropIndex(['tenant_id', 'ad_id']);
-            $table->dropIndex(['tenant_id', 'form_id']);
+            $table->dropIndex('leads_tenant_meta_lead_id_index');
+            $table->dropIndex('leads_tenant_ad_id_index');
+            $table->dropIndex('leads_tenant_form_id_index');
 
             $table->dropColumn([
                 'meta_lead_id', 'ad_id', 'ad_name',
