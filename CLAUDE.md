@@ -59,6 +59,25 @@ direction without pulling the work forward.
 - Use enums (`LeadStatus`, `LeadPriority`, `UserRole`) — never raw strings
   in the domain layer.
 
+## Every commit checklist
+
+Before committing any change, always update these three files:
+
+1. **`CHANGELOG.md`** — add an entry under `[Unreleased]` describing what
+   changed (Added / Changed / Fixed / Removed). Use plain English, one bullet
+   per logical change.
+2. **`README.md`** — if the change adds, removes or alters a user-visible
+   feature, update the relevant section (Features, Out of scope, Config
+   reference, Roadmap, Architecture tree) so the README stays accurate.
+3. **`composer.json` `"version"`** — bump using semver:
+   - Patch (`0.x.y → 0.x.y+1`) for bug fixes and small internal changes.
+   - Minor (`0.x.0 → 0.x+1.0`) for new features or behaviour changes.
+   - Major reserved for breaking changes to the data schema or public API.
+
+When a batch of [Unreleased] entries represents a coherent release (e.g. a
+milestone or tag), promote `[Unreleased]` to `[x.y.z] · YYYY-MM-DD` in the
+changelog.
+
 ## Commands worth knowing
 
 ```bash
