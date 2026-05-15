@@ -4,6 +4,34 @@ All notable changes to lodgely are documented here. The format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 semantic-ish versioning once a 1.0 is tagged.
 
+## [Unreleased]
+
+### Added
+
+- **Bulk actions** in the inbox (roadmap item 4):
+  - Operators see a checkbox on each row and a "select all on page" header checkbox.
+  - A bulk action bar appears above the table when one or more leads are selected, showing a count and two dropdowns — set status, set priority — each with an Apply button.
+  - Bulk mutations respect `visibleTo()` visibility scoping and record a
+    `lead.status_changed` / `lead.priority_changed` audit event per affected lead.
+  - Selecting a different filter, sort, or page automatically clears the selection.
+- **Dynamic source filter** — the Source dropdown in the inbox filter bar now
+  queries distinct sources actually present in the visible lead set instead of
+  using a hardcoded list, so `webhook` and `email_imap` sources appear when relevant.
+
+### Changed
+
+- All modal and panel overlay surfaces (`lead-panel`, `new-lead` modal, `users`
+  modal, `webhooks` modal) now carry `role="dialog"`, `aria-modal="true"`, and
+  `aria-labelledby` pointing at the panel title, improving screen-reader
+  compatibility.
+- Close buttons (✕) in all dialogs now have `aria-label="Close"`.
+- The toast notification container in the app layout carries `role="status"`,
+  `aria-live="polite"`, and `aria-atomic="true"` so screen readers announce
+  confirmations (e.g. "Lead added.", "3 leads updated.").
+- Submit buttons on the users, webhooks, and lead-panel note forms now dim and
+  become disabled during the Livewire network request (`wire:loading`), preventing
+  double-submit.
+
 ## [0.2.0] · 2026-05-14
 
 ### Added

@@ -112,12 +112,14 @@
     {{-- create / edit modal --}}
     @if($showForm)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-            <div class="w-full max-w-lg rounded-lg bg-white shadow-xl">
+            <div role="dialog" aria-modal="true" aria-labelledby="users-dialog-title"
+                 class="w-full max-w-lg rounded-lg bg-white shadow-xl">
                 <header class="border-b border-slate-200 px-5 py-3 flex justify-between items-center">
-                    <h2 class="text-base font-semibold text-slate-900">
+                    <h2 id="users-dialog-title" class="text-base font-semibold text-slate-900">
                         {{ $editingUserId ? 'Edit user' : 'New user' }}
                     </h2>
-                    <button type="button" wire:click="close" class="text-slate-400 hover:text-slate-700">✕</button>
+                    <button type="button" wire:click="close" aria-label="Close"
+                            class="text-slate-400 hover:text-slate-700">✕</button>
                 </header>
 
                 <form wire:submit.prevent="save" class="px-5 py-4 space-y-3">
@@ -198,6 +200,7 @@
                             Cancel
                         </button>
                         <button type="submit"
+                                wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
                                 class="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800">
                             {{ $editingUserId ? 'Save changes' : 'Create user' }}
                         </button>

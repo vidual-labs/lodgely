@@ -28,6 +28,10 @@ class InboxPage extends Component
 
     public ?int $selectedLeadId = null;
 
+    public array $bulkSelected = [];
+    public string $bulkStatusValue   = '';
+    public string $bulkPriorityValue = '';
+
     public ?string $newNoteBody = null;
 
     public bool $showManualForm = false;
@@ -52,6 +56,7 @@ class InboxPage extends Component
     {
         if (in_array($name, ['search', 'status', 'priority', 'source', 'client', 'sort'], true)) {
             $this->resetPage();
+            $this->bulkSelected = [];
         }
     }
 
@@ -189,7 +194,86 @@ class InboxPage extends Component
         $this->priority = '';
         $this->source = '';
         $this->client = '';
+        $this->bulkSelected = [];
         $this->resetPage();
+    }
+
+    public function bulkToggleAll(): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        $base = Lead::query()->visibleTo(auth()->user());
+        $pageIds = $this->applyFilters($base)
+            ->orderBy(...$this->sortBy())
+            ->paginate(config('lodgely.pagination.per_page'))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $this->bulkSelected = (count($this->bulkSelected) === count($pageIds) && count($pageIds) > 0)
+            ? []
+            : $pageIds;
+    }
+
+    public function clearBulkSelection(): void
+    {
+        $this->bulkSelected = [];
+    }
+
+    public function bulkSetStatus(AuditLogger $audit): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        if ($this->bulkStatusValue === '' || empty($this->bulkSelected)) {
+            return;
+        }
+
+        $statusEnum = LeadStatus::from($this->bulkStatusValue);
+        $ids        = array_map('intval', $this->bulkSelected);
+        $leads      = Lead::query()->visibleTo(auth()->user())->whereIn('id', $ids)->get();
+
+        foreach ($leads as $lead) {
+            if ($lead->status === $statusEnum) {
+                continue;
+            }
+            $previous     = $lead->status?->value;
+            $lead->status = $statusEnum;
+            $lead->save();
+            $audit->record($lead, 'lead.status_changed', ['from' => $previous, 'to' => $statusEnum->value]);
+        }
+
+        $count                 = $leads->count();
+        $this->bulkSelected    = [];
+        $this->bulkStatusValue = '';
+        $this->dispatch('toast', message: $count . ' ' . ($count === 1 ? 'lead' : 'leads') . ' updated.');
+    }
+
+    public function bulkSetPriority(AuditLogger $audit): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        if ($this->bulkPriorityValue === '' || empty($this->bulkSelected)) {
+            return;
+        }
+
+        $priorityEnum = LeadPriority::from($this->bulkPriorityValue);
+        $ids          = array_map('intval', $this->bulkSelected);
+        $leads        = Lead::query()->visibleTo(auth()->user())->whereIn('id', $ids)->get();
+
+        foreach ($leads as $lead) {
+            if ($lead->priority === $priorityEnum) {
+                continue;
+            }
+            $previous       = $lead->priority?->value;
+            $lead->priority = $priorityEnum;
+            $lead->save();
+            $audit->record($lead, 'lead.priority_changed', ['from' => $previous, 'to' => $priorityEnum->value]);
+        }
+
+        $count                   = $leads->count();
+        $this->bulkSelected      = [];
+        $this->bulkPriorityValue = '';
+        $this->dispatch('toast', message: $count . ' ' . ($count === 1 ? 'lead' : 'leads') . ' updated.');
     }
 
     public function render(): View
@@ -198,13 +282,8 @@ class InboxPage extends Component
 
         $base = Lead::query()->visibleTo($user);
 
-        $leads = (clone $base)
-            ->search($this->search)
-            ->when($this->status,   fn ($q, $v) => $q->where('status', $v))
-            ->when($this->priority, fn ($q, $v) => $q->where('priority', $v))
-            ->when($this->source,   fn ($q, $v) => $q->where('source', $v))
-            ->when($this->client,   fn ($q, $v) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($v)]))
-            ->orderBy(... $this->sortBy())
+        $leads = $this->applyFilters($base)
+            ->orderBy(...$this->sortBy())
             ->paginate(config('lodgely.pagination.per_page'));
 
         $kpis = $this->kpis($base);
@@ -216,18 +295,47 @@ class InboxPage extends Component
             ->pluck('client_name')
             ->all();
 
+        $sourceLabels = [
+            'csv'        => 'CSV',
+            'email_mock' => 'Email (mock)',
+            'email_imap' => 'Email (IMAP)',
+            'manual'     => 'Manual',
+            'webhook'    => 'Webhook',
+        ];
+
+        $sourceOptions = (clone $base)
+            ->distinct()
+            ->orderBy('source')
+            ->pluck('source')
+            ->map(fn ($s) => [
+                'value' => $s,
+                'label' => $sourceLabels[$s] ?? ucwords(str_replace('_', ' ', $s)),
+            ])
+            ->all();
+
         $selected = $this->selectedLeadId
             ? (clone $base)->with(['notes.user', 'events.user', 'duplicateOf', 'import'])->find($this->selectedLeadId)
             : null;
 
         return view('livewire.inbox.inbox-page', [
-            'leads'         => $leads,
-            'kpis'          => $kpis,
-            'clientOptions' => $clientOptions,
-            'selected'      => $selected,
+            'leads'           => $leads,
+            'kpis'            => $kpis,
+            'clientOptions'   => $clientOptions,
+            'sourceOptions'   => $sourceOptions,
+            'selected'        => $selected,
             'statusOptions'   => LeadStatus::options(),
             'priorityOptions' => LeadPriority::options(),
         ]);
+    }
+
+    private function applyFilters($base): mixed
+    {
+        return (clone $base)
+            ->search($this->search)
+            ->when($this->status,   fn ($q, $v) => $q->where('status', $v))
+            ->when($this->priority, fn ($q, $v) => $q->where('priority', $v))
+            ->when($this->source,   fn ($q, $v) => $q->where('source', $v))
+            ->when($this->client,   fn ($q, $v) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($v)]));
     }
 
     /** @return array{0:string, 1:string} */

@@ -82,9 +82,9 @@
                 <label class="text-xs font-medium text-slate-600">Source</label>
                 <select wire:model.live="source" class="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-slate-500 focus:ring-slate-500">
                     <option value="">All</option>
-                    <option value="csv">CSV</option>
-                    <option value="email_mock">Email (mock)</option>
-                    <option value="manual">Manual</option>
+                    @foreach($sourceOptions as $o)
+                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -112,12 +112,69 @@
         </div>
     </div>
 
+    {{-- ────────────────── bulk action bar ───────────────── --}}
+    @auth
+        @if(auth()->user()->isOperator() && count($bulkSelected) > 0)
+            <div class="rounded-md border border-blue-200 bg-blue-50 px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span class="text-sm font-medium text-blue-800">
+                    {{ count($bulkSelected) }} {{ count($bulkSelected) === 1 ? 'lead' : 'leads' }} selected
+                </span>
+
+                <div class="flex items-center gap-2">
+                    <select wire:model="bulkStatusValue"
+                            class="rounded-md border-slate-300 text-sm focus:border-slate-500 focus:ring-slate-500">
+                        <option value="">Set status…</option>
+                        @foreach($statusOptions as $o)
+                            <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                        @endforeach
+                    </select>
+                    <button type="button" wire:click="bulkSetStatus"
+                            @disabled(!$bulkStatusValue)
+                            class="rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Apply
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <select wire:model="bulkPriorityValue"
+                            class="rounded-md border-slate-300 text-sm focus:border-slate-500 focus:ring-slate-500">
+                        <option value="">Set priority…</option>
+                        @foreach($priorityOptions as $o)
+                            <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                        @endforeach
+                    </select>
+                    <button type="button" wire:click="bulkSetPriority"
+                            @disabled(!$bulkPriorityValue)
+                            class="rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Apply
+                    </button>
+                </div>
+
+                <button type="button" wire:click="clearBulkSelection"
+                        class="text-sm text-slate-500 hover:text-slate-900 ml-auto">
+                    Clear selection
+                </button>
+            </div>
+        @endif
+    @endauth
+
     {{-- ────────────────── table ───────────────── --}}
     <div class="rounded-md border border-slate-200 bg-white overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr class="text-left text-xs font-semibold text-slate-500">
+                        @auth
+                            @if(auth()->user()->isOperator())
+                                <th class="px-3 py-2 w-8">
+                                    <input type="checkbox"
+                                           wire:click="bulkToggleAll"
+                                           @checked(count($bulkSelected) > 0 && count($bulkSelected) === $leads->count())
+                                           class="rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                                           aria-label="Select all on this page">
+                                </th>
+                            @endif
+                        @endauth
                         <th class="px-3 py-2 w-[160px]">Received</th>
                         <th class="px-3 py-2">Contact</th>
                         <th class="px-3 py-2 w-[140px]">Client</th>
@@ -132,6 +189,17 @@
                         <tr wire:key="lead-{{ $lead->id }}"
                             wire:click="selectLead({{ $lead->id }})"
                             class="cursor-pointer hover:bg-slate-50 {{ $selected?->id === $lead->id ? 'bg-slate-100' : '' }}">
+                            @auth
+                                @if(auth()->user()->isOperator())
+                                    <td class="px-3 py-2" wire:click.stop>
+                                        <input type="checkbox"
+                                               wire:model="bulkSelected"
+                                               value="{{ $lead->id }}"
+                                               class="rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                                               aria-label="Select lead {{ $lead->id }}">
+                                    </td>
+                                @endif
+                            @endauth
                             <td class="px-3 py-2 text-sm text-slate-600 whitespace-nowrap">
                                 <div>{{ $lead->created_at?->format('Y-m-d H:i') }}</div>
                                 <div class="text-xs text-slate-400">{{ $lead->created_at?->diffForHumans() }}</div>
@@ -158,13 +226,15 @@
                             </td>
                             <td class="px-3 py-2 text-right">
                                 @if($lead->duplicate_flag)
-                                    <span title="Potential duplicate" class="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 ring-1 ring-rose-600/20">DUP</span>
+                                    <span aria-label="Potential duplicate" title="Potential duplicate"
+                                          class="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 ring-1 ring-rose-600/20">DUP</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-3 py-10 text-center text-sm text-slate-500">
+                            <td colspan="{{ auth()->user()?->isOperator() ? 8 : 7 }}"
+                                class="px-3 py-10 text-center text-sm text-slate-500">
                                 No leads match these filters yet.
                             </td>
                         </tr>

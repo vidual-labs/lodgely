@@ -55,6 +55,8 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 🗑️ **Retention awareness** — every lead carries a `retention_until`
   field, with an opt-in `php artisan lodgely:leads:purge` command.
 - 📊 **Inbox KPIs** — new, duplicates, incomplete, total, leads by source.
+- ☑️ **Bulk actions** — operators select multiple leads via checkboxes and apply
+  a status or priority change to all in one step. Audit events recorded per lead.
 
 ---
 
@@ -269,7 +271,7 @@ and are listed in the roadmap.
    the reporting layer with pseudonymization / aggregation defaults.
 3. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-4. **Bulk actions** in the inbox (mass-forward, mass-status).
+4. ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.3.0.
 5. **Saved filters** and per-user view defaults.
 
 ---
