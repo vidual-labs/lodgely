@@ -42,9 +42,21 @@
 
         <div class="flex items-center gap-2">
             {{-- Dark / Light mode pill switch --}}
-            <div x-data="{ dark: document.documentElement.classList.contains('dark') }"
+            <div x-data="{
+                    dark: document.documentElement.classList.contains('dark'),
+                    saveTheme(theme) {
+                        localStorage.setItem('theme', theme);
+                        @auth
+                        fetch('{{ route('user.theme') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                            body: JSON.stringify({ theme })
+                        });
+                        @endauth
+                    }
+                 }"
                  class="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800/80 p-0.5 text-xs font-medium">
-                <button @click="dark = false; document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light')"
+                <button @click="dark = false; document.documentElement.classList.remove('dark'); saveTheme('light')"
                         :class="!dark ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 dark:text-slate-400'"
                         class="flex items-center gap-1 px-2.5 py-1 rounded-md transition-all"
                         :aria-pressed="!dark ? 'true' : 'false'"
@@ -58,7 +70,7 @@
                     </svg>
                     <span class="hidden sm:inline">{{ __('Light') }}</span>
                 </button>
-                <button @click="dark = true; document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark')"
+                <button @click="dark = true; document.documentElement.classList.add('dark'); saveTheme('dark')"
                         :class="dark ? 'bg-slate-700 shadow-sm text-slate-100' : 'text-slate-500 dark:text-slate-400'"
                         class="flex items-center gap-1 px-2.5 py-1 rounded-md transition-all"
                         :aria-pressed="dark ? 'true' : 'false'"

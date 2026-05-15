@@ -17,9 +17,18 @@ Route::post('/locale', function (Request $request) {
     $locale = $request->input('locale');
     if (in_array($locale, SetLocale::SUPPORTED, true)) {
         session(['locale' => $locale]);
+        $request->user()?->update(['locale' => $locale]);
     }
     return back();
 })->name('locale');
+
+Route::post('/user/theme', function (Request $request) {
+    $theme = $request->input('theme');
+    if (in_array($theme, ['light', 'dark'], true)) {
+        $request->user()?->update(['ui_theme' => $theme]);
+    }
+    return response()->noContent();
+})->middleware('auth')->name('user.theme');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
