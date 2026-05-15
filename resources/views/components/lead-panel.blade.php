@@ -7,13 +7,13 @@
            class="w-full max-w-[520px] bg-white dark:bg-slate-900 shadow-xl dark:shadow-black/40 flex flex-col border-l border-slate-200 dark:border-slate-700/50">
         <header class="border-b border-slate-200 dark:border-slate-700/50 px-5 py-4 flex items-start justify-between">
             <div>
-                <div class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Lead #{{ $lead->id }}</div>
+                <div class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Lead #:id', ['id' => $lead->id]) }}</div>
                 <h2 id="lead-panel-title" class="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ $lead->full_name ?? '—' }}</h2>
                 <div class="text-xs text-slate-500 dark:text-slate-400">
                     {{ $lead->client_name ?? '—' }} · {{ $lead->campaign_name ?? '—' }}
                 </div>
             </div>
-            <button type="button" wire:click="closePanel" aria-label="Close"
+            <button type="button" wire:click="closePanel" aria-label="{{ __('Close') }}"
                     class="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">✕</button>
         </header>
 
@@ -22,39 +22,39 @@
             @if($lead->duplicate_flag)
                 <div class="rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/50 px-3 py-2 text-sm text-rose-800 dark:text-rose-300 flex items-center justify-between">
                     <span>
-                        Potential duplicate
+                        {{ __('Potential duplicate') }}
                         @if($lead->duplicateOf)
-                            of <strong>#{{ $lead->duplicateOf->id }}</strong>
+                            {{ __('of') }} <strong>#{{ $lead->duplicateOf->id }}</strong>
                             <span class="text-rose-700/80 dark:text-rose-400/80">— {{ $lead->duplicateOf->full_name ?? $lead->duplicateOf->email ?? $lead->duplicateOf->phone }}</span>
                         @endif
                     </span>
                     <button type="button" wire:click="reconcileDuplicate({{ $lead->id }})" class="text-xs underline hover:no-underline">
-                        Re-check
+                        {{ __('Re-check') }}
                     </button>
                 </div>
             @endif
 
             {{-- contact --}}
             <section>
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Contact</h3>
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Contact') }}</h3>
                 <dl class="grid grid-cols-3 gap-y-2 text-sm">
-                    <dt class="text-slate-500 dark:text-slate-400">Email</dt>
+                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Email') }}</dt>
                     <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ $lead->email ?? '—' }}</dd>
-                    <dt class="text-slate-500 dark:text-slate-400">Phone</dt>
+                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Phone') }}</dt>
                     <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ $lead->phone ?? '—' }}</dd>
-                    <dt class="text-slate-500 dark:text-slate-400">Source</dt>
+                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Source') }}</dt>
                     <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ str_replace('_', ' ', $lead->source) }}</dd>
-                    <dt class="text-slate-500 dark:text-slate-400">Received</dt>
+                    <dt class="text-slate-500 dark:text-slate-400">{{ __('Received') }}</dt>
                     <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ $lead->created_at?->format('Y-m-d H:i') }}</dd>
                 </dl>
             </section>
 
             {{-- workflow --}}
             <section>
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Workflow</h3>
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">Status</label>
+                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
                         <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
                                 class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                             @foreach($statusOptions as $o)
@@ -63,7 +63,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">Priority</label>
+                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
                         <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
                                 class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                             @foreach($priorityOptions as $o)
@@ -77,14 +77,14 @@
             {{-- message --}}
             @if($lead->message)
                 <section>
-                    <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Message</h3>
+                    <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Message') }}</h3>
                     <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{{ $lead->message }}</div>
                 </section>
             @endif
 
             {{-- notes --}}
             <section>
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Notes</h3>
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Notes') }}</h3>
                 <div class="space-y-2">
                     @forelse($lead->notes as $note)
                         <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 px-3 py-2 text-sm bg-white dark:bg-slate-800/40">
@@ -94,25 +94,25 @@
                             </div>
                         </div>
                     @empty
-                        <p class="text-xs text-slate-500 dark:text-slate-400">No notes yet.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('No notes yet.') }}</p>
                     @endforelse
                 </div>
 
                 <form wire:submit.prevent="addNote" class="mt-3">
-                    <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="Add a short note…"
+                    <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
                               class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
                     @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     <div class="mt-2 flex justify-end">
                         <button type="submit"
                             wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
-                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">Add note</button>
+                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Add note') }}</button>
                     </div>
                 </form>
             </section>
 
             {{-- audit trail --}}
             <section>
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Activity</h3>
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Activity') }}</h3>
                 <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                     @foreach($lead->events->take(20) as $event)
                         <li class="flex items-center justify-between">
