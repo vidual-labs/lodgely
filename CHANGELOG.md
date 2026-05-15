@@ -6,57 +6,34 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+## [0.7.0] · 2026-05-15
+
 ### Added
 
 - **Per-user preference persistence** — language and theme are now stored in the `users` table (`locale`, `ui_theme` columns). For authenticated users: the `SetLocale` middleware reads `users.locale` (falling back to session for guests); clicking a language option saves to DB via `POST /locale`; toggling Light/Dark fires a background `fetch` to `POST /user/theme` and saves to `users.ui_theme`. On the next page load the server injects the stored theme into the FOUC-prevention script, so the correct mode is applied before any CSS loads without relying solely on `localStorage`.
-
 - **i18n / localization infrastructure**: JSON-based translations via Laravel's `__()` helper. All user-visible strings in every Blade view are now wrapped in `__()`. Language files ship for `en` (English) and `de` (German). A `SetLocale` middleware reads the locale from session on every request. A `POST /locale` route lets the language switcher in the topbar persist the choice server-side.
 - **Language switcher** in the topbar: pill-shaped EN / DE toggle (same visual style as the dark mode switch). Works on both authenticated and guest pages.
 - **Dark / Light mode pill switch**: replaced the single icon button with a labelled two-option pill (`Light · Dark`) that clearly shows the active mode and makes both choices a single click.
-
-- **Dark mode** with OS-preference detection and manual toggle: a sun/moon button in the topbar persists the choice to `localStorage`. All pages, modals, side panels, tables, and form controls fully support `dark:` variants. The `@custom-variant dark` directive in Tailwind CSS v4 enables class-based toggling via `.dark` on `<html>`.
-- **Modernized UI**: cards and panels now use `rounded-xl` / `rounded-2xl` and carry a subtle `shadow-sm`; the topbar is sticky with a `backdrop-blur` glass effect; the brand logo uses a gradient; KPI cards have a colored top-accent bar; buttons use `transition-colors` for smooth hover feedback; focus rings use the brand color accent.
-
-### Changed
-
-- Brand logo icon updated from flat `bg-slate-900` to `bg-gradient-to-br from-brand-500 to-brand-900` gradient throughout (topbar and login page).
-- Login card now uses `rounded-2xl` with a depth shadow; sign-in button uses brand color in dark mode.
-- All primary action buttons and filter inputs now focus with `brand-500` ring instead of plain slate.
-
-### Added
-
-- **Saved filters and per-user view defaults** (roadmap item 1):
-  - Users can save any combination of search, status, priority, source, client, and sort as a named filter via a "Save view" button in the filter bar.
-  - Saved filters appear as chips below the filter controls; clicking a chip instantly applies that filter set.
-  - Each saved filter has a star (★) toggle to mark it as the user's default view.  The default is loaded automatically when the user visits `/inbox` with no explicit URL filter parameters.
-  - Toggling the star on an already-default filter clears the default; setting a new default clears any previous one (one default per user at most).
-  - Each chip also has a × delete button. All saved-filter operations are scoped to the authenticated user.
+- **Dark mode** with OS-preference detection and manual toggle. All pages, modals, side panels, tables, and form controls support `dark:` variants. The `@custom-variant dark` directive in Tailwind CSS v4 enables class-based toggling via `.dark` on `<html>`.
+- **Modernized UI**: cards and panels now use `rounded-xl` / `rounded-2xl` with `shadow-sm`; topbar is sticky with `backdrop-blur` glass effect; brand logo uses a gradient; KPI cards have a colored top-accent bar; buttons use `transition-colors`; focus rings use the brand color.
+- **Saved filters and per-user view defaults**:
+  - Any combination of search, status, priority, source, client, and sort can be saved as a named filter via a "Save view" button in the filter bar.
+  - Saved filters appear as chips; clicking applies the filter set instantly.
+  - One filter can be starred as the user's default, loaded automatically on `/inbox` visits with no explicit URL parameters.
   - New `saved_filters` table (`user_id`, `tenant_id`, `name`, `filters` JSONB, `is_default`).
-  - New `SavedFilter` model with a `HasMany` relationship wired from `User`.
-
-- **Bulk actions** in the inbox (roadmap item 4):
-  - Operators see a checkbox on each row and a "select all on page" header checkbox.
-  - A bulk action bar appears above the table when one or more leads are selected, showing a count and two dropdowns — set status, set priority — each with an Apply button.
-  - Bulk mutations respect `visibleTo()` visibility scoping and record a
-    `lead.status_changed` / `lead.priority_changed` audit event per affected lead.
-  - Selecting a different filter, sort, or page automatically clears the selection.
-- **Dynamic source filter** — the Source dropdown in the inbox filter bar now
-  queries distinct sources actually present in the visible lead set instead of
-  using a hardcoded list, so `webhook` and `email_imap` sources appear when relevant.
+- **Bulk actions** in the inbox:
+  - Per-row checkboxes and a "select all on page" header checkbox for operators.
+  - Bulk action bar with set-status and set-priority dropdowns; audit events recorded per affected lead.
+- **Dynamic source filter** — Source dropdown queries distinct sources present in the visible lead set rather than a hardcoded list.
 
 ### Changed
 
-- All modal and panel overlay surfaces (`lead-panel`, `new-lead` modal, `users`
-  modal, `webhooks` modal) now carry `role="dialog"`, `aria-modal="true"`, and
-  `aria-labelledby` pointing at the panel title, improving screen-reader
-  compatibility.
-- Close buttons (✕) in all dialogs now have `aria-label="Close"`.
-- The toast notification container in the app layout carries `role="status"`,
-  `aria-live="polite"`, and `aria-atomic="true"` so screen readers announce
-  confirmations (e.g. "Lead added.", "3 leads updated.").
-- Submit buttons on the users, webhooks, and lead-panel note forms now dim and
-  become disabled during the Livewire network request (`wire:loading`), preventing
-  double-submit.
+- Brand logo updated to `bg-gradient-to-br from-brand-500 to-brand-900` gradient throughout.
+- Login card uses `rounded-2xl` with depth shadow; sign-in button uses brand color in dark mode.
+- All primary buttons and filter inputs focus with `brand-500` ring.
+- All modal/panel overlays carry `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` for screen-reader compatibility.
+- Toast container carries `role="status"` / `aria-live="polite"` / `aria-atomic="true"`.
+- Submit buttons on note, user, and webhook forms dim and disable during Livewire network requests (`wire:loading`).
 
 ## [0.2.0] · 2026-05-14
 
