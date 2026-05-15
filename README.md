@@ -186,7 +186,8 @@ app/
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
 │   │                        LeadIngestor, ImportRunner
-│   ├── Reporting/           (reserved) Meta / Google Ads ingestion
+│   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
+│   │                        MetricsIngestor, CampaignRollup services
 │   └── Ai/                  (reserved) AI summaries / scoring
 ├── Http/Controllers/Auth/   LoginController
 ├── Importers/
@@ -194,14 +195,17 @@ app/
 │   ├── Csv/                 CsvLeadSource adapter
 │   ├── Email/               ImapLeadSource + MailBodyParser
 │   ├── EmailMock/           EmailMockLeadSource adapter
+│   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
+│   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
 ├── Livewire/
 │   ├── Inbox/InboxPage      the main UI
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs
+│   ├── Reporting/ReportingPage  operator ad spend + campaign rollup dashboard
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
-│                            Import, UserLeadScope
+│                            Import, UserLeadScope, AdSpendReport
 ├── Providers/AppServiceProvider
 └── Support/Audit/AuditLogger
 ```
@@ -283,13 +287,12 @@ and are listed in the roadmap.
 
 1. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-2. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
-   ingestion, campaign/source rollups.
-3. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
+2. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
    the reporting layer with pseudonymization / aggregation defaults.
 
 ### Completed
 
+- ~~**Reporting module**~~ ✓ Done in v0.9.0 — `/reporting` page with Meta + Google Ads mock adapters, `ad_spend_reports` table, campaign rollup, KPI cards.
 - ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.7.0.
 - ~~**Saved filters** and per-user view defaults.~~ ✓ Done in v0.7.0.
 - ~~**Dark / Light mode** with OS-preference detection and manual toggle.~~ ✓ Done in v0.7.0.
