@@ -18,6 +18,17 @@ final readonly class IncomingLead
         public ?string $message = null,
         /** @var array<string, mixed>|null */
         public ?array $rawPayload = null,
+        // Meta Lead Ads structural fields (stable across all forms)
+        public ?string $metaLeadId = null,
+        public ?string $adId = null,
+        public ?string $adName = null,
+        public ?string $adsetId = null,
+        public ?string $adsetName = null,
+        public ?string $campaignId = null,
+        public ?string $formId = null,
+        public ?string $formName = null,
+        public ?string $platform = null,
+        public ?bool $isOrganic = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -32,6 +43,16 @@ final readonly class IncomingLead
             'phone'          => $this->phone,
             'message'        => $this->message,
             'raw_payload'    => $this->rawPayload,
+            'meta_lead_id'   => $this->metaLeadId,
+            'ad_id'          => $this->adId,
+            'ad_name'        => $this->adName,
+            'adset_id'       => $this->adsetId,
+            'adset_name'     => $this->adsetName,
+            'campaign_id'    => $this->campaignId,
+            'form_id'        => $this->formId,
+            'form_name'      => $this->formName,
+            'platform'       => $this->platform,
+            'is_organic'     => $this->isOrganic,
         ];
     }
 }

@@ -24,6 +24,12 @@ class Lead extends Model
         'status', 'priority',
         'duplicate_flag', 'duplicate_of_id',
         'retention_until',
+        'meta_lead_id',
+        'ad_id', 'ad_name',
+        'adset_id', 'adset_name',
+        'campaign_id',
+        'form_id', 'form_name',
+        'platform', 'is_organic',
     ];
 
     protected function casts(): array
@@ -31,6 +37,7 @@ class Lead extends Model
         return [
             'raw_payload'     => 'array',
             'duplicate_flag'  => 'boolean',
+            'is_organic'      => 'boolean',
             'retention_until' => 'datetime',
             'status'          => LeadStatus::class,
             'priority'        => LeadPriority::class,
