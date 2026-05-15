@@ -35,6 +35,10 @@
                            class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('webhooks') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
                             {{ __('Webhooks') }}
                         </a>
+                        <a href="{{ route('reporting') }}"
+                           class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('reporting') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
+                            {{ __('Reporting') }}
+                        </a>
                     @endif
                 @endauth
             </nav>

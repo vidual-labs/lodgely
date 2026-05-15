@@ -52,4 +52,10 @@ return [
     'pagination' => [
         'per_page' => 25,
     ],
+
+    'reporting' => [
+        // Comma-separated list of ad metrics source keys to run on schedule.
+        // Available: meta_mock, google_mock. Replace with real adapters when API keys are configured.
+        'sources' => explode(',', env('LODGELY_AD_METRICS_SOURCES', 'meta_mock,google_mock')),
+    ],
 ];

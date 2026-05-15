@@ -63,6 +63,7 @@ clean place to *triage* leads before anything else happens, you are at home.
   automatically on each inbox visit.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
+- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads. Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
 
 ---
 
@@ -70,7 +71,6 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 These have architecture seams reserved but are not yet implemented:
 
-- Reporting module (Meta Ads / Google Ads ingestion, campaign rollups)
 - AI summaries / quality scoring on top of reporting data
 - Multi-tenancy (`tenant_id` exists everywhere; only the default tenant is wired)
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ImportAdMetrics;
 use App\Console\Commands\ImportEmailsImap;
 use App\Console\Commands\ImportEmailsMock;
 use App\Console\Commands\PurgeExpiredLeads;
@@ -15,3 +16,6 @@ if (config('lodgely.importers.email.imap.host')) {
 
 // GDPR-friendly cleanup pass; only acts on leads with a retention_until in the past.
 Schedule::command(PurgeExpiredLeads::class)->dailyAt('03:00');
+
+// Daily ad metrics pull — fetches yesterday's aggregate spend data from all configured sources.
+Schedule::command(ImportAdMetrics::class, ['--days=1'])->dailyAt('05:00')->withoutOverlapping();

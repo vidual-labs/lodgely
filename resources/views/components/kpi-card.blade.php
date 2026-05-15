@@ -18,5 +18,5 @@
 <div class="relative rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-4 overflow-hidden shadow-sm">
     <div class="absolute top-0 inset-x-0 h-0.5 {{ $tone_conf['bar'] }}"></div>
     <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">{{ $label }}</div>
-    <div class="mt-2 text-2xl font-semibold {{ $tone_conf['text'] }} tabular-nums">{{ number_format($value) }}</div>
+    <div class="mt-2 text-2xl font-semibold {{ $tone_conf['text'] }} tabular-nums">{{ $value }}</div>
 </div>
