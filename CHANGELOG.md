@@ -8,6 +8,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Reporting module** (`app/Domain/Reporting/`) — light ad spend ingestion and campaign rollup dashboard for operators:
+  - New `ad_spend_reports` table stores daily aggregate metrics per campaign (platform, campaign ID/name, impressions, clicks, spend in cents, currency, reach, platform-reported lead count). No PII stored. Unique constraint on `(tenant_id, platform, date, campaign_id)` makes re-ingestion idempotent.
+  - `AdMetricsSource` contract (adapter interface): `platform()`, `label()`, `fetch(tenantId, date): iterable<AdMetricsSnapshot>`. Drop a class implementing this, register it in `AppServiceProvider::AD_METRICS_SOURCES`, and it runs on schedule.
+  - `AdMetricsSnapshot` readonly DTO carries one day's aggregate metrics from an ad platform into `MetricsIngestor`.
+  - `MetricsIngestor` service upserts snapshots into `ad_spend_reports` (insert or update by unique key).
+  - `CampaignRollup` service aggregates spend/click/impression totals across the date range and joins with lodgely's own lead counts via `leads.campaign_id`.
+  - Mock adapters: `MetaMockAdMetricsSource` (3 campaigns, deterministic seed) and `GoogleMockAdMetricsSource` (2 campaigns) for demos and dev.
+  - `lodgely:import:ad-metrics` artisan command — `--days=N`, `--date=YYYY-MM-DD`, `--platform=meta|google` options. Scheduled daily at 05:00.
+  - `/reporting` Livewire page (operators only): platform pill filter (All / Meta / Google), date range pill (7 / 30 / 90 days), KPI cards (total spend, clicks, impressions, platform leads, lodgely leads), cost-per-lead callout, per-campaign breakdown table, and leads-by-source table from lodgely's own data.
+  - `Reporting` link added to operator nav in the topbar.
+  - `LODGELY_AD_METRICS_SOURCES` env var (comma-separated) controls which sources run; defaults to `meta_mock,google_mock`.
 - **Meta Lead Ads fields on `leads` table** — ten new nullable columns cover the structural fields present on every Meta lead: `meta_lead_id` (Meta's own ID, for idempotent webhook ingestion), `ad_id` / `ad_name`, `adset_id` / `adset_name`, `campaign_id`, `form_id` / `form_name`, `platform` (`facebook` | `instagram`), and `is_organic`. Indexes added on `(tenant_id, meta_lead_id)`, `(tenant_id, ad_id)`, and `(tenant_id, form_id)`. Dynamic per-form custom question answers continue to flow through `raw_payload`.
 - `IncomingLead` DTO extended with the same ten optional Meta fields so the future Meta Lead Ads importer adapter can pass them through to the ingestor without any further changes.
 

@@ -63,6 +63,7 @@ clean place to *triage* leads before anything else happens, you are at home.
   automatically on each inbox visit.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
+- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads. Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
 
 ---
 
@@ -70,7 +71,6 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 These have architecture seams reserved but are not yet implemented:
 
-- Reporting module (Meta Ads / Google Ads ingestion, campaign rollups)
 - AI summaries / quality scoring on top of reporting data
 - Multi-tenancy (`tenant_id` exists everywhere; only the default tenant is wired)
 
@@ -186,7 +186,8 @@ app/
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
 │   │                        LeadIngestor, ImportRunner
-│   ├── Reporting/           (reserved) Meta / Google Ads ingestion
+│   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
+│   │                        MetricsIngestor, CampaignRollup services
 │   └── Ai/                  (reserved) AI summaries / scoring
 ├── Http/Controllers/Auth/   LoginController
 ├── Importers/
@@ -194,14 +195,17 @@ app/
 │   ├── Csv/                 CsvLeadSource adapter
 │   ├── Email/               ImapLeadSource + MailBodyParser
 │   ├── EmailMock/           EmailMockLeadSource adapter
+│   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
+│   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
 ├── Livewire/
 │   ├── Inbox/InboxPage      the main UI
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs
+│   ├── Reporting/ReportingPage  operator ad spend + campaign rollup dashboard
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
-│                            Import, UserLeadScope
+│                            Import, UserLeadScope, AdSpendReport
 ├── Providers/AppServiceProvider
 └── Support/Audit/AuditLogger
 ```
@@ -283,13 +287,12 @@ and are listed in the roadmap.
 
 1. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-2. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
-   ingestion, campaign/source rollups.
-3. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
+2. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
    the reporting layer with pseudonymization / aggregation defaults.
 
 ### Completed
 
+- ~~**Reporting module**~~ ✓ Done in v0.9.0 — `/reporting` page with Meta + Google Ads mock adapters, `ad_spend_reports` table, campaign rollup, KPI cards.
 - ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.7.0.
 - ~~**Saved filters** and per-user view defaults.~~ ✓ Done in v0.7.0.
 - ~~**Dark / Light mode** with OS-preference detection and manual toggle.~~ ✓ Done in v0.7.0.

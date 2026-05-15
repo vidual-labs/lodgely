@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
 use App\Importers\Email\ImapLeadSource;
 use App\Importers\EmailMock\EmailMockLeadSource;
+use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
+use App\Importers\MetaMock\MetaMockAdMetricsSource;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -26,9 +29,24 @@ class AppServiceProvider extends ServiceProvider
         'manual'      => ManualLeadSource::class,
     ];
 
+    /**
+     * Ad metrics source adapters. Each fetches aggregate spend/click data from
+     * an ad platform for a given date and returns AdMetricsSnapshot DTOs.
+     *
+     * @var array<string, class-string<AdMetricsSource>>
+     */
+    public const AD_METRICS_SOURCES = [
+        'meta_mock'   => MetaMockAdMetricsSource::class,
+        'google_mock' => GoogleMockAdMetricsSource::class,
+    ];
+
     public function register(): void
     {
         foreach (self::IMPORTERS as $class) {
+            $this->app->singleton($class);
+        }
+
+        foreach (self::AD_METRICS_SOURCES as $class) {
             $this->app->singleton($class);
         }
     }
