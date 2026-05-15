@@ -57,6 +57,10 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 📊 **Inbox KPIs** — new, duplicates, incomplete, total, leads by source.
 - ☑️ **Bulk actions** — operators select multiple leads via checkboxes and apply
   a status or priority change to all in one step. Audit events recorded per lead.
+- 🔖 **Saved filters & default views** — any filter combination (search, status,
+  priority, source, client, sort) can be saved as a named view. Saved views appear
+  as chips in the filter bar; one can be starred as the user's default, loaded
+  automatically on each inbox visit.
 
 ---
 
@@ -265,7 +269,7 @@ and are listed in the roadmap.
 
 ## Roadmap
 
-1. **Saved filters** and per-user view defaults.
+1. ~~**Saved filters** and per-user view defaults.~~ ✅ Shipped.
 2. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
 3. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads

@@ -108,8 +108,63 @@
                     <option value="priority_desc">Priority (high→low)</option>
                 </select>
             </div>
-            <button type="button" wire:click="clearFilters" class="text-slate-500 hover:text-slate-900">Clear filters</button>
+            <div class="flex items-center gap-3">
+                @if(!$showSaveDialog)
+                    <button type="button" wire:click="openSaveDialog" class="text-slate-500 hover:text-slate-900">Save view</button>
+                @endif
+                <button type="button" wire:click="clearFilters" class="text-slate-500 hover:text-slate-900">Clear filters</button>
+            </div>
         </div>
+
+        {{-- ── save-filter inline form ── --}}
+        @if($showSaveDialog)
+            <div class="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                <input type="text" wire:model="newFilterName" placeholder="Filter name…"
+                       maxlength="100" autocomplete="off"
+                       class="rounded-md border-slate-300 text-sm focus:border-slate-500 focus:ring-slate-500 w-44">
+                @error('newFilterName')
+                    <span class="text-xs text-red-600">{{ $message }}</span>
+                @enderror
+                <label class="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                    <input type="checkbox" wire:model="newFilterIsDefault"
+                           class="rounded border-slate-300 text-slate-900 focus:ring-slate-500">
+                    Default view
+                </label>
+                <button type="button" wire:click="saveFilter"
+                        class="rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800">
+                    Save
+                </button>
+                <button type="button" wire:click="closeSaveDialog" class="text-slate-500 hover:text-slate-700">Cancel</button>
+            </div>
+        @endif
+
+        {{-- ── saved filter chips ── --}}
+        @if($savedFilters->isNotEmpty())
+            <div class="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-400">Saved:</span>
+                @foreach($savedFilters as $sf)
+                    <span wire:key="sf-{{ $sf->id }}"
+                          class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 pl-2.5 pr-1 py-0.5 text-xs gap-1 {{ $sf->is_default ? 'border-amber-300 bg-amber-50' : '' }}">
+                        <button type="button" wire:click="loadFilter({{ $sf->id }})"
+                                class="font-medium text-slate-700 hover:text-slate-900 max-w-[140px] truncate"
+                                title="{{ $sf->name }}">
+                            {{ $sf->name }}
+                        </button>
+                        <button type="button" wire:click="toggleDefaultFilter({{ $sf->id }})"
+                                title="{{ $sf->is_default ? 'Default view – click to remove' : 'Set as default view' }}"
+                                class="{{ $sf->is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 hover:text-amber-400' }} leading-none px-0.5">
+                            ★
+                        </button>
+                        <button type="button" wire:click="deleteFilter({{ $sf->id }})"
+                                aria-label="Delete {{ $sf->name }}"
+                                title="Delete"
+                                class="text-slate-300 hover:text-red-500 leading-none px-0.5">
+                            ×
+                        </button>
+                    </span>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     {{-- ────────────────── bulk action bar ───────────────── --}}

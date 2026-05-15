@@ -8,6 +8,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Saved filters and per-user view defaults** (roadmap item 1):
+  - Users can save any combination of search, status, priority, source, client, and sort as a named filter via a "Save view" button in the filter bar.
+  - Saved filters appear as chips below the filter controls; clicking a chip instantly applies that filter set.
+  - Each saved filter has a star (★) toggle to mark it as the user's default view.  The default is loaded automatically when the user visits `/inbox` with no explicit URL filter parameters.
+  - Toggling the star on an already-default filter clears the default; setting a new default clears any previous one (one default per user at most).
+  - Each chip also has a × delete button. All saved-filter operations are scoped to the authenticated user.
+  - New `saved_filters` table (`user_id`, `tenant_id`, `name`, `filters` JSONB, `is_default`).
+  - New `SavedFilter` model with a `HasMany` relationship wired from `User`.
+
 - **Bulk actions** in the inbox (roadmap item 4):
   - Operators see a checkbox on each row and a "select all on page" header checkbox.
   - A bulk action bar appears above the table when one or more leads are selected, showing a count and two dropdowns — set status, set priority — each with an Apply button.
