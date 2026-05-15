@@ -214,6 +214,16 @@ Adding a new lead source means:
 
 No changes to migrations, models or the inbox are needed.
 
+### Meta Lead Ads fields
+
+The `leads` table carries ten pre-wired nullable columns for Meta Lead Ads
+payloads: `meta_lead_id` (idempotency key), `ad_id` / `ad_name`,
+`adset_id` / `adset_name`, `campaign_id`, `form_id` / `form_name`,
+`platform` (`facebook` | `instagram`), and `is_organic`.
+`IncomingLead` exposes matching optional properties so a future Meta
+importer adapter can pass them through without any further schema work.
+Per-form custom question answers continue to flow through `raw_payload`.
+
 ---
 
 ## Privacy & GDPR notes for self-hosters
