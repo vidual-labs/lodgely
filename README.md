@@ -265,14 +265,17 @@ and are listed in the roadmap.
 
 ## Roadmap
 
-1. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
-   ingestion, campaign/source rollups.
-2. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
-   the reporting layer with pseudonymization / aggregation defaults.
-3. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
+1. **Saved filters** and per-user view defaults.
+2. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-4. ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.3.0.
-5. **Saved filters** and per-user view defaults.
+3. **Reporting module** (in `app/Domain/Reporting/`) — light Meta Ads + Google Ads
+   ingestion, campaign/source rollups.
+4. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
+   the reporting layer with pseudonymization / aggregation defaults.
+
+### Completed
+
+- ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.3.0.
 
 ---
 
