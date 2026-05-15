@@ -41,6 +41,11 @@ class User extends Authenticatable
         return $this->hasMany(UserLeadScope::class);
     }
 
+    public function savedFilters(): HasMany
+    {
+        return $this->hasMany(SavedFilter::class);
+    }
+
     public function isOperator(): bool
     {
         return $this->role === UserRole::Operator;
