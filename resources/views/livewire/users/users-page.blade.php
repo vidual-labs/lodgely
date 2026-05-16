@@ -192,7 +192,7 @@
                         @error('form.password') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                         @if($generatedPassword)
                             <p class="mt-1 text-xs text-amber-700 dark:text-amber-500">
-                                {!! __('Share this password securely — it is shown <strong>only once</strong> and is not retrievable later.') !!}
+                                {{ __('Share this password securely — it is shown') }} <strong>{{ __('only once') }}</strong> {{ __('and is not retrievable later.') }}
                             </p>
                         @endif
                     </div>
