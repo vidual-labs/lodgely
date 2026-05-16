@@ -6,6 +6,13 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- `tests/Feature/InboxPageTest.php` — Livewire feature coverage for the
+  inbox page: URL filters, saved views (default load + persist + toggle),
+  bulk status updates with audit events, manual-lead form (validation,
+  authorization, happy-path ingest), and per-lead note creation.
+
 ### Changed
 
 - Refactored `App\Livewire\Inbox\InboxPage` (532 → 260 lines): extracted
