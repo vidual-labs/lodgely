@@ -303,11 +303,15 @@ class InboxPage extends Component
         $filter = SavedFilter::where('user_id', auth()->id())->findOrFail($id);
 
         if ($filter->is_default) {
-            $filter->update(['is_default' => false]);
+            DB::transaction(function () use ($filter) {
+                $filter->update(['is_default' => false]);
+            });
             $this->dispatch('toast', message: __('Default view cleared.'));
         } else {
-            SavedFilter::where('user_id', auth()->id())->update(['is_default' => false]);
-            $filter->update(['is_default' => true]);
+            DB::transaction(function () use ($filter) {
+                SavedFilter::where('user_id', auth()->id())->update(['is_default' => false]);
+                $filter->update(['is_default' => true]);
+            });
             $this->dispatch('toast', message: __('Default view updated.'));
         }
     }

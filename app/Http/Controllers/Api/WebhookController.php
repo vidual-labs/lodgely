@@ -28,6 +28,10 @@ class WebhookController extends Controller
             return response()->json(['error' => 'JSON body required.'], 422);
         }
 
+        if (count($data) > 20) {
+            return response()->json(['error' => 'Payload too large.'], 422);
+        }
+
         $validator = Validator::make($data, [
             'full_name'     => ['nullable', 'string', 'max:255'],
             'email'         => ['nullable', 'email', 'max:255'],
@@ -83,7 +87,6 @@ class WebhookController extends Controller
 
         return response()->json([
             'status'    => 'accepted',
-            'lead_id'   => $lead->id,
             'duplicate' => $lead->duplicate_flag,
         ], 201);
     }

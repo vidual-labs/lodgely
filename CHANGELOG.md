@@ -6,6 +6,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Security
+
+- Added `throttle:5,1` rate limit to the login POST endpoint to prevent brute-force attacks.
+- Added `SecurityHeaders` middleware (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Content-Security-Policy) applied to all web responses.
+- Removed `lead_id` from webhook 201 response to prevent lead-count enumeration.
+- Added payload key-count guard (>20 keys → 422) to the webhook endpoint.
+- Wrapped `SavedFilter` default-toggle in a `DB::transaction` to prevent a race condition leaving no default filter.
+- Fixed unescaped `{!! !!}` in the user password hint template; emphasis is now rendered via inline HTML rather than via a PHP-translated string.
+- Hardened `.env.example` defaults: `APP_DEBUG=false`, `LOG_LEVEL=error`, `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`; added `php artisan key:generate` hint; cleared IMAP password example value.
+
 ### Added
 
 - **AI summaries & lead qualification** (`app/Domain/Ai/`) — operators
