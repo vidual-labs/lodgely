@@ -1,3 +1,16 @@
+<p align="center">
+  <img src=".github/logo.png" alt="lodgely logo" width="320" />
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.3+">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
+  <img src="https://img.shields.io/badge/version-0.9.0-6366F1" alt="Version 0.9.0">
+  <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
+</p>
+
 # lodgely
 
 **lodgely** is a lightweight, open-source **lead intake hub** for small teams.
@@ -9,6 +22,23 @@ clean inbox to prioritize, deduplicate and forward.
 > sequences, no forecasts. It is the layer *before* a CRM — the place where
 > incoming leads from many sources stop being scattered and start being
 > actionable.
+
+---
+
+## Table of Contents
+
+- [Who it is for](#who-it-is-for)
+- [Features](#features)
+- [What's intentionally out of scope](#whats-intentionally-out-of-scope-for-now)
+- [Tech stack](#tech-stack)
+- [Quick start (Docker)](#quick-start-docker)
+- [Quick start (local PHP, no Docker)](#quick-start-local-php-no-docker)
+- [CSV import](#csv-import)
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Privacy & GDPR notes for self-hosters](#privacy--gdpr-notes-for-self-hosters)
+- [Configuration reference](#configuration-reference)
+- [Roadmap](#roadmap)
+- [License](#license)
 
 ---
 

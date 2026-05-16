@@ -8,6 +8,8 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **README header** — added lodgely logo, shields.io badges (license, PHP, Laravel, Livewire, version, GitHub stars), and a table of contents.
+
 - **Reporting module** (`app/Domain/Reporting/`) — light ad spend ingestion and campaign rollup dashboard for operators:
   - New `ad_spend_reports` table stores daily aggregate metrics per campaign (platform, campaign ID/name, impressions, clicks, spend in cents, currency, reach, platform-reported lead count). No PII stored. Unique constraint on `(tenant_id, platform, date, campaign_id)` makes re-ingestion idempotent.
   - `AdMetricsSource` contract (adapter interface): `platform()`, `label()`, `fetch(tenantId, date): iterable<AdMetricsSnapshot>`. Drop a class implementing this, register it in `AppServiceProvider::AD_METRICS_SOURCES`, and it runs on schedule.
