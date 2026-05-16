@@ -8,6 +8,10 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- Replaced the placeholder "L" gradient square in the topbar and login screen
+  with the actual lodgely logo graphic (wordmark + dot mark). The logo is
+  served from `public/img/logo.png`, copied from the existing
+  `.github/logo.png` artwork already referenced by the README.
 - Decoupled `WithLeadFilters` from `WithBulkLeadActions`. `clearFilters()`
   no longer reaches into the bulk trait's `$bulkSelected`; it dispatches a
   self-targeted `inbox-filters-cleared` Livewire event, and the bulk trait
