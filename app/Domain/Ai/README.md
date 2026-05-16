@@ -1,24 +1,40 @@
-# Domain · Ai (reserved, not in MVP)
+# Domain · Ai
 
-This folder is a deliberate placeholder for AI-assisted features on top of
-the Reporting domain (which is itself a reserved seam — see
-`app/Domain/Reporting/README.md`).
+AI-assisted summaries on top of the Reporting and Leads domains. Off by
+default — flip `LODGELY_AI_ENABLED=true`, then configure a provider at
+`/settings/ai` (operator-only).
 
-Planned scope (post-MVP):
+## Layout
 
-- Short, human-readable summaries of campaign performance.
-- Anomaly / quality-of-leads hints.
-- Optional, opt-in light optimization suggestions.
+- `Contracts/LlmProvider.php` — adapter interface for LLM backends.
+- `Providers/` — `OpenAiCompatibleProvider`, `OllamaProvider`. New
+  providers should implement `LlmProvider` and be registered in
+  `AppServiceProvider::LLM_PROVIDERS`.
+- `DTOs/` — `LlmRequest`, `LlmResponse`. Provider-agnostic shapes.
+- `Enums/` — `AiSummaryKind` (`report_view`, `lead_qualification`) and
+  `AiSummaryStatus` (`pending` → `approved`/`rejected`/`shared`/`failed`).
+- `Services/` — `AiSummarizer` (the only place that talks to providers),
+  `PromptBuilder` (per-kind system + user prompts), and
+  `ReportSummaryDataAssembler` (wraps `ClientViewDataBuilder` to produce
+  the aggregated data block for report summaries).
+- `Support/Pseudonymizer.php` — PII masking for `lead_qualification`.
+- `Exceptions/` — `AiDisabledException`, `LlmCallException`.
 
-Design constraints baked in from day one:
+## Design constraints
 
-- AI features operate **only** on the Reporting layer or on **explicitly
-  selected** lead snippets, never on the full lead corpus.
-- Data passed to a model should be pseudonymized or aggregated where
-  feasible.
-- A single config switch turns AI features off without breaking anything
-  else.
-- Self-hosted-friendly: it must be possible to plug a local model in
-  place of any hosted endpoint.
+- AI operates **only** on the Reporting layer (aggregates) or on
+  explicitly selected, pseudonymized leads — never on the full lead corpus.
+- A single config switch (`LODGELY_AI_ENABLED`) turns AI features off.
+- Tenant admins additionally control runtime config in the `ai_settings`
+  table (provider, API key, model, house style, per-kind toggles, and an
+  explicit `lead_data_consent` checkbox required for lead-level kinds).
+- API keys are encrypted at rest with Laravel's `Crypt` facade.
+- Self-hosted-friendly: `OllamaProvider` and any local LM-Studio /
+  vLLM endpoint that speaks OpenAI's chat-completions shape work
+  without leaving the host.
 
-Nothing in this folder is implemented in v1.
+## Adding a new provider
+
+1. Create `app/Domain/Ai/Providers/MyProvider.php` implementing `LlmProvider`.
+2. Register it in `AppServiceProvider::LLM_PROVIDERS` with a stable key.
+3. The settings UI picks it up automatically via the provider's `label()`.

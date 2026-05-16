@@ -311,7 +311,7 @@
 
     {{-- ────────────────── detail side panel ───────────────── --}}
     @if($selected)
-        <x-lead-panel :lead="$selected" :statusOptions="$statusOptions" :priorityOptions="$priorityOptions" />
+        <x-lead-panel :lead="$selected" :statusOptions="$statusOptions" :priorityOptions="$priorityOptions" :aiSummary="$leadAiSummary" />
     @endif
 
     {{-- ────────────────── new lead modal ───────────────── --}}

@@ -2,9 +2,14 @@
 
 namespace App\Livewire\Inbox;
 
+use App\Domain\Ai\Enums\AiSummaryKind;
+use App\Domain\Ai\Enums\AiSummaryStatus;
+use App\Domain\Ai\Exceptions\AiDisabledException;
+use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
+use App\Models\AiSummary;
 use App\Models\Lead;
 use App\Models\SavedFilter;
 use App\Support\Audit\AuditLogger;
@@ -142,6 +147,20 @@ class InboxPage extends Component
                 'duplicate_flag' => $lead->duplicate_flag,
                 'duplicate_of'   => $lead->duplicate_of_id,
             ]);
+        }
+    }
+
+    public function evaluateLeadWithAi(int $leadId, AiSummarizer $summarizer): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        $lead = $this->guardedLead($leadId);
+
+        try {
+            $summarizer->requestLeadQualification($lead, auth()->user());
+            $this->dispatch('toast', message: __('AI evaluation queued. Review it in AI drafts.'), type: 'success');
+        } catch (AiDisabledException $e) {
+            $this->dispatch('toast', message: $e->getMessage(), type: 'error');
         }
     }
 
@@ -412,6 +431,19 @@ class InboxPage extends Component
             ? (clone $base)->with(['notes.user', 'events.user', 'duplicateOf', 'import'])->find($this->selectedLeadId)
             : null;
 
+        $leadAiSummary = null;
+        if ($selected && $user?->isOperator() && config('lodgely.ai.enabled')) {
+            $leadAiSummary = AiSummary::query()
+                ->where('tenant_id', \App\Models\Tenant::DEFAULT_ID)
+                ->where('kind', AiSummaryKind::LeadQualification->value)
+                ->where('subject_type', Lead::class)
+                ->where('subject_id', $selected->id)
+                ->whereIn('status', [AiSummaryStatus::Approved->value, AiSummaryStatus::Shared->value])
+                ->with('operator')
+                ->latest('approved_at')
+                ->first();
+        }
+
         $savedFilters = SavedFilter::where('user_id', auth()->id())
             ->orderByDesc('is_default')
             ->orderBy('name')
@@ -426,6 +458,7 @@ class InboxPage extends Component
             'statusOptions'   => LeadStatus::options(),
             'priorityOptions' => LeadPriority::options(),
             'savedFilters'    => $savedFilters,
+            'leadAiSummary'   => $leadAiSummary,
         ]);
     }
 

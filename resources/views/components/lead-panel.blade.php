@@ -1,4 +1,4 @@
-@props(['lead', 'statusOptions' => [], 'priorityOptions' => []])
+@props(['lead', 'statusOptions' => [], 'priorityOptions' => [], 'aiSummary' => null])
 
 <div class="fixed inset-0 z-40 flex" x-data x-trap.noscroll="true">
     <div class="flex-1 bg-slate-900/40 dark:bg-black/50" wire:click="closePanel"></div>
@@ -83,6 +83,24 @@
                 <section>
                     <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Message') }}</h3>
                     <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{{ $lead->message }}</div>
+                </section>
+            @endif
+
+            {{-- AI evaluation (operator only) --}}
+            @if(config('lodgely.ai.enabled') && auth()->user()?->isOperator())
+                <section>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('AI evaluation') }}</h3>
+                        <button type="button" wire:click="evaluateLeadWithAi({{ $lead->id }})"
+                                class="text-xs text-brand-600 dark:text-brand-400 hover:underline">
+                            {{ __('Run AI evaluation') }}
+                        </button>
+                    </div>
+                    @if($aiSummary)
+                        <x-ai.summary-card :summary="$aiSummary" />
+                    @else
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('No approved AI evaluation yet. Run one and review it in AI drafts.') }}</p>
+                    @endif
                 </section>
             @endif
 

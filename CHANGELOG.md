@@ -8,6 +8,46 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **AI summaries & lead qualification** (`app/Domain/Ai/`) — operators
+  can plug in either an OpenAI-compatible API (OpenAI, Together, Groq,
+  LM Studio, …) or a local/self-hosted Ollama endpoint. Two AI tasks
+  ship in v1: report-view summaries (aggregate data, no PII leaves the
+  server) and lead qualification (pseudonymized PII — masked name /
+  email / phone). All AI output is a draft that flows through an
+  operator approval gate before reaching a client.
+  - `ai_settings` table — per-tenant provider config (provider, base URL,
+    encrypted API key, model, "house style" instruction, per-kind toggles,
+    explicit `lead_data_consent` checkbox required for lead-level kinds).
+  - `ai_summaries` table — drafts with status `pending → approved → shared`
+    (and `rejected` / `failed`). Stores prompt verbatim so disclosures
+    are auditable.
+  - `ai_events` table — audit trail (sibling of `lead_events`). API keys
+    are redacted from every recorded payload.
+  - `LlmProvider` contract + `OpenAiCompatibleProvider` and
+    `OllamaProvider` implementations, registered in
+    `AppServiceProvider::LLM_PROVIDERS`. New providers are adapters, not
+    new tables.
+  - `AiSummarizer` service — the only place that calls providers. Mirrors
+    the centralization rule from `LeadIngestor`.
+  - `Pseudonymizer` — masks `full_name → "Lead #N"`, emails and phones,
+    drops PII-shaped keys from `raw_payload`. Only the lead kind is
+    pseudonymized; aggregate kinds work on totals.
+  - `GenerateAiSummary` queued job — calls the configured provider,
+    writes back `response` + `model` + `token_usage`, leaves the row at
+    `pending` for operator review. Enforces a per-tenant daily call cap
+    (`LODGELY_AI_MAX_CALLS_PER_DAY`, default 100).
+  - `EnsureAiEnabled` middleware — `/settings/ai` and `/ai/drafts` 404 when
+    `LODGELY_AI_ENABLED=false` (master kill-switch). All trigger buttons
+    are also hidden in that state.
+  - New Livewire pages: `AiSettingsPage` at `/settings/ai` (provider
+    config, write-only API key, "Test connection" button) and `DraftsPage`
+    at `/ai/drafts` (review, approve, reject, share, regenerate).
+  - Trigger buttons added to `ReportingViewsPage` rows, `MyReportsPage`
+    (operator view), and the lead detail panel. Approved & shared
+    report-view summaries render as a card above the table in
+    `/my-reports`; approved lead-qualification summaries render in the
+    operator's lead panel.
+  - Off by default — `LODGELY_AI_ENABLED=false` ships in `.env.example`.
 - **Custom client reporting views** — operators can now define named reporting views (choosing any combination of metrics from: Leads, New Leads, Reviewed Leads, Clicks, Impressions, Ad Spend, Reach, CTR, Cost per Lead, Platform Leads) and assign each view to specific client users. Clients see a "My reports" page with a tab per assigned view and a monthly time-series table showing only the selected columns. Different clients can see entirely different views. Operators see all views at `/my-reports` for preview. New nav links: "Report views" for operators, "My reports" for clients.
   - `client_reporting_views` table — stores view name and JSON column list per tenant.
   - `client_reporting_view_user` pivot table — maps views to client users with cascade-delete.

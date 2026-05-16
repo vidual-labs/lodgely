@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Domain\Ai\Contracts\LlmProvider;
+use App\Domain\Ai\Providers\OllamaProvider;
+use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Reporting\Contracts\AdMetricsSource;
+use App\Http\Middleware\EnsureAiEnabled;
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
 use App\Importers\Email\ImapLeadSource;
@@ -10,7 +14,9 @@ use App\Importers\EmailMock\EmailMockLeadSource;
 use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -40,6 +46,17 @@ class AppServiceProvider extends ServiceProvider
         'google_mock' => GoogleMockAdMetricsSource::class,
     ];
 
+    /**
+     * LLM provider adapters. Resolution from `ai_settings.provider` key.
+     * Implementations must implement {@see LlmProvider}.
+     *
+     * @var array<string, class-string<LlmProvider>>
+     */
+    public const LLM_PROVIDERS = [
+        'openai_compatible' => OpenAiCompatibleProvider::class,
+        'ollama'            => OllamaProvider::class,
+    ];
+
     public function register(): void
     {
         foreach (self::IMPORTERS as $class) {
@@ -47,6 +64,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         foreach (self::AD_METRICS_SOURCES as $class) {
+            $this->app->singleton($class);
+        }
+
+        foreach (self::LLM_PROVIDERS as $class) {
             $this->app->singleton($class);
         }
     }
@@ -58,5 +79,10 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Register the AI kill-switch middleware as a route alias so it can be
+        // attached to specific Livewire routes.
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('ai.enabled', EnsureAiEnabled::class);
     }
 }

@@ -58,4 +58,31 @@ return [
         // Available: meta_mock, google_mock. Replace with real adapters when API keys are configured.
         'sources' => explode(',', env('LODGELY_AD_METRICS_SOURCES', 'meta_mock,google_mock')),
     ],
+
+    'ai' => [
+        // Master kill-switch. When false, all AI routes 404, buttons are hidden,
+        // and queued jobs no-op. Per-tenant `enabled` toggles only matter when
+        // this is true.
+        'enabled' => (bool) env('LODGELY_AI_ENABLED', false),
+
+        // Maximum number of *completed* AI generations per tenant per day.
+        // Set to 0 to disable the cap.
+        'max_calls_per_day' => (int) env('LODGELY_AI_MAX_CALLS_PER_DAY', 100),
+
+        // HTTP timeout for a single provider call, in seconds.
+        'request_timeout_sec' => (int) env('LODGELY_AI_TIMEOUT', 60),
+
+        // Per-provider defaults, used when an admin leaves the base URL or
+        // model blank on the AI settings page.
+        'defaults' => [
+            'openai_compatible' => [
+                'base_url' => 'https://api.openai.com/v1',
+                'model'    => 'gpt-4o-mini',
+            ],
+            'ollama' => [
+                'base_url' => 'http://localhost:11434',
+                'model'    => 'llama3.1',
+            ],
+        ],
+    ],
 ];
