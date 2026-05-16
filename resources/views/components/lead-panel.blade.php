@@ -28,9 +28,11 @@
                             <span class="text-rose-700/80 dark:text-rose-400/80">— {{ $lead->duplicateOf->full_name ?? $lead->duplicateOf->email ?? $lead->duplicateOf->phone }}</span>
                         @endif
                     </span>
-                    <button type="button" wire:click="reconcileDuplicate({{ $lead->id }})" class="text-xs underline hover:no-underline">
-                        {{ __('Re-check') }}
-                    </button>
+                    @if(auth()->user()?->isOperator())
+                        <button type="button" wire:click="reconcileDuplicate({{ $lead->id }})" class="text-xs underline hover:no-underline">
+                            {{ __('Re-check') }}
+                        </button>
+                    @endif
                 </div>
             @endif
 
@@ -50,29 +52,31 @@
             </section>
 
             {{-- workflow --}}
-            <section>
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
-                        <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
-                                class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            @foreach($statusOptions as $o)
-                                <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
-                            @endforeach
-                        </select>
+            @if(auth()->user()?->isOperator())
+                <section>
+                    <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
+                            <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                @foreach($statusOptions as $o)
+                                    <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
+                            <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                @foreach($priorityOptions as $o)
+                                    <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
-                        <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
-                                class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            @foreach($priorityOptions as $o)
-                                <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </section>
+                </section>
+            @endif
 
             {{-- message --}}
             @if($lead->message)
@@ -98,16 +102,18 @@
                     @endforelse
                 </div>
 
-                <form wire:submit.prevent="addNote" class="mt-3">
-                    <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
-                              class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                    @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    <div class="mt-2 flex justify-end">
-                        <button type="submit"
-                            wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
-                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Add note') }}</button>
-                    </div>
-                </form>
+                @if(auth()->user()?->isOperator())
+                    <form wire:submit.prevent="addNote" class="mt-3">
+                        <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
+                                  class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
+                        @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        <div class="mt-2 flex justify-end">
+                            <button type="submit"
+                                wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
+                                class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Add note') }}</button>
+                        </div>
+                    </form>
+                @endif
             </section>
 
             {{-- audit trail --}}

@@ -70,7 +70,7 @@ class WebhookController extends Controller
             'phone'         => $fields['phone'] ?? null,
             'message'       => $fields['message'] ?? null,
             'raw_payload'   => $data,
-        ], $import, $endpoint->tenant_id);
+        ], $import, $endpoint->tenant_id, $endpoint->user_id);
 
         if ($lead->duplicate_flag) {
             $import->increment('rows_duplicate');

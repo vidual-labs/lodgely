@@ -92,6 +92,8 @@ class InboxPage extends Component
 
     public function setStatus(int $leadId, string $status, AuditLogger $audit): void
     {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
         $status = LeadStatus::from($status);
         $lead = $this->guardedLead($leadId);
 
@@ -111,6 +113,8 @@ class InboxPage extends Component
 
     public function setPriority(int $leadId, string $priority, AuditLogger $audit): void
     {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
         $priority = LeadPriority::from($priority);
         $lead = $this->guardedLead($leadId);
 
@@ -130,6 +134,8 @@ class InboxPage extends Component
 
     public function reconcileDuplicate(int $leadId, DuplicateDetector $detector, AuditLogger $audit): void
     {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
         $lead = $this->guardedLead($leadId);
         if ($detector->reconcile($lead)) {
             $audit->record($lead, 'lead.duplicate_reconciled', [
@@ -141,6 +147,8 @@ class InboxPage extends Component
 
     public function addNote(AuditLogger $audit): void
     {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
         $this->validate();
         $body = trim((string) $this->newNoteBody);
         if ($body === '' || $this->selectedLeadId === null) {
