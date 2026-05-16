@@ -6,12 +6,14 @@ use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Models\Lead;
 use App\Support\Audit\AuditLogger;
+use Livewire\Attributes\On;
 
 /**
  * Bulk selection and bulk status/priority application for the inbox table.
  *
  * Relies on {@see WithLeadFilters::applyFilters()} / {@see WithLeadFilters::sortBy()}
- * for the "select all on page" query.
+ * for the "select all on page" query, and reacts to the
+ * `inbox-filters-cleared` event so selections do not survive a filter reset.
  */
 trait WithBulkLeadActions
 {
@@ -20,6 +22,12 @@ trait WithBulkLeadActions
     public string $bulkStatusValue = '';
 
     public string $bulkPriorityValue = '';
+
+    #[On('inbox-filters-cleared')]
+    public function clearBulkSelectionOnFiltersCleared(): void
+    {
+        $this->bulkSelected = [];
+    }
 
     public function bulkToggleAll(): void
     {

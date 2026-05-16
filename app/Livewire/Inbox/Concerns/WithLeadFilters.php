@@ -7,9 +7,9 @@ use Livewire\Attributes\Url;
 /**
  * URL-bound filter state for the inbox table.
  *
- * Designed to be composed with {@see WithBulkLeadActions} — {@see clearFilters()}
- * also resets `$bulkSelected` defined on that trait so the table never shows
- * stale selections after the filter set changes.
+ * Emits an `inbox-filters-cleared` self-dispatched event from
+ * {@see clearFilters()} so other traits (e.g. {@see WithBulkLeadActions})
+ * can react without this trait knowing about them.
  */
 trait WithLeadFilters
 {
@@ -44,8 +44,8 @@ trait WithLeadFilters
         $this->priority = '';
         $this->source = '';
         $this->client = '';
-        $this->bulkSelected = [];
         $this->resetPage();
+        $this->dispatch('inbox-filters-cleared')->self();
     }
 
     protected function applyFilterState(array $filters): void
