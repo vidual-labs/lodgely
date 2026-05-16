@@ -1,9 +1,10 @@
 <header class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm">
     <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
         <div class="flex items-center gap-6">
-            <a href="{{ route('inbox') }}" class="flex items-center gap-2 group">
-                <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-900 text-white text-xs font-bold shadow-sm group-hover:shadow-md transition-shadow">L</span>
-                <span class="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">{{ config('lodgely.brand.name') }}</span>
+            <a href="{{ route('inbox') }}" class="flex items-center group" aria-label="{{ config('lodgely.brand.name') }}">
+                <img src="{{ asset('img/logo.png') }}"
+                     alt="{{ config('lodgely.brand.name') }}"
+                     class="h-8 w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
             </a>
 
             <nav class="hidden md:flex items-center gap-0.5 text-sm">

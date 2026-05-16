@@ -1,9 +1,10 @@
 <x-layouts.guest>
     <div class="w-full max-w-sm">
         <div class="mb-6 text-center">
-            <div class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-900 text-white text-sm font-bold shadow-lg">L</div>
-            <h1 class="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-50">{{ config('lodgely.brand.name') }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ config('lodgely.brand.tagline') }}</p>
+            <img src="{{ asset('img/logo.png') }}"
+                 alt="{{ config('lodgely.brand.name') }}"
+                 class="mx-auto h-14 w-auto rounded-xl shadow-lg">
+            <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ config('lodgely.brand.tagline') }}</p>
         </div>
 
         <form method="POST" action="{{ route('login.attempt') }}"
