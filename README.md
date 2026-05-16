@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.9.0-6366F1" alt="Version 0.9.0">
+  <img src="https://img.shields.io/badge/version-0.11.0-6366F1" alt="Version 0.11.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -95,6 +95,7 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
 - 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads. Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
 - 📊 **Custom client reporting views** — operators define named reporting views by selecting any combination of metrics (Leads, Clicks, Impressions, CTR, Ad Spend, Cost per Lead, Platform Leads, etc.) and assign each view to specific client users. Clients see a "My reports" tab page at `/my-reports` with a monthly time-series table showing only their assigned columns. Different clients can see entirely different views — client A might see only Leads and Clicks, client B sees full ad performance metrics. Lead data is always scoped to each client's own leads.
+- 🤖 **AI summaries & lead qualification** *(optional, off by default)* — admins plug in either an OpenAI-compatible API (OpenAI, Together, Groq, LM Studio, …) or a local Ollama endpoint at `/settings/ai`, set a free-text "house style" instruction, and choose which AI tasks to enable. Two kinds in v1: **report-view summaries** (narrative + evaluation + follow-ups on a custom reporting view, aggregate data only) and **lead qualification** (priority recommendation with pseudonymized lead context). Every AI output is a draft that an operator reviews at `/ai/drafts` — approve, reject, regenerate, then share with the client. API keys are stored encrypted; lead-level kinds require an explicit consent toggle; a daily per-tenant cap prevents cost runaway.
 
 ---
 
@@ -102,7 +103,6 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 These have architecture seams reserved but are not yet implemented:
 
-- AI summaries / quality scoring on top of reporting data
 - Multi-tenancy (`tenant_id` exists everywhere; only the default tenant is wired)
 
 ---
@@ -219,7 +219,8 @@ app/
 │   │                        LeadIngestor, ImportRunner
 │   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
 │   │                        MetricsIngestor, CampaignRollup services
-│   └── Ai/                  (reserved) AI summaries / scoring
+│   └── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
+│                            AiSummarizer + PromptBuilder + Pseudonymizer
 ├── Http/Controllers/Auth/   LoginController
 ├── Importers/
 │   ├── Contracts/           LeadSource interface, IncomingLead DTO
@@ -229,16 +230,20 @@ app/
 │   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
 │   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
+├── Jobs/                    GenerateAiSummary (queued LLM call)
 ├── Livewire/
+│   ├── Ai/DraftsPage        operator review of AI drafts
 │   ├── Inbox/InboxPage      the main UI
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs
 │   ├── Reporting/ReportingPage  operator ad spend + campaign rollup dashboard
+│   ├── Settings/AiSettingsPage  operator AI provider config
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
-│                            Import, UserLeadScope, AdSpendReport
+│                            Import, UserLeadScope, AdSpendReport,
+│                            ClientReportingView, AiSetting, AiSummary, AiEvent
 ├── Providers/AppServiceProvider
-└── Support/Audit/AuditLogger
+└── Support/Audit/           AuditLogger, AiAuditLogger
 ```
 
 Adding a new lead source means:
@@ -248,6 +253,47 @@ Adding a new lead source means:
 3. (Optionally) add a Livewire page to expose it in the UI.
 
 No changes to migrations, models or the inbox are needed.
+
+### How AI summaries work
+
+AI is **off by default**. Enable it in two places:
+
+1. Set `LODGELY_AI_ENABLED=true` in `.env` (master kill-switch — the server
+   operator controls this).
+2. As an operator, open `/settings/ai` and:
+   - Pick a provider — **OpenAI-compatible** (works with OpenAI, Together,
+     Groq, LM Studio, vLLM, …) or **Ollama** (local or self-hosted).
+   - Paste your API key (stored encrypted at rest via Laravel's `Crypt`
+     facade; the form never re-displays it).
+   - Optionally override the base URL and model name; otherwise the
+     provider defaults from `config/lodgely.php` are used.
+   - Write a free-text **house style** — "what is important, where to
+     look" — the AI reads it on every call.
+   - Toggle which **kinds** to enable: report-view summaries,
+     lead qualification, or both.
+   - For lead qualification, tick the **data-sharing consent** checkbox.
+     Without it, lead-level kinds refuse to run.
+   - Use **Test connection** to verify reachability before going live.
+
+Flow per generation:
+
+1. An operator clicks "Generate AI summary" on a reporting view row, on
+   `/my-reports`, or on a lead's side panel.
+2. A draft row is created in `ai_summaries` (status `pending`) and a
+   `GenerateAiSummary` job is queued. The exact prompt (including any
+   pseudonymized lead data) is stored verbatim for audit.
+3. The job calls the configured provider, writes the response back, and
+   leaves the status at `pending` for review.
+4. At `/ai/drafts`, the operator reviews the prompt + response and:
+   `approve` (visible to operators only), `share` (visible to assigned
+   clients in `/my-reports` for `report_view` summaries), `reject`
+   (closed, with optional reason), or `regenerate` (re-queue with the
+   same prompt).
+5. Every transition is written to `ai_events` (sibling of `lead_events`);
+   API keys and bearer tokens are redacted from every payload.
+
+A daily per-tenant call cap (`LODGELY_AI_MAX_CALLS_PER_DAY`, default 100)
+is enforced inside the job so a runaway loop cannot blow past it.
 
 ### Meta Lead Ads fields
 
@@ -309,6 +355,9 @@ and are listed in the roadmap.
 | `LODGELY_IMAP_MAILBOX` | Folder to poll | `INBOX` |
 | `LODGELY_IMAP_MAX_MESSAGES` | Max unseen messages per pull | `50` |
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention, empty = retain | `365` |
+| `LODGELY_AI_ENABLED` | Master kill-switch for the AI module. When `false`, all AI routes 404, buttons are hidden, and jobs no-op. Per-tenant config at `/settings/ai` only matters when this is true. | `false` |
+| `LODGELY_AI_MAX_CALLS_PER_DAY` | Maximum completed AI generations per tenant per day. `0` disables the cap. | `100` |
+| `LODGELY_AI_TIMEOUT` | HTTP timeout (seconds) for a single LLM provider call. | `60` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |
 
@@ -318,11 +367,13 @@ and are listed in the roadmap.
 
 1. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
    one-click subject erasure.
-2. **AI summaries / quality scoring** (in `app/Domain/Ai/`) — operating on
-   the reporting layer with pseudonymization / aggregation defaults.
+2. **Multi-tenancy** — `tenant_id` exists everywhere; wire the full
+   tenant-resolution stack so a single install can host many isolated
+   workspaces.
 
 ### Completed
 
+- ~~**AI summaries & lead qualification**~~ ✓ Done in v0.11.0 — `/settings/ai` for provider config (OpenAI-compatible or Ollama), `/ai/drafts` for operator review, report-view summaries and pseudonymized lead qualification with approve-then-share workflow.
 - ~~**Reporting module**~~ ✓ Done in v0.9.0 — `/reporting` page with Meta + Google Ads mock adapters, `ad_spend_reports` table, campaign rollup, KPI cards.
 - ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.7.0.
 - ~~**Saved filters** and per-user view defaults.~~ ✓ Done in v0.7.0.

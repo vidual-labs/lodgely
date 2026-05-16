@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Reporting;
 
+use App\Domain\Ai\Exceptions\AiDisabledException;
+use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Leads\Enums\UserRole;
 use App\Domain\Reporting\Enums\ReportColumn;
 use App\Models\ClientReportingView;
@@ -119,6 +121,24 @@ class ReportingViewsPage extends Component
     {
         $this->confirmingDeleteId = false;
         $this->deletingId = null;
+    }
+
+    public function generateAiSummary(int $viewId, AiSummarizer $summarizer): void
+    {
+        $this->guardOperator();
+
+        $view = ClientReportingView::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($viewId);
+
+        // Use the same 6-month window MyReportsPage defaults to.
+        $to   = now()->format('Y-m-d');
+        $from = now()->subMonths(5)->startOfMonth()->format('Y-m-d');
+
+        try {
+            $summarizer->requestReportSummary($view, auth()->user(), $from, $to);
+            $this->dispatch('toast', message: __('AI summary queued. Review it in AI drafts.'), type: 'success');
+        } catch (AiDisabledException $e) {
+            $this->dispatch('toast', message: $e->getMessage(), type: 'error');
+        }
     }
 
     public function render(): View
