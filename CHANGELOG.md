@@ -35,6 +35,10 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Client persona could mutate leads from the inbox** — `setStatus`, `setPriority`, `reconcileDuplicate`, and `addNote` on `InboxPage` only checked lead visibility, not the operator role, so a client user with `user_lead_scopes` matching a lead could change its status/priority or add notes via Livewire. Now matches every other action on the page and aborts with 403 for non-operators.
+- **Lead detail panel rendered operator-only controls to clients** — the Workflow status/priority `<select>`s, the duplicate "Re-check" button, and the Add-note form are now wrapped in an operator gate. The notes list itself stays visible to clients.
+- **Webhook-created leads lost their audit actor** — `WebhookController` now passes the endpoint's `user_id` to `LeadIngestor::ingest()`, so `lead_events.user_id` is populated instead of falling back to a null `Auth::id()` on the API request.
+- **`saved_filters.tenant_id` lacked a foreign-key constraint** — replaced the plain `unsignedBigInteger` column with a proper `foreignId('tenant_id')->constrained()->cascadeOnDelete()`, matching every other tenant-scoped table.
 - License listed as MIT in README, composer.json, and app footer — corrected to GPL-3.0 to match the `LICENSE` file.
 
 ## [0.7.0] · 2026-05-15
