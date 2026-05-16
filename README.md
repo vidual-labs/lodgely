@@ -234,6 +234,8 @@ app/
 ├── Livewire/
 │   ├── Ai/DraftsPage        operator review of AI drafts
 │   ├── Inbox/InboxPage      the main UI
+│   │   └── Concerns/        URL filters, saved views, bulk actions,
+│   │                        manual-lead modal (composed via traits)
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs
 │   ├── Reporting/ReportingPage  operator ad spend + campaign rollup dashboard
 │   ├── Settings/AiSettingsPage  operator AI provider config

@@ -9,51 +9,40 @@ use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
+use App\Livewire\Inbox\Concerns\WithBulkLeadActions;
+use App\Livewire\Inbox\Concerns\WithLeadFilters;
+use App\Livewire\Inbox\Concerns\WithManualLeadForm;
+use App\Livewire\Inbox\Concerns\WithSavedFilters;
 use App\Models\AiSummary;
 use App\Models\Lead;
-use App\Models\SavedFilter;
+use App\Models\Tenant;
 use App\Support\Audit\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
 class InboxPage extends Component
 {
+    use WithBulkLeadActions;
+    use WithLeadFilters;
+    use WithManualLeadForm;
     use WithPagination;
+    use WithSavedFilters;
 
-    #[Url(as: 'q', except: '')] public string $search = '';
-    #[Url(except: '')] public string $status   = '';
-    #[Url(except: '')] public string $priority = '';
-    #[Url(except: '')] public string $source   = '';
-    #[Url(except: '')] public string $client   = '';
-    #[Url(except: 'created_desc')] public string $sort = 'created_desc';
+    private const SOURCE_LABELS = [
+        'csv' => 'CSV',
+        'email_mock' => 'Email (mock)',
+        'email_imap' => 'Email (IMAP)',
+        'manual' => 'Manual',
+        'webhook' => 'Webhook',
+    ];
 
     public ?int $selectedLeadId = null;
 
-    public array $bulkSelected = [];
-    public string $bulkStatusValue   = '';
-    public string $bulkPriorityValue = '';
-
     public ?string $newNoteBody = null;
-
-    public bool $showSaveDialog     = false;
-    public string $newFilterName     = '';
-    public bool $newFilterIsDefault  = false;
-
-    public bool $showManualForm = false;
-    public array $manual = [
-        'client_name'   => '',
-        'campaign_name' => '',
-        'full_name'     => '',
-        'email'         => '',
-        'phone'         => '',
-        'message'       => '',
-        'priority'      => 'medium',
-    ];
 
     protected function rules(): array
     {
@@ -64,20 +53,14 @@ class InboxPage extends Component
 
     public function mount(): void
     {
-        if (! request()->hasAny(['q', 'status', 'priority', 'source', 'client', 'sort'])) {
-            $default = SavedFilter::where('user_id', auth()->id())
-                ->where('is_default', true)
-                ->first();
-
-            if ($default) {
-                $this->applyFilterState($default->filters);
-            }
+        if (! request()->hasAny(self::FILTER_URL_KEYS)) {
+            $this->loadDefaultSavedFilter();
         }
     }
 
     public function updating($name): void
     {
-        if (in_array($name, ['search', 'status', 'priority', 'source', 'client', 'sort'], true)) {
+        if (in_array($name, self::FILTER_PROPERTIES, true)) {
             $this->resetPage();
             $this->bulkSelected = [];
         }
@@ -112,7 +95,7 @@ class InboxPage extends Component
 
         $audit->record($lead, 'lead.status_changed', [
             'from' => $previous,
-            'to'   => $status->value,
+            'to' => $status->value,
         ]);
     }
 
@@ -133,7 +116,7 @@ class InboxPage extends Component
 
         $audit->record($lead, 'lead.priority_changed', [
             'from' => $previous,
-            'to'   => $priority->value,
+            'to' => $priority->value,
         ]);
     }
 
@@ -145,7 +128,7 @@ class InboxPage extends Component
         if ($detector->reconcile($lead)) {
             $audit->record($lead, 'lead.duplicate_reconciled', [
                 'duplicate_flag' => $lead->duplicate_flag,
-                'duplicate_of'   => $lead->duplicate_of_id,
+                'duplicate_of' => $lead->duplicate_of_id,
             ]);
         }
     }
@@ -177,221 +160,11 @@ class InboxPage extends Component
         $lead = $this->guardedLead($this->selectedLeadId);
         $note = $lead->notes()->create([
             'user_id' => auth()->id(),
-            'body'    => $body,
+            'body' => $body,
         ]);
 
         $audit->record($lead, 'lead.note_added', ['note_id' => $note->id]);
         $this->newNoteBody = null;
-    }
-
-    public function openManualForm(): void
-    {
-        abort_unless(auth()->user()?->isOperator(), 403);
-        $this->showManualForm = true;
-    }
-
-    public function closeManualForm(): void
-    {
-        $this->showManualForm = false;
-        $this->reset('manual');
-        $this->manual['priority'] = 'medium';
-    }
-
-    public function saveManual(\App\Domain\Leads\Services\LeadIngestor $ingestor): void
-    {
-        abort_unless(auth()->user()?->isOperator(), 403);
-
-        $data = $this->validate([
-            'manual.client_name'   => ['nullable', 'string', 'max:120'],
-            'manual.campaign_name' => ['nullable', 'string', 'max:120'],
-            'manual.full_name'     => ['nullable', 'string', 'max:120'],
-            'manual.email'         => ['nullable', 'email', 'max:160'],
-            'manual.phone'         => ['nullable', 'string', 'max:60'],
-            'manual.message'       => ['nullable', 'string', 'max:5000'],
-            'manual.priority'      => ['required', 'in:low,medium,high'],
-        ])['manual'];
-
-        if (! $data['email'] && ! $data['phone'] && ! $data['full_name']) {
-            $this->addError('manual.full_name', __('Provide at least a name, email, or phone.'));
-            return;
-        }
-
-        $ingestor->ingest([
-            'source'        => 'manual',
-            'client_name'   => $data['client_name'] ?: null,
-            'campaign_name' => $data['campaign_name'] ?: null,
-            'full_name'     => $data['full_name'] ?: null,
-            'email'         => $data['email'] ?: null,
-            'phone'         => $data['phone'] ?: null,
-            'message'       => $data['message'] ?: null,
-            'priority'      => $data['priority'],
-        ], null, \App\Models\Tenant::DEFAULT_ID, auth()->id());
-
-        $this->closeManualForm();
-        $this->resetPage();
-        $this->dispatch('toast', message: __('Lead added.'));
-    }
-
-    public function clearFilters(): void
-    {
-        $this->search   = '';
-        $this->status   = '';
-        $this->priority = '';
-        $this->source   = '';
-        $this->client   = '';
-        $this->bulkSelected = [];
-        $this->resetPage();
-    }
-
-    public function openSaveDialog(): void
-    {
-        $this->showSaveDialog   = true;
-        $this->newFilterName    = '';
-        $this->newFilterIsDefault = false;
-    }
-
-    public function closeSaveDialog(): void
-    {
-        $this->showSaveDialog   = false;
-        $this->newFilterName    = '';
-        $this->newFilterIsDefault = false;
-    }
-
-    public function saveFilter(): void
-    {
-        $this->validate(['newFilterName' => ['required', 'string', 'max:100']]);
-
-        if ($this->newFilterIsDefault) {
-            SavedFilter::where('user_id', auth()->id())->update(['is_default' => false]);
-        }
-
-        SavedFilter::create([
-            'user_id'    => auth()->id(),
-            'tenant_id'  => \App\Models\Tenant::DEFAULT_ID,
-            'name'       => trim($this->newFilterName),
-            'filters'    => [
-                'search'   => $this->search,
-                'status'   => $this->status,
-                'priority' => $this->priority,
-                'source'   => $this->source,
-                'client'   => $this->client,
-                'sort'     => $this->sort,
-            ],
-            'is_default' => $this->newFilterIsDefault,
-        ]);
-
-        $this->closeSaveDialog();
-        $this->dispatch('toast', message: __('Filter saved.'));
-    }
-
-    public function loadFilter(int $id): void
-    {
-        $filter = SavedFilter::where('user_id', auth()->id())->findOrFail($id);
-        $this->applyFilterState($filter->filters);
-        $this->bulkSelected = [];
-        $this->resetPage();
-    }
-
-    public function deleteFilter(int $id): void
-    {
-        SavedFilter::where('user_id', auth()->id())->findOrFail($id)->delete();
-        $this->dispatch('toast', message: __('Filter deleted.'));
-    }
-
-    public function toggleDefaultFilter(int $id): void
-    {
-        $filter = SavedFilter::where('user_id', auth()->id())->findOrFail($id);
-
-        if ($filter->is_default) {
-            DB::transaction(function () use ($filter) {
-                $filter->update(['is_default' => false]);
-            });
-            $this->dispatch('toast', message: __('Default view cleared.'));
-        } else {
-            DB::transaction(function () use ($filter) {
-                SavedFilter::where('user_id', auth()->id())->update(['is_default' => false]);
-                $filter->update(['is_default' => true]);
-            });
-            $this->dispatch('toast', message: __('Default view updated.'));
-        }
-    }
-
-    public function bulkToggleAll(): void
-    {
-        abort_unless(auth()->user()?->isOperator(), 403);
-
-        $base = Lead::query()->visibleTo(auth()->user());
-        $pageIds = $this->applyFilters($base)
-            ->orderBy(...$this->sortBy())
-            ->paginate(config('lodgely.pagination.per_page'))
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        $this->bulkSelected = (count($this->bulkSelected) === count($pageIds) && count($pageIds) > 0)
-            ? []
-            : $pageIds;
-    }
-
-    public function clearBulkSelection(): void
-    {
-        $this->bulkSelected = [];
-    }
-
-    public function bulkSetStatus(AuditLogger $audit): void
-    {
-        abort_unless(auth()->user()?->isOperator(), 403);
-
-        if ($this->bulkStatusValue === '' || empty($this->bulkSelected)) {
-            return;
-        }
-
-        $statusEnum = LeadStatus::from($this->bulkStatusValue);
-        $ids        = array_map('intval', $this->bulkSelected);
-        $leads      = Lead::query()->visibleTo(auth()->user())->whereIn('id', $ids)->get();
-
-        foreach ($leads as $lead) {
-            if ($lead->status === $statusEnum) {
-                continue;
-            }
-            $previous     = $lead->status?->value;
-            $lead->status = $statusEnum;
-            $lead->save();
-            $audit->record($lead, 'lead.status_changed', ['from' => $previous, 'to' => $statusEnum->value]);
-        }
-
-        $count                 = $leads->count();
-        $this->bulkSelected    = [];
-        $this->bulkStatusValue = '';
-        $this->dispatch('toast', message: $count . ' ' . ($count === 1 ? 'lead' : 'leads') . ' updated.');
-    }
-
-    public function bulkSetPriority(AuditLogger $audit): void
-    {
-        abort_unless(auth()->user()?->isOperator(), 403);
-
-        if ($this->bulkPriorityValue === '' || empty($this->bulkSelected)) {
-            return;
-        }
-
-        $priorityEnum = LeadPriority::from($this->bulkPriorityValue);
-        $ids          = array_map('intval', $this->bulkSelected);
-        $leads        = Lead::query()->visibleTo(auth()->user())->whereIn('id', $ids)->get();
-
-        foreach ($leads as $lead) {
-            if ($lead->priority === $priorityEnum) {
-                continue;
-            }
-            $previous       = $lead->priority?->value;
-            $lead->priority = $priorityEnum;
-            $lead->save();
-            $audit->record($lead, 'lead.priority_changed', ['from' => $previous, 'to' => $priorityEnum->value]);
-        }
-
-        $count                   = $leads->count();
-        $this->bulkSelected      = [];
-        $this->bulkPriorityValue = '';
-        $this->dispatch('toast', message: $count . ' ' . ($count === 1 ? 'lead' : 'leads') . ' updated.');
     }
 
     public function render(): View
@@ -404,8 +177,6 @@ class InboxPage extends Component
             ->orderBy(...$this->sortBy())
             ->paginate(config('lodgely.pagination.per_page'));
 
-        $kpis = $this->kpis($base);
-
         $clientOptions = (clone $base)
             ->whereNotNull('client_name')
             ->distinct()
@@ -413,21 +184,13 @@ class InboxPage extends Component
             ->pluck('client_name')
             ->all();
 
-        $sourceLabels = [
-            'csv'        => 'CSV',
-            'email_mock' => 'Email (mock)',
-            'email_imap' => 'Email (IMAP)',
-            'manual'     => 'Manual',
-            'webhook'    => 'Webhook',
-        ];
-
         $sourceOptions = (clone $base)
             ->distinct()
             ->orderBy('source')
             ->pluck('source')
             ->map(fn ($s) => [
                 'value' => $s,
-                'label' => $sourceLabels[$s] ?? ucwords(str_replace('_', ' ', $s)),
+                'label' => self::SOURCE_LABELS[$s] ?? ucwords(str_replace('_', ' ', $s)),
             ])
             ->all();
 
@@ -438,7 +201,7 @@ class InboxPage extends Component
         $leadAiSummary = null;
         if ($selected && $user?->isOperator() && config('lodgely.ai.enabled')) {
             $leadAiSummary = AiSummary::query()
-                ->where('tenant_id', \App\Models\Tenant::DEFAULT_ID)
+                ->where('tenant_id', Tenant::DEFAULT_ID)
                 ->where('kind', AiSummaryKind::LeadQualification->value)
                 ->where('subject_type', Lead::class)
                 ->where('subject_id', $selected->id)
@@ -448,52 +211,17 @@ class InboxPage extends Component
                 ->first();
         }
 
-        $savedFilters = SavedFilter::where('user_id', auth()->id())
-            ->orderByDesc('is_default')
-            ->orderBy('name')
-            ->get();
-
         return view('livewire.inbox.inbox-page', [
-            'leads'           => $leads,
-            'kpis'            => $kpis,
-            'clientOptions'   => $clientOptions,
-            'sourceOptions'   => $sourceOptions,
-            'selected'        => $selected,
-            'statusOptions'   => LeadStatus::options(),
+            'leads' => $leads,
+            'kpis' => $this->kpis($base),
+            'clientOptions' => $clientOptions,
+            'sourceOptions' => $sourceOptions,
+            'selected' => $selected,
+            'statusOptions' => LeadStatus::options(),
             'priorityOptions' => LeadPriority::options(),
-            'savedFilters'    => $savedFilters,
-            'leadAiSummary'   => $leadAiSummary,
+            'savedFilters' => $this->userSavedFilters(),
+            'leadAiSummary' => $leadAiSummary,
         ]);
-    }
-
-    private function applyFilterState(array $filters): void
-    {
-        $this->search   = $filters['search']   ?? '';
-        $this->status   = $filters['status']   ?? '';
-        $this->priority = $filters['priority'] ?? '';
-        $this->source   = $filters['source']   ?? '';
-        $this->client   = $filters['client']   ?? '';
-        $this->sort     = $filters['sort']     ?? 'created_desc';
-    }
-
-    private function applyFilters($base): mixed
-    {
-        return (clone $base)
-            ->search($this->search)
-            ->when($this->status,   fn ($q, $v) => $q->where('status', $v))
-            ->when($this->priority, fn ($q, $v) => $q->where('priority', $v))
-            ->when($this->source,   fn ($q, $v) => $q->where('source', $v))
-            ->when($this->client,   fn ($q, $v) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($v)]));
-    }
-
-    /** @return array{0:string, 1:string} */
-    private function sortBy(): array
-    {
-        return match ($this->sort) {
-            'created_asc'   => ['created_at', 'asc'],
-            'priority_desc' => ['priority', 'desc'],
-            default         => ['created_at', 'desc'],
-        };
     }
 
     private function guardedLead(int $id): Lead
@@ -522,11 +250,11 @@ class InboxPage extends Component
             ->get();
 
         return [
-            'new'        => (int) ($counts->new_count ?? 0),
+            'new' => (int) ($counts->new_count ?? 0),
             'duplicates' => (int) ($counts->duplicate_count ?? 0),
             'incomplete' => (int) ($counts->incomplete_count ?? 0),
-            'total'      => (int) ($counts->total_count ?? 0),
-            'by_source'  => $bySource,
+            'total' => (int) ($counts->total_count ?? 0),
+            'by_source' => $bySource,
         ];
     }
 }
