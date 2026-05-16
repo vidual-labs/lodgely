@@ -8,6 +8,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Custom client reporting views** — operators can now define named reporting views (choosing any combination of metrics from: Leads, New Leads, Reviewed Leads, Clicks, Impressions, Ad Spend, Reach, CTR, Cost per Lead, Platform Leads) and assign each view to specific client users. Clients see a "My reports" page with a tab per assigned view and a monthly time-series table showing only the selected columns. Different clients can see entirely different views. Operators see all views at `/my-reports` for preview. New nav links: "Report views" for operators, "My reports" for clients.
+  - `client_reporting_views` table — stores view name and JSON column list per tenant.
+  - `client_reporting_view_user` pivot table — maps views to client users with cascade-delete.
+  - `ReportColumn` enum (`app/Domain/Reporting/Enums/`) — single registry of all selectable metric keys with labels, descriptions, format helpers, and source flags.
+  - `ClientReportingView` model with `columnEnums()`, `assignedUsers()` pivot relation.
+  - `ClientViewDataBuilder` service — merges ad-spend and lead sub-queries by month, zero-fills gaps, computes CTR and CPL, respects `Lead::scopeVisibleTo()` for lead metrics.
+  - `ReportingViewsPage` Livewire component at `/reporting/views` (operators only) — full CRUD with column checkbox grid and client assignment.
+  - `MyReportsPage` Livewire component at `/my-reports` — tab-based view selector, 3/6/12-month range filter, KPI summary strip, monthly table.
+
 - **README header** — added lodgely logo, shields.io badges (license, PHP, Laravel, Livewire, version, GitHub stars), and a table of contents.
 
 - **Reporting module** (`app/Domain/Reporting/`) — light ad spend ingestion and campaign rollup dashboard for operators:

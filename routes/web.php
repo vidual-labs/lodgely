@@ -5,7 +5,9 @@ use App\Livewire\Inbox\InboxPage;
 use App\Livewire\Imports\CsvImportPage;
 use App\Livewire\Imports\EmailImapImportPage;
 use App\Livewire\Imports\EmailMockImportPage;
+use App\Livewire\Reporting\MyReportsPage;
 use App\Livewire\Reporting\ReportingPage;
+use App\Livewire\Reporting\ReportingViewsPage;
 use App\Livewire\Users\UsersPage;
 use App\Livewire\Webhooks\WebhooksPage;
 use App\Http\Middleware\SetLocale;
@@ -46,4 +48,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/users',           UsersPage::class)->name('users');
     Route::get('/webhooks',        WebhooksPage::class)->name('webhooks');
     Route::get('/reporting',       ReportingPage::class)->name('reporting');
+    Route::get('/reporting/views', ReportingViewsPage::class)->name('reporting.views');
+    Route::get('/my-reports',      MyReportsPage::class)->name('my-reports');
 });

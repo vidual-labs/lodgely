@@ -39,6 +39,15 @@
                            class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('reporting') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
                             {{ __('Reporting') }}
                         </a>
+                        <a href="{{ route('reporting.views') }}"
+                           class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('reporting.views') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
+                            {{ __('Report views') }}
+                        </a>
+                    @else
+                        <a href="{{ route('my-reports') }}"
+                           class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('my-reports') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
+                            {{ __('My reports') }}
+                        </a>
                     @endif
                 @endauth
             </nav>
