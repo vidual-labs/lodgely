@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- Extracted the inbox KPI query out of `App\Livewire\Inbox\InboxPage` into
+  `App\Domain\Leads\Services\LeadKpis::compute(Builder $base)`. The Livewire
+  page now resolves the service via `render()` constructor-injection; the
+  page no longer carries raw aggregate SQL or a `DB` facade import. Added
+  `tests/Feature/LeadKpisTest.php` covering zero/aggregate/scope cases.
 - Replaced the placeholder "L" gradient square in the topbar and login screen
   with the actual lodgely logo graphic (wordmark + dot mark). The logo is
   served from `public/img/logo.png`, copied from the existing

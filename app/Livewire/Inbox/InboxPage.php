@@ -9,6 +9,7 @@ use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
+use App\Domain\Leads\Services\LeadKpis;
 use App\Livewire\Inbox\Concerns\WithBulkLeadActions;
 use App\Livewire\Inbox\Concerns\WithLeadFilters;
 use App\Livewire\Inbox\Concerns\WithManualLeadForm;
@@ -18,7 +19,6 @@ use App\Models\Lead;
 use App\Models\Tenant;
 use App\Support\Audit\AuditLogger;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -167,7 +167,7 @@ class InboxPage extends Component
         $this->newNoteBody = null;
     }
 
-    public function render(): View
+    public function render(LeadKpis $kpis): View
     {
         $user = auth()->user();
 
@@ -213,7 +213,7 @@ class InboxPage extends Component
 
         return view('livewire.inbox.inbox-page', [
             'leads' => $leads,
-            'kpis' => $this->kpis($base),
+            'kpis' => $kpis->compute($base),
             'clientOptions' => $clientOptions,
             'sourceOptions' => $sourceOptions,
             'selected' => $selected,
@@ -230,31 +230,5 @@ class InboxPage extends Component
         $lead = Lead::query()->visibleTo(auth()->user())->findOrFail($id);
 
         return $lead;
-    }
-
-    private function kpis($base): array
-    {
-        $counts = (clone $base)
-            ->selectRaw('
-                COUNT(*) FILTER (WHERE status = ?) AS new_count,
-                COUNT(*) FILTER (WHERE duplicate_flag = true) AS duplicate_count,
-                COUNT(*) FILTER (WHERE status = ?) AS incomplete_count,
-                COUNT(*) AS total_count
-            ', [LeadStatus::New->value, LeadStatus::Incomplete->value])
-            ->first();
-
-        $bySource = (clone $base)
-            ->select('source', DB::raw('COUNT(*) as total'))
-            ->groupBy('source')
-            ->orderByDesc('total')
-            ->get();
-
-        return [
-            'new' => (int) ($counts->new_count ?? 0),
-            'duplicates' => (int) ($counts->duplicate_count ?? 0),
-            'incomplete' => (int) ($counts->incomplete_count ?? 0),
-            'total' => (int) ($counts->total_count ?? 0),
-            'by_source' => $bySource,
-        ];
     }
 }

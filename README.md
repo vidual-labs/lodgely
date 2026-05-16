@@ -216,7 +216,7 @@ app/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
-│   │                        LeadIngestor, ImportRunner
+│   │                        LeadIngestor, ImportRunner, LeadKpis
 │   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
 │   │                        MetricsIngestor, CampaignRollup services
 │   └── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
