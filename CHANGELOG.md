@@ -6,6 +6,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- Refactored `App\Livewire\Inbox\InboxPage` (532 → 260 lines): extracted
+  saved-views, bulk lead actions, the manual-lead modal, and URL filter
+  state into composable traits under `App\Livewire\Inbox\Concerns\`
+  (`WithLeadFilters`, `WithSavedFilters`, `WithBulkLeadActions`,
+  `WithManualLeadForm`). No behavior changes — the route, view bindings
+  and request handling are unchanged.
+
 ### Security
 
 - Added `throttle:5,1` rate limit to the login POST endpoint to prevent brute-force attacks.
