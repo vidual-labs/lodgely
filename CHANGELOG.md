@@ -6,6 +6,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- Decoupled `WithLeadFilters` from `WithBulkLeadActions`. `clearFilters()`
+  no longer reaches into the bulk trait's `$bulkSelected`; it dispatches a
+  self-targeted `inbox-filters-cleared` Livewire event, and the bulk trait
+  reacts via an `#[On('inbox-filters-cleared')]` listener. Each trait now
+  only knows the event name, not the other trait's state.
+
 ### Added
 
 - `tests/Feature/InboxPageTest.php` — Livewire feature coverage for the

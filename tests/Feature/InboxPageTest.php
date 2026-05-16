@@ -72,7 +72,9 @@ class InboxPageTest extends TestCase
         $this->assertSame([$high->id], $leads->pluck('id')->all());
 
         $cmp->set('bulkSelected', [$high->id])
-            ->call('clearFilters');
+            ->call('clearFilters')
+            ->assertDispatched('inbox-filters-cleared')
+            ->dispatch('inbox-filters-cleared');
 
         $this->assertSame('', $cmp->get('client'));
         $this->assertSame('', $cmp->get('priority'));
