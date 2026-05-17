@@ -6,6 +6,13 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Logo replaced with vector SVG.** `public/img/logo.svg` replaces the
+  raster `logo.png` in the login page and topbar. The SVG is crisp at
+  every size and adds a subtle inner border so the dark pill reads
+  cleanly on both light and dark page backgrounds.
+
 ### Added
 
 - **Footer version badge + GitHub link.** The app footer now shows the
