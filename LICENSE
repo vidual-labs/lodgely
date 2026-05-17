@@ -1,3 +1,22 @@
+ETHICAL USE STATEMENT (non-binding)
+
+lodgely is a marketing / lead-intake tool. The maintainers ask, as an
+ethical request, that you do not deploy this software to acquire or
+process leads on behalf of clients in the following industries:
+
+  - Weapons and armaments
+  - Fossil-fuel energy (extraction, refining, distribution, generation)
+  - Internal-combustion / fossil-fuel passenger vehicles
+    (electric vehicles, bicycles and public transit are not in scope)
+
+This is a request from the maintainers, not a legal restriction. The
+software itself remains licensed under the GNU General Public License,
+version 3 (below), and GPL-3.0 section 10 prohibits us from imposing
+further restrictions on your use of the program. We trust users to
+honour the spirit of this statement.
+
+-------------------------------------------------------------------------
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
