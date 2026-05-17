@@ -44,6 +44,10 @@
                            class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('reporting.views') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
                             {{ __('Report views') }}
                         </a>
+                        <a href="{{ route('reporting.emails') }}"
+                           class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('reporting.emails') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">
+                            {{ __('Report emails') }}
+                        </a>
                         @if(config('lodgely.ai.enabled'))
                             <a href="{{ route('ai.drafts') }}"
                                class="px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 {{ request()->routeIs('ai.drafts') ? 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium' : 'text-slate-600 dark:text-slate-400' }}">

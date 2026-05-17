@@ -7,6 +7,7 @@ use App\Livewire\Imports\CsvImportPage;
 use App\Livewire\Imports\EmailImapImportPage;
 use App\Livewire\Imports\EmailMockImportPage;
 use App\Livewire\Reporting\MyReportsPage;
+use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
 use App\Livewire\Settings\AiSettingsPage;
@@ -50,8 +51,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/users',           UsersPage::class)->name('users');
     Route::get('/webhooks',        WebhooksPage::class)->name('webhooks');
     Route::get('/reporting',       ReportingPage::class)->name('reporting');
-    Route::get('/reporting/views', ReportingViewsPage::class)->name('reporting.views');
-    Route::get('/my-reports',      MyReportsPage::class)->name('my-reports');
+    Route::get('/reporting/views',  ReportingViewsPage::class)->name('reporting.views');
+    Route::get('/reporting/emails', ReportEmailsPage::class)->name('reporting.emails');
+    Route::get('/my-reports',       MyReportsPage::class)->name('my-reports');
 
     Route::middleware('ai.enabled')->group(function () {
         Route::get('/settings/ai', AiSettingsPage::class)->name('settings.ai');

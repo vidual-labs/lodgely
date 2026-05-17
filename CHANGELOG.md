@@ -6,6 +6,26 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Custom client report emails.** Operators can compose modular report
+  emails at `/reporting/emails` and send them now, schedule them as a
+  one-off, or recur them weekly / monthly. Each template chooses any
+  combination of: a free-text intro (markdown), the KPI summary strip
+  for a `ClientReportingView`, the monthly metrics table, and the
+  latest operator-approved AI summary for that view. Recipients are
+  picked from existing Client users; visibility scoping is honoured
+  because metrics are built through `ClientViewDataBuilder` against
+  the recipient. Every dispatch writes a `client_report_email_sends`
+  audit row (period covered, recipient ids, AI summary id, status,
+  error) which renders as a "Recent sends" history on the page.
+  New artisan command `lodgely:report-emails:dispatch` (with
+  `--dry-run`) runs hourly via the scheduler. New tables:
+  `client_report_emails`, `client_report_email_recipients`,
+  `client_report_email_schedules`, `client_report_email_sends`.
+  New mailable `App\Mail\ClientReportEmailMessage` + queued job
+  `App\Jobs\SendClientReportEmail`.
+
 ### Changed
 
 - Extracted the inbox KPI query out of `App\Livewire\Inbox\InboxPage` into
