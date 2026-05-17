@@ -6,6 +6,23 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Password recovery and per-user profile page (v0.14.0).** Public
+  `/forgot-password` and `/reset-password/{token}` routes (Laravel's
+  password broker, 5-req/min throttle on every endpoint, 12-character
+  minimum on the new password) let users recover access without an
+  operator handout. Inactive accounts never receive a reset email,
+  and the request form always returns the same generic confirmation so
+  it cannot be used to enumerate accounts. A new `/profile` page —
+  reachable from the topbar avatar by every role — lets users edit
+  their name, email, language and theme, and change their password
+  with a current-password challenge. Operators get a one-click
+  "Reset link" action on each row of the `/users` table so they can
+  hand off password setup to the user without ever seeing the value.
+  The login form now exposes a "Forgot your password?" link and
+  surfaces flash status messages after a successful reset.
+
 ### Changed
 
 - **Logo replaced with vector SVG.** `public/img/logo.svg` replaces the

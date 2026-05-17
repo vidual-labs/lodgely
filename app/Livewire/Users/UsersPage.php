@@ -8,6 +8,7 @@ use App\Models\UserLeadScope;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -150,6 +151,27 @@ class UsersPage extends Component
         }
 
         $this->close();
+    }
+
+    public function sendResetLink(int $id): void
+    {
+        $this->guardOperator();
+
+        $user = User::findOrFail($id);
+        if (! $user->is_active) {
+            $this->dispatch('toast', message: __('Enable the account before issuing a reset link.'));
+            return;
+        }
+
+        $status = Password::sendResetLink(['email' => $user->email]);
+
+        Log::info('lodgely.user.reset_link_sent', [
+            'id'     => $user->id,
+            'actor'  => auth()->id(),
+            'status' => $status,
+        ]);
+
+        $this->dispatch('toast', message: __('Reset link emailed to :email.', ['email' => $user->email]));
     }
 
     public function toggleActive(int $id): void

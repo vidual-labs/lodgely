@@ -222,7 +222,9 @@
 
             @auth
                 <div class="flex items-center gap-3 text-sm">
-                    <span class="hidden md:inline-flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <a href="{{ route('profile') }}"
+                       class="hidden md:inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors rounded-lg px-1 py-0.5"
+                       title="{{ __('Profile & settings') }}">
                         <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
                             {{ auth()->user()->initials }}
                         </span>
@@ -230,7 +232,7 @@
                             {{ auth()->user()->name }}
                             <span class="text-xs text-slate-400 dark:text-slate-600">· {{ auth()->user()->role->label() }}</span>
                         </span>
-                    </span>
+                    </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="hidden sm:inline text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors text-sm">{{ __('Sign out') }}</button>
@@ -291,13 +293,19 @@
                     </a>
                 @endif
 
+                <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('Account') }}</div>
+                <a href="{{ route('profile') }}"
+                   class="{{ $menuItem }} {{ request()->routeIs('profile') ? $menuItemActive : $menuItemIdle }}">
+                    {{ __('Profile') }}
+                </a>
+
                 <div class="border-t border-slate-200 dark:border-slate-800 mt-3 pt-3 flex items-center justify-between gap-3 sm:hidden">
-                    <span class="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <a href="{{ route('profile') }}" class="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                         <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
                             {{ auth()->user()->initials }}
                         </span>
                         {{ auth()->user()->name }}
-                    </span>
+                    </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Sign out') }}</button>

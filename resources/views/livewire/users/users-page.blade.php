@@ -46,7 +46,7 @@
                         <th class="px-3 py-2 w-[110px]">{{ __('Role') }}</th>
                         <th class="px-3 py-2 w-[120px]">{{ __('Scopes') }}</th>
                         <th class="px-3 py-2 w-[100px]">{{ __('Status') }}</th>
-                        <th class="px-3 py-2 w-[140px] text-right"></th>
+                        <th class="px-3 py-2 w-[220px] text-right"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -89,6 +89,13 @@
                             <td class="px-3 py-2 text-right text-sm">
                                 <button wire:click="openEdit({{ $u->id }})"
                                         class="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Edit') }}</button>
+                                @if($u->is_active && $u->id !== auth()->id())
+                                    <span class="mx-1 text-slate-300 dark:text-slate-600">·</span>
+                                    <button wire:click="sendResetLink({{ $u->id }})"
+                                            wire:confirm="{{ __('Email a password reset link to :email?', ['email' => $u->email]) }}"
+                                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                                            title="{{ __('Email this user a one-time link to set a new password.') }}">{{ __('Reset link') }}</button>
+                                @endif
                                 @if($u->id !== auth()->id())
                                     <span class="mx-1 text-slate-300 dark:text-slate-600">·</span>
                                     <button wire:click="toggleActive({{ $u->id }})"
