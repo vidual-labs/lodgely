@@ -15,6 +15,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Ethical use statement.** Added a non-binding preamble to `LICENSE`
+  and a matching `## Ethical use` section in `README.md` asking that
+  lodgely not be used to run lead intake for clients in the weapons,
+  fossil-fuel energy, or internal-combustion vehicle industries. Framed
+  as an ethical request because GPL-3.0 §10 prohibits further
+  restrictions on the software itself.
 - **Footer version badge + GitHub link.** The app footer now shows the
   current package version (read from `composer.json` via the new
   `lodgely.version` config value, so it stays in sync with the

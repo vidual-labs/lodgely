@@ -38,6 +38,7 @@ clean inbox to prioritize, deduplicate and forward.
 - [Privacy & GDPR notes for self-hosters](#privacy--gdpr-notes-for-self-hosters)
 - [Configuration reference](#configuration-reference)
 - [Roadmap](#roadmap)
+- [Ethical use](#ethical-use)
 - [License](#license)
 
 ---
@@ -404,6 +405,21 @@ and are listed in the roadmap.
 - ~~**Saved filters** and per-user view defaults.~~ ✓ Done in v0.7.0.
 - ~~**Dark / Light mode** with OS-preference detection and manual toggle.~~ ✓ Done in v0.7.0.
 - ~~**i18n** — English and German, per-user language preference persisted in DB.~~ ✓ Done in v0.7.0.
+
+---
+
+## Ethical use
+
+lodgely is a marketing tool. We ask, as a non-binding ethical request,
+that you do **not** use lodgely to run lead intake for clients in:
+
+- **Weapons and armaments**
+- **Fossil-fuel energy** (extraction, refining, distribution, generation)
+- **Internal-combustion / fossil-fuel passenger vehicles** — electric
+  vehicles, bicycles and public transit are explicitly fine.
+
+This is a request from the maintainers, not a legal restriction (lodgely
+remains GPL-3.0). See the preamble in `LICENSE` for the full statement.
 
 ---
 
