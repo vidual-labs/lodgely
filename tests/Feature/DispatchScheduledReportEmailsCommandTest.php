@@ -100,4 +100,18 @@ class DispatchScheduledReportEmailsCommandTest extends TestCase
         $this->assertSame(0, ClientReportEmailSend::count());
         Bus::assertNotDispatched(SendClientReportEmail::class);
     }
+
+    public function test_inactive_template_is_skipped_even_when_schedule_is_due(): void
+    {
+        Bus::fake();
+        $schedule = $this->setup_due_schedule('weekly');
+
+        // Operator deactivated the template after creating the schedule.
+        $schedule->email->forceFill(['is_active' => false])->save();
+
+        $this->artisan('lodgely:report-emails:dispatch')->assertSuccessful();
+
+        $this->assertSame(0, ClientReportEmailSend::count());
+        Bus::assertNotDispatched(SendClientReportEmail::class);
+    }
 }
