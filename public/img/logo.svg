@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60">
+  <defs>
+    <!-- Background gradient: deep navy, slightly bluer at bottom-right -->
+    <linearGradient id="bg" x1="0" y1="0" x2="220" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0e0c1f"/>
+      <stop offset="1" stop-color="#0b1228"/>
+    </linearGradient>
+    <!-- Icon gradient: sky-blue to indigo, top-left to bottom-right -->
+    <linearGradient id="ic" x1="14" y1="14" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <!-- Wordmark gradient: indigo → violet → fuchsia, left to right -->
+    <linearGradient id="tx" x1="60" y1="0" x2="212" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0"    stop-color="#818cf8"/>
+      <stop offset="0.45" stop-color="#a78bfa"/>
+      <stop offset="1"    stop-color="#e879f9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark pill background -->
+  <rect width="220" height="60" rx="12" fill="url(#bg)"/>
+  <!-- Subtle inner border — helps separate the pill from light and dark page backgrounds -->
+  <rect width="220" height="60" rx="12" fill="none" stroke="white" stroke-opacity="0.07" stroke-width="1"/>
+
+  <!--
+    Dotted icon: staircase pattern representing a lead funnel.
+    5 columns (x = 14, 22, 30, 38, 46); dots stack up from y=46.
+    Left column (x=14) is tallest (5 dots), right column (x=46) is shortest (1 dot).
+    Dots fade toward the apex so the eye reads it as a single connected shape.
+  -->
+  <!-- col 1 (x=14) — 5 dots -->
+  <circle cx="14" cy="46" r="2.2" fill="url(#ic)"/>
+  <circle cx="14" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
+  <circle cx="14" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
+  <circle cx="14" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
+  <circle cx="14" cy="14" r="2.2" fill="url(#ic)" opacity=".44"/>
+  <!-- col 2 (x=22) — 4 dots -->
+  <circle cx="22" cy="46" r="2.2" fill="url(#ic)"/>
+  <circle cx="22" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
+  <circle cx="22" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
+  <circle cx="22" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
+  <!-- col 3 (x=30) — 3 dots -->
+  <circle cx="30" cy="46" r="2.2" fill="url(#ic)"/>
+  <circle cx="30" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
+  <circle cx="30" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
+  <!-- col 4 (x=38) — 2 dots -->
+  <circle cx="38" cy="46" r="2.2" fill="url(#ic)"/>
+  <circle cx="38" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
+  <!-- col 5 (x=46) — 1 dot -->
+  <circle cx="46" cy="46" r="2.2" fill="url(#ic)"/>
+
+  <!-- Wordmark -->
+  <text x="60" y="40"
+        font-family="'InterVariable','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"
+        font-size="26" font-weight="600" letter-spacing="-.5"
+        fill="url(#tx)">lodgely</text>
+</svg>
