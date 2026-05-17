@@ -1,6 +1,8 @@
 @props(['priorityOptions' => [], 'form' => []])
 
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/60 px-4">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 dark:bg-black/60 px-4"
+     x-data x-on:keydown.escape.window="$wire.closeManualForm()"
+     wire:click.self="closeManualForm">
     <div role="dialog" aria-modal="true" aria-labelledby="manual-lead-title"
          class="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 shadow-2xl dark:shadow-black/50 border border-slate-200 dark:border-slate-700/50">
         <header class="border-b border-slate-200 dark:border-slate-700/50 px-5 py-3 flex justify-between items-center">

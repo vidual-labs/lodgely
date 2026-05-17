@@ -8,6 +8,44 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Footer version badge + GitHub link.** The app footer now shows the
+  current package version (read from `composer.json` via the new
+  `lodgely.version` config value, so it stays in sync with the
+  every-commit version bump) and an icon-labelled link to the source
+  repository. The link target is configurable via `LODGELY_GITHUB_URL`
+  and disappears when the env var is left blank, so self-hosted
+  deployments that don't want to advertise a public repo can hide it.
+
+### Changed
+
+- **Topbar nav restructured into grouped dropdowns + mobile hamburger.**
+  The operator topbar used to render 8–11 sibling links across a single
+  row, which overflowed on mid-sized desktops and was completely hidden
+  on screens below `md` (mobile users had no way to navigate after
+  login). The new layout collapses `CSV import / Email (mock) / Email
+  (IMAP)` under an **Imports** dropdown, `Reporting / Report views /
+  Report emails` under **Reporting**, and `AI drafts / AI settings`
+  under **AI**, leaving Inbox / Users / Webhooks as top-level links.
+  A hamburger button (`< lg`) now opens a full grouped panel for
+  mobile and small-laptop widths, including the sign-out action that
+  was previously only reachable on `sm+` screens.
+
+### Fixed
+
+- Saved-filter star button on the inbox showed the nonsensical title
+  "Default view – Clear filters" while already-default; the tooltip now
+  reflects what the action will do ("Set as default view" /
+  "Remove as default view") and exposes the same string via
+  `aria-label` for screen readers.
+- The new-lead modal, user create/edit modal, webhook create modal,
+  and lead detail panel now close on `Escape`. The three modals also
+  close when clicking the backdrop, matching the existing behaviour
+  of the report-email and report-view modals.
+- Footer stacks vertically on `< sm` screens instead of cramming both
+  notices onto one line.
+
+### Added
+
 - **Operator-only inbox export to CSV and NDJSON.** New `/inbox/export`
   endpoint streams the currently filtered/sorted lead set to disk in
   either CSV (header row + one row per lead) or newline-delimited JSON
