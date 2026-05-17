@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.11.0-6366F1" alt="Version 0.11.0">
+  <img src="https://img.shields.io/badge/version-0.12.1-6366F1" alt="Version 0.12.1">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -212,17 +212,23 @@ A working sample lives at `database/samples/leads-sample.csv`.
 
 ```
 app/
-├── Console/Commands/        artisan commands (create-user, mock pull, purge)
+├── Console/Commands/        artisan commands (create-user, mock pull, purge,
+│                            ad-metrics pull, report-emails dispatch)
 ├── Domain/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
 │   │                        LeadIngestor, ImportRunner, LeadKpis
 │   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
-│   │                        MetricsIngestor, CampaignRollup services
+│   │                        MetricsIngestor, CampaignRollup,
+│   │                        ClientViewDataBuilder, ReportEmailDispatcher,
+│   │                        ReportColumn enum
 │   └── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
 │                            AiSummarizer + PromptBuilder + Pseudonymizer
-├── Http/Controllers/Auth/   LoginController
+├── Http/
+│   ├── Controllers/Auth/    LoginController
+│   ├── Controllers/         WebhookController
+│   └── Middleware/          SetLocale, EnsureAiEnabled, SecurityHeaders
 ├── Importers/
 │   ├── Contracts/           LeadSource interface, IncomingLead DTO
 │   ├── Csv/                 CsvLeadSource adapter
@@ -231,20 +237,28 @@ app/
 │   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
 │   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
-├── Jobs/                    GenerateAiSummary (queued LLM call)
+├── Jobs/                    GenerateAiSummary, SendClientReportEmail
 ├── Livewire/
 │   ├── Ai/DraftsPage        operator review of AI drafts
 │   ├── Inbox/InboxPage      the main UI
 │   │   └── Concerns/        URL filters, saved views, bulk actions,
 │   │                        manual-lead modal (composed via traits)
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs
-│   ├── Reporting/ReportingPage  operator ad spend + campaign rollup dashboard
+│   ├── Reporting/
+│   │   ├── ReportingPage    operator ad spend + campaign rollup dashboard
+│   │   ├── ReportingViewsPage  operator CRUD for client reporting views
+│   │   ├── ReportEmailsPage    operator-composed scheduled report emails
+│   │   └── MyReportsPage    per-client monthly reporting tab
 │   ├── Settings/AiSettingsPage  operator AI provider config
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
+├── Mail/                    ClientReportEmailMessage
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
-│                            Import, UserLeadScope, AdSpendReport,
-│                            ClientReportingView, AiSetting, AiSummary, AiEvent
+│                            Import, UserLeadScope, SavedFilter,
+│                            WebhookEndpoint, AdSpendReport,
+│                            ClientReportingView, AiSetting, AiSummary,
+│                            AiEvent, ClientReportEmail,
+│                            ClientReportEmailSchedule, ClientReportEmailSend
 ├── Providers/AppServiceProvider
 └── Support/Audit/           AuditLogger, AiAuditLogger
 ```
@@ -376,6 +390,8 @@ and are listed in the roadmap.
 
 ### Completed
 
+- ~~**Custom client report emails**~~ ✓ Done in v0.12.0 — `/reporting/emails` for composing modular templates (intro, KPI strip, monthly table, latest approved AI summary), send-now / one-off / weekly / monthly schedules, audited `client_report_email_sends` history, `lodgely:report-emails:dispatch` hourly cron.
+- ~~**Custom client reporting views**~~ ✓ Done in v0.10.0 — `/reporting/views` for operators to define named views and assign per-client column sets, `/my-reports` per-client monthly time-series.
 - ~~**AI summaries & lead qualification**~~ ✓ Done in v0.11.0 — `/settings/ai` for provider config (OpenAI-compatible or Ollama), `/ai/drafts` for operator review, report-view summaries and pseudonymized lead qualification with approve-then-share workflow.
 - ~~**Reporting module**~~ ✓ Done in v0.9.0 — `/reporting` page with Meta + Google Ads mock adapters, `ad_spend_reports` table, campaign rollup, KPI cards.
 - ~~**Bulk actions** in the inbox (mass-forward, mass-status).~~ ✓ Done in v0.7.0.
