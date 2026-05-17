@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\DispatchScheduledReportEmails;
 use App\Console\Commands\ImportAdMetrics;
 use App\Console\Commands\ImportEmailsImap;
 use App\Console\Commands\ImportEmailsMock;
@@ -19,3 +20,7 @@ Schedule::command(PurgeExpiredLeads::class)->dailyAt('03:00');
 
 // Daily ad metrics pull — fetches yesterday's aggregate spend data from all configured sources.
 Schedule::command(ImportAdMetrics::class, ['--days=1'])->dailyAt('05:00')->withoutOverlapping();
+
+// Hourly sweep that fires any due report-email schedules. Schedules carry their own
+// hour-of-day and timezone, so hourly granularity is sufficient — minute is always 0.
+Schedule::command(DispatchScheduledReportEmails::class)->hourly()->withoutOverlapping();
