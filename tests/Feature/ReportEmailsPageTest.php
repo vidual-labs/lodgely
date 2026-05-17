@@ -145,6 +145,41 @@ class ReportEmailsPageTest extends TestCase
         $this->assertSame($op->id, $send->triggered_by);
     }
 
+    public function test_editing_a_template_preserves_the_original_creator(): void
+    {
+        $original = $this->operator();
+        $editor   = User::create([
+            'name'      => 'Editor',
+            'email'     => 'editor@example.com',
+            'password'  => Hash::make('p'),
+            'role'      => 'operator',
+            'is_active' => true,
+        ]);
+
+        $email = ClientReportEmail::create([
+            'tenant_id'             => Tenant::DEFAULT_ID,
+            'name'                  => 'Original',
+            'include_kpi_strip'     => false,
+            'include_metrics_table' => false,
+            'include_ai_summary'    => false,
+            'period_months'         => 1,
+            'subject_template'      => 'Original subject',
+            'is_active'             => true,
+            'created_by'            => $original->id,
+        ]);
+
+        Livewire::actingAs($editor)
+            ->test(ReportEmailsPage::class)
+            ->call('openEdit', $email->id)
+            ->set('form.name', 'Renamed')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $email->refresh();
+        $this->assertSame('Renamed', $email->name);
+        $this->assertSame($original->id, $email->created_by);
+    }
+
     public function test_send_now_without_recipients_is_a_no_op_and_does_not_queue(): void
     {
         Bus::fake();

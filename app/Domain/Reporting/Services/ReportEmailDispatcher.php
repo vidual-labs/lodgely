@@ -49,15 +49,23 @@ class ReportEmailDispatcher
 
     /**
      * Cron-driven send for a due schedule. Returns null if the template
-     * has no eligible recipients (treated as a silent no-op rather than a
-     * failure — operators usually want the schedule to just keep trying).
+     * is inactive or has no eligible recipients (treated as a silent
+     * no-op rather than a failure — operators usually want the schedule
+     * to just keep trying). Deactivating the template is the operator's
+     * "pause" switch and must be honored even when a schedule is left
+     * active on the row.
      */
     public function dispatchSchedule(ClientReportEmailSchedule $schedule): ?ClientReportEmailSend
     {
-        $email      = $schedule->email;
-        $recipients = $email?->recipients()->where('is_active', true)->get()->all() ?? [];
+        $email = $schedule->email;
 
-        if ($email === null || $recipients === []) {
+        if ($email === null || ! $email->is_active) {
+            return null;
+        }
+
+        $recipients = $email->recipients()->where('is_active', true)->get()->all();
+
+        if ($recipients === []) {
             return null;
         }
 

@@ -6,6 +6,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- `ReportEmailDispatcher::dispatchSchedule()` now skips sends when the
+  underlying `ClientReportEmail` template is inactive. Previously a
+  deactivated template would still fire on cron as long as the attached
+  schedule's `is_active` flag was true, because only the schedule row
+  was being checked. Deactivating a template now behaves as the operator
+  expects — a pause on all triggers.
+- `ReportEmailsPage::save()` no longer overwrites `created_by` when an
+  existing template is edited. The original author is preserved, and
+  `created_by` is only set on creation.
+
 ### Added
 
 - **Custom client report emails.** Operators can compose modular report

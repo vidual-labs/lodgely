@@ -141,14 +141,15 @@ class ReportEmailsPage extends Component
             'period_months'            => (int) $f['period_months'],
             'subject_template'         => $f['subject_template'],
             'is_active'                => (bool) $f['is_active'],
-            'created_by'               => auth()->id(),
         ];
 
         if ($this->editingId) {
+            // Preserve the original creator — editing a template shouldn't
+            // re-attribute authorship to whoever made the last tweak.
             $email = ClientReportEmail::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($this->editingId);
             $email->update($attrs);
         } else {
-            $email = ClientReportEmail::create($attrs);
+            $email = ClientReportEmail::create($attrs + ['created_by' => auth()->id()]);
         }
 
         $recipientIds = array_map('intval', $f['recipient_ids'] ?? []);
