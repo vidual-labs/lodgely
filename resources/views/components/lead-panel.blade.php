@@ -1,6 +1,6 @@
 @props(['lead', 'statusOptions' => [], 'priorityOptions' => [], 'aiSummary' => null])
 
-<div class="fixed inset-0 z-40 flex" x-data x-trap.noscroll="true">
+<div class="fixed inset-0 z-40 flex" x-data x-trap.noscroll="true" x-on:keydown.escape.window="$wire.closePanel()">
     <div class="flex-1 bg-slate-900/40 dark:bg-black/50" wire:click="closePanel"></div>
 
     <aside role="dialog" aria-modal="true" aria-labelledby="lead-panel-title"

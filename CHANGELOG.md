@@ -6,6 +6,34 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Topbar nav restructured into grouped dropdowns + mobile hamburger.**
+  The operator topbar used to render 8–11 sibling links across a single
+  row, which overflowed on mid-sized desktops and was completely hidden
+  on screens below `md` (mobile users had no way to navigate after
+  login). The new layout collapses `CSV import / Email (mock) / Email
+  (IMAP)` under an **Imports** dropdown, `Reporting / Report views /
+  Report emails` under **Reporting**, and `AI drafts / AI settings`
+  under **AI**, leaving Inbox / Users / Webhooks as top-level links.
+  A hamburger button (`< lg`) now opens a full grouped panel for
+  mobile and small-laptop widths, including the sign-out action that
+  was previously only reachable on `sm+` screens.
+
+### Fixed
+
+- Saved-filter star button on the inbox showed the nonsensical title
+  "Default view – Clear filters" while already-default; the tooltip now
+  reflects what the action will do ("Set as default view" /
+  "Remove as default view") and exposes the same string via
+  `aria-label` for screen readers.
+- The new-lead modal, user create/edit modal, webhook create modal,
+  and lead detail panel now close on `Escape`. The three modals also
+  close when clicking the backdrop, matching the existing behaviour
+  of the report-email and report-view modals.
+- Footer stacks vertically on `< sm` screens instead of cramming both
+  notices onto one line.
+
 ### Added
 
 - **Operator-only inbox export to CSV and NDJSON.** New `/inbox/export`

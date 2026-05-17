@@ -169,7 +169,8 @@
                             {{ $sf->name }}
                         </button>
                         <button type="button" wire:click="toggleDefaultFilter({{ $sf->id }})"
-                                title="{{ $sf->is_default ? __('Default view') . ' – ' . __('Clear filters') : __('Default view') }}"
+                                aria-label="{{ $sf->is_default ? __('Remove as default view') : __('Set as default view') }}"
+                                title="{{ $sf->is_default ? __('Remove as default view') : __('Set as default view') }}"
                                 class="{{ $sf->is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400' }} leading-none px-0.5">
                             ★
                         </button>

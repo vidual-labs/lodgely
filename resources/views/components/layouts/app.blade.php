@@ -35,7 +35,7 @@
         </main>
 
         <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-3 text-xs text-slate-500 flex justify-between">
+            <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-3 text-xs text-slate-500 flex flex-col sm:flex-row gap-1 sm:gap-3 sm:justify-between">
                 <span>{{ config('lodgely.brand.name') }} — {{ config('lodgely.brand.tagline') }}</span>
                 <span>{{ __('Open source · GPL-3.0') }}</span>
             </div>
