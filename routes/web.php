@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\LeadExportController;
 use App\Livewire\Ai\DraftsPage;
 use App\Livewire\Inbox\InboxPage;
 use App\Livewire\Imports\CsvImportPage;
@@ -45,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('/inbox',           InboxPage::class)->name('inbox');
+    Route::get('/inbox/export',    LeadExportController::class)->name('inbox.export');
     Route::get('/imports/csv',        CsvImportPage::class)->name('imports.csv');
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
     Route::get('/imports/email-imap', EmailImapImportPage::class)->name('imports.email-imap');

@@ -17,10 +17,22 @@
 
             @auth
                 @if(auth()->user()->isOperator())
-                    <button type="button" wire:click="openManualForm"
-                            class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
-                        + {{ __('New lead') }}
-                    </button>
+                    <div class="flex items-center gap-2" wire:ignore.self>
+                        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                {{ __('Export CSV') }}
+                            </a>
+                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
+                                {{ __('Export JSON') }}
+                            </a>
+                        </div>
+                        <button type="button" wire:click="openManualForm"
+                                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
+                            + {{ __('New lead') }}
+                        </button>
+                    </div>
                 @endif
             @endauth
         </div>

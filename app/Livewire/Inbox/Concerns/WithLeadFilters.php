@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Inbox\Concerns;
 
+use App\Domain\Leads\Services\LeadFilter;
 use Livewire\Attributes\Url;
 
 /**
@@ -60,22 +61,13 @@ trait WithLeadFilters
 
     protected function applyFilters($base): mixed
     {
-        return (clone $base)
-            ->search($this->search)
-            ->when($this->status, fn ($q, $v) => $q->where('status', $v))
-            ->when($this->priority, fn ($q, $v) => $q->where('priority', $v))
-            ->when($this->source, fn ($q, $v) => $q->where('source', $v))
-            ->when($this->client, fn ($q, $v) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($v)]));
+        return app(LeadFilter::class)->apply($base, $this->currentFilterState());
     }
 
     /** @return array{0:string, 1:string} */
     protected function sortBy(): array
     {
-        return match ($this->sort) {
-            'created_asc' => ['created_at', 'asc'],
-            'priority_desc' => ['priority', 'desc'],
-            default => ['created_at', 'desc'],
-        };
+        return app(LeadFilter::class)->sortBy($this->sort);
     }
 
     protected function currentFilterState(): array
