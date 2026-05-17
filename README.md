@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.12.1-6366F1" alt="Version 0.12.1">
+  <img src="https://img.shields.io/badge/version-0.14.0-6366F1" alt="Version 0.14.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -77,10 +77,20 @@ clean place to *triage* leads before anything else happens, you are at home.
 - ✍️ **Manual entry** — quick "new lead" modal for phone calls and walk-ins.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
+  A one-click "Reset link" issues a single-use email so users can choose
+  their own password without an operator ever seeing it.
 - 🔐 **Multi-user logins, two roles**:
   - `operator` — agency or inhouse team. Sees every lead, can import.
   - `client` — scoped to one or more `client_name` values. Read-friendly,
     review-only access to *their* leads.
+- 👤 **Per-user profile page** at `/profile` (linked from the topbar avatar
+  for every role) — change name, email, password (with current-password
+  challenge), interface language and theme. Clients use the same page to
+  manage their own account without seeing any operator screens.
+- 🔑 **Password recovery** — public `/forgot-password` flow that issues a
+  rate-limited reset email through Laravel's password broker. Inactive
+  accounts never receive a link, and the form response is uniform so the
+  endpoint cannot be used to enumerate accounts.
 - 🧾 **Audit log** of lead lifecycle changes (created, status changed,
   priority changed, note added, duplicate reconciled).
 - 🗑️ **Retention awareness** — every lead carries a `retention_until`
@@ -233,7 +243,7 @@ app/
 │   └── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
 │                            AiSummarizer + PromptBuilder + Pseudonymizer
 ├── Http/
-│   ├── Controllers/Auth/    LoginController
+│   ├── Controllers/Auth/    LoginController, PasswordResetController
 │   ├── Controllers/         WebhookController
 │   └── Middleware/          SetLocale, EnsureAiEnabled, SecurityHeaders
 ├── Importers/
@@ -257,6 +267,7 @@ app/
 │   │   ├── ReportEmailsPage    operator-composed scheduled report emails
 │   │   └── MyReportsPage    per-client monthly reporting tab
 │   ├── Settings/AiSettingsPage  operator AI provider config
+│   ├── Settings/ProfilePage     per-user profile + password change
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Mail/                    ClientReportEmailMessage
@@ -397,6 +408,7 @@ and are listed in the roadmap.
 
 ### Completed
 
+- ~~**Password recovery + per-user profile page**~~ ✓ Done in v0.14.0 — public `/forgot-password` flow with rate-limited reset emails, operator "Reset link" action on the `/users` table, and a `/profile` page that lets every role manage their name, email, password, language and theme.
 - ~~**Custom client report emails**~~ ✓ Done in v0.12.0 — `/reporting/emails` for composing modular templates (intro, KPI strip, monthly table, latest approved AI summary), send-now / one-off / weekly / monthly schedules, audited `client_report_email_sends` history, `lodgely:report-emails:dispatch` hourly cron.
 - ~~**Custom client reporting views**~~ ✓ Done in v0.10.0 — `/reporting/views` for operators to define named views and assign per-client column sets, `/my-reports` per-client monthly time-series.
 - ~~**AI summaries & lead qualification**~~ ✓ Done in v0.11.0 — `/settings/ai` for provider config (OpenAI-compatible or Ollama), `/ai/drafts` for operator review, report-view summaries and pseudonymized lead qualification with approve-then-share workflow.

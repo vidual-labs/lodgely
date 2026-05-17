@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\LeadExportController;
 use App\Livewire\Ai\DraftsPage;
 use App\Livewire\Inbox\InboxPage;
@@ -12,6 +13,7 @@ use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
 use App\Livewire\Settings\AiSettingsPage;
+use App\Livewire\Settings\ProfilePage;
 use App\Livewire\Users\UsersPage;
 use App\Livewire\Webhooks\WebhooksPage;
 use App\Http\Middleware\SetLocale;
@@ -40,10 +42,17 @@ Route::post('/user/theme', function (Request $request) {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:5,1')->name('login.attempt');
+
+    Route::get('/forgot-password',          [PasswordResetController::class, 'requestForm'])->name('password.request');
+    Route::post('/forgot-password',         [PasswordResetController::class, 'sendLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}',   [PasswordResetController::class, 'resetForm'])->name('password.reset');
+    Route::post('/reset-password',          [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    Route::get('/profile', ProfilePage::class)->name('profile');
 
     Route::get('/inbox',           InboxPage::class)->name('inbox');
     Route::get('/inbox/export',    LeadExportController::class)->name('inbox.export');

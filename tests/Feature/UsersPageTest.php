@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Livewire\Users\UsersPage;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -88,5 +90,37 @@ class UsersPageTest extends TestCase
             ->call('toggleActive', $op->id);
 
         $this->assertTrue((bool) $op->fresh()->is_active);
+    }
+
+    public function test_operator_can_send_a_reset_link_to_an_active_user(): void
+    {
+        Notification::fake();
+        $op    = $this->operator();
+        $other = User::create([
+            'name' => 'Other', 'email' => 'other@example.com', 'password' => Hash::make('x'),
+            'role' => 'operator', 'is_active' => true,
+        ]);
+
+        Livewire::actingAs($op)
+            ->test(UsersPage::class)
+            ->call('sendResetLink', $other->id);
+
+        Notification::assertSentTo($other, ResetPassword::class);
+    }
+
+    public function test_inactive_users_do_not_receive_reset_links(): void
+    {
+        Notification::fake();
+        $op       = $this->operator();
+        $disabled = User::create([
+            'name' => 'Off', 'email' => 'off@example.com', 'password' => Hash::make('x'),
+            'role' => 'client', 'is_active' => false,
+        ]);
+
+        Livewire::actingAs($op)
+            ->test(UsersPage::class)
+            ->call('sendResetLink', $disabled->id);
+
+        Notification::assertNothingSentTo($disabled);
     }
 }
