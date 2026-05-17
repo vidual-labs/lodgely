@@ -14,9 +14,21 @@
 
 return [
 
+    // Read once from composer.json so the package version stays the single
+    // source of truth (the every-commit checklist already bumps it there).
+    'version' => (function () {
+        $composer = base_path('composer.json');
+        if (! is_file($composer)) {
+            return 'dev';
+        }
+        $data = json_decode((string) file_get_contents($composer), true);
+        return $data['version'] ?? 'dev';
+    })(),
+
     'brand' => [
-        'name'    => env('LODGELY_BRAND_NAME', 'lodgely'),
-        'tagline' => env('LODGELY_BRAND_TAGLINE', 'Lead intake, unified.'),
+        'name'       => env('LODGELY_BRAND_NAME', 'lodgely'),
+        'tagline'    => env('LODGELY_BRAND_TAGLINE', 'Lead intake, unified.'),
+        'github_url' => env('LODGELY_GITHUB_URL', 'https://github.com/vidual-labs/lodgely'),
     ],
 
     'importers' => [

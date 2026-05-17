@@ -6,6 +6,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Footer version badge + GitHub link.** The app footer now shows the
+  current package version (read from `composer.json` via the new
+  `lodgely.version` config value, so it stays in sync with the
+  every-commit version bump) and an icon-labelled link to the source
+  repository. The link target is configurable via `LODGELY_GITHUB_URL`
+  and disappears when the env var is left blank, so self-hosted
+  deployments that don't want to advertise a public repo can hide it.
+
 ### Changed
 
 - **Topbar nav restructured into grouped dropdowns + mobile hamburger.**
