@@ -87,6 +87,12 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 📊 **Inbox KPIs** — new, duplicates, incomplete, total, leads by source.
 - ☑️ **Bulk actions** — operators select multiple leads via checkboxes and apply
   a status or priority change to all in one step. Audit events recorded per lead.
+- ⬇️ **Inbox export** — operators can download the currently filtered inbox as
+  CSV or newline-delimited JSON (`/inbox/export?format=csv|ndjson`). Streams in
+  chunks so it stays memory-safe at any size; honours the same `q / status /
+  priority / source / client / sort` filters as the inbox URL. Excludes
+  `raw_payload` and internal dedupe keys. Each export writes a `lead.exported`
+  log line for auditability.
 - 🔖 **Saved filters & default views** — any filter combination (search, status,
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded

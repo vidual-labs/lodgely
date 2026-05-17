@@ -6,6 +6,28 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Operator-only inbox export to CSV and NDJSON.** New `/inbox/export`
+  endpoint streams the currently filtered/sorted lead set to disk in
+  either CSV (header row + one row per lead) or newline-delimited JSON
+  (one lead object per line). Filters and sort are read from the same
+  query keys the inbox already URL-binds (`q`, `status`, `priority`,
+  `source`, `client`, `sort`), so the inbox "Export CSV" / "Export JSON"
+  buttons just link to the route with the current filter state preserved.
+  Visibility goes through `Lead::scopeVisibleTo()`; clients receive 403.
+  Streaming via `lazyById()` keeps memory bounded for large workspaces.
+  Each export is logged as a single `lead.exported` info line with user,
+  format, row count and active filters. Internal/PII-adjacent columns
+  (`raw_payload`, `email_normalized`, `phone_normalized`, internal IDs)
+  are intentionally excluded.
+
+### Changed
+
+- Inbox filter/sort semantics extracted from `WithLeadFilters` into a
+  shared `App\Domain\Leads\Services\LeadFilter` so the export controller
+  and the Livewire inbox use one definition. Behaviour unchanged.
+
 ### Fixed
 
 - `ReportEmailDispatcher::dispatchSchedule()` now skips sends when the
