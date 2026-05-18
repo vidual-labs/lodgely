@@ -142,15 +142,30 @@ A typical lodgely install runs comfortably on ~512 MB RAM.
 ## Quick start (Docker)
 
 ```bash
-# 1. Clone and copy env
+# 1. Clone and configure
 git clone https://github.com/vidual-labs/lodgely.git
 cd lodgely
 cp .env.example .env
+```
 
-# 2. Bring the stack up
+Open `.env` and set at minimum:
+
+| Key | What to set |
+|-----|-------------|
+| `APP_URL` | Your public URL, e.g. `https://lodgely.example.com` |
+| `DB_PASSWORD` | A strong password (must match across all `DB_*` vars) |
+| `LODGELY_HTTP_PORT` | Host port for HTTP (default `8080`); change if that port is taken |
+| `SESSION_SECURE_COOKIE` | `true` if serving over HTTPS, `false` for plain HTTP |
+| `SESSION_DRIVER` | `file` is simplest; `database` works but requires the DB to be up first |
+
+```bash
+# 2. Build and start
 docker compose up -d --build
 
-# 3. First-time bootstrap (inside the app container)
+# 3. Fix storage permissions (required on first start)
+docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+
+# 4. First-time bootstrap
 docker compose exec app composer install
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
@@ -158,7 +173,7 @@ docker compose exec app npm ci
 docker compose exec app npm run build
 ```
 
-Then open <http://localhost:8080> and sign in with one of the seeded accounts:
+Then open your `APP_URL` and sign in with one of the seeded accounts:
 
 | Role     | Email                        | Password   | Sees                              |
 |----------|------------------------------|------------|-----------------------------------|
@@ -180,6 +195,15 @@ docker compose exec app php artisan lodgely:user:create \
   --name="Brand Owner" --email=owner@example.com --role=client \
   --client="Northwind Studio"
 ```
+
+### Behind a reverse proxy or Cloudflare
+
+If lodgely sits behind Cloudflare, nginx, or any other reverse proxy:
+
+- Set `APP_URL` to the **public** HTTPS URL (e.g. `https://lodgely.example.com`), not the internal address.
+- Set `SESSION_SECURE_COOKIE=true` (the browser is on HTTPS even if the internal hop is HTTP).
+- Set `SESSION_DRIVER=file` or ensure `SESSION_DRIVER=database` is working before testing login.
+- The app already calls `trustProxies(at: '*')` in `bootstrap/app.php`, so `X-Forwarded-Proto` and other forwarded headers are trusted automatically — no extra config needed.
 
 ---
 

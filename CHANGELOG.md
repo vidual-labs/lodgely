@@ -12,6 +12,8 @@ semantic-ish versioning once a 1.0 is tagged.
 - Added `package-lock.json` so `npm ci` works in clean Docker/CI environments.
 - Removed `imap`, `imap-dev`, `krb5-dev` and the `docker-php-ext-configure imap` step from the Dockerfile; PHP 8.4 dropped the `imap` extension from its bundled set, causing `docker build` to fail. The IMAP email driver is optional (default `LODGELY_EMAIL_IMPORT_DRIVER=mock`) — see the config reference for how to enable it with a custom image.
 - Added `trustProxies(at: '*')` in `bootstrap/app.php` so Laravel correctly reads forwarded HTTPS headers from reverse proxies (Cloudflare, nginx, etc.), fixing 419 CSRF errors and broken secure-cookie sessions behind a proxy.
+- Improved Quick start (Docker) docs: added required `.env` keys table, storage permissions step, and a "Behind a reverse proxy / Cloudflare" section explaining `APP_URL`, `SESSION_SECURE_COOKIE`, and proxy trust.
+- Updated `.env.example` with clearer inline comments, safer defaults (`SESSION_DRIVER=file`, `SESSION_SECURE_COOKIE=false`), and explicit `LODGELY_HTTP_PORT` / `LODGELY_HTTPS_PORT` entries so port conflicts are easier to resolve.
 
 ### Added
 
