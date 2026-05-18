@@ -1,7 +1,7 @@
 <x-layouts.guest>
     <div class="w-full max-w-sm">
         <div class="mb-6 text-center">
-            <img src="{{ asset('img/logo.svg') }}"
+            <img src="{{ asset('img/logo.png') }}"
                  alt="{{ config('lodgely.brand.name') }}"
                  class="mx-auto h-14 w-auto rounded-xl shadow-lg">
             <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('Choose a new password') }}</p>
