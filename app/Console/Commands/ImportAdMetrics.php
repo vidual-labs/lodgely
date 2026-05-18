@@ -21,7 +21,7 @@ class ImportAdMetrics extends Command
     {
         $tenantId = Tenant::DEFAULT_ID;
         $platform = $this->option('platform');
-        $days     = max(1, (int) $this->option('days'));
+        $days = max(1, (int) $this->option('days'));
 
         $anchorDate = $this->option('date')
             ? new \DateTimeImmutable($this->option('date'))
@@ -31,11 +31,12 @@ class ImportAdMetrics extends Command
 
         if (empty($sources)) {
             $this->warn('No ad metrics sources registered or matched the platform filter.');
+
             return self::SUCCESS;
         }
 
         $totalInserted = 0;
-        $totalUpdated  = 0;
+        $totalUpdated = 0;
 
         for ($d = $days - 1; $d >= 0; $d--) {
             $date = $anchorDate->modify("-{$d} days");
@@ -43,10 +44,10 @@ class ImportAdMetrics extends Command
             foreach ($sources as $source) {
                 $this->line("→ [{$source->label()}] {$date->format('Y-m-d')}…");
                 $snapshots = $source->fetch($tenantId, $date);
-                $result    = $ingestor->ingest($snapshots, $tenantId);
+                $result = $ingestor->ingest($snapshots, $tenantId);
                 $this->info("  inserted={$result['inserted']} updated={$result['updated']}");
                 $totalInserted += $result['inserted'];
-                $totalUpdated  += $result['updated'];
+                $totalUpdated += $result['updated'];
             }
         }
 
@@ -58,11 +59,22 @@ class ImportAdMetrics extends Command
     /** @return AdMetricsSource[] */
     private function resolveSources(?string $platform): array
     {
+        // `LODGELY_AD_METRICS_SOURCES` is the operator-facing knob for which
+        // adapters actually run — both mocks and the real Meta/Google APIs are
+        // registered, but only those listed here are activated.
+        $enabledKeys = array_values(array_filter(array_map(
+            'trim',
+            (array) config('lodgely.reporting.sources', []),
+        )));
+
         $sources = [];
 
-        foreach (AppServiceProvider::AD_METRICS_SOURCES as $class) {
+        foreach (AppServiceProvider::AD_METRICS_SOURCES as $key => $class) {
+            if ($enabledKeys && ! in_array($key, $enabledKeys, true)) {
+                continue;
+            }
             $source = app($class);
-            if (!$platform || $source->platform() === $platform) {
+            if (! $platform || $source->platform() === $platform) {
                 $sources[] = $source;
             }
         }

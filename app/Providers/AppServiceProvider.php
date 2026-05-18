@@ -11,10 +11,11 @@ use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
 use App\Importers\Email\ImapLeadSource;
 use App\Importers\EmailMock\EmailMockLeadSource;
+use App\Importers\Google\GoogleAdsSource;
 use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
+use App\Importers\Meta\MetaAdsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
-use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\URL;
@@ -29,10 +30,10 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, class-string<LeadSource>>
      */
     public const IMPORTERS = [
-        'csv'         => CsvLeadSource::class,
-        'email_mock'  => EmailMockLeadSource::class,
-        'email_imap'  => ImapLeadSource::class,
-        'manual'      => ManualLeadSource::class,
+        'csv' => CsvLeadSource::class,
+        'email_mock' => EmailMockLeadSource::class,
+        'email_imap' => ImapLeadSource::class,
+        'manual' => ManualLeadSource::class,
     ];
 
     /**
@@ -42,8 +43,10 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, class-string<AdMetricsSource>>
      */
     public const AD_METRICS_SOURCES = [
-        'meta_mock'   => MetaMockAdMetricsSource::class,
+        'meta_mock' => MetaMockAdMetricsSource::class,
         'google_mock' => GoogleMockAdMetricsSource::class,
+        'meta' => MetaAdsSource::class,
+        'google' => GoogleAdsSource::class,
     ];
 
     /**
@@ -54,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public const LLM_PROVIDERS = [
         'openai_compatible' => OpenAiCompatibleProvider::class,
-        'ollama'            => OllamaProvider::class,
+        'ollama' => OllamaProvider::class,
     ];
 
     public function register(): void

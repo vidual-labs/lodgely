@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.14.0-6366F1" alt="Version 0.14.0">
+  <img src="https://img.shields.io/badge/version-0.15.0-6366F1" alt="Version 0.15.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -110,7 +110,7 @@ clean place to *triage* leads before anything else happens, you are at home.
   automatically on each inbox visit.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
-- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads. Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
+- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads, plus live API adapters that pull aggregate campaign metrics from Meta's Marketing API and Google Ads' REST API once credentials are configured (see [Configuration reference](#configuration-reference)). Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
 - 📊 **Custom client reporting views** — operators define named reporting views by selecting any combination of metrics (Leads, Clicks, Impressions, CTR, Ad Spend, Cost per Lead, Platform Leads, etc.) and assign each view to specific client users. Clients see a "My reports" tab page at `/my-reports` with a monthly time-series table showing only their assigned columns. Different clients can see entirely different views — client A might see only Leads and Clicks, client B sees full ad performance metrics. Lead data is always scoped to each client's own leads.
 - 🤖 **AI summaries & lead qualification** *(optional, off by default)* — admins plug in either an OpenAI-compatible API (OpenAI, Together, Groq, LM Studio, …) or a local Ollama endpoint at `/settings/ai`, set a free-text "house style" instruction, and choose which AI tasks to enable. Two kinds in v1: **report-view summaries** (narrative + evaluation + follow-ups on a custom reporting view, aggregate data only) and **lead qualification** (priority recommendation with pseudonymized lead context). Every AI output is a draft that an operator reviews at `/ai/drafts` — approve, reject, regenerate, then share with the client. API keys are stored encrypted; lead-level kinds require an explicit consent toggle; a daily per-tenant cap prevents cost runaway.
 - 📨 **Custom client report emails** — operators compose modular report emails at `/reporting/emails` and either send them now, schedule them as a one-off, or recur them weekly / monthly. Each template picks any combination of: a free-text intro (markdown), the KPI summary strip, the monthly metrics table, and the latest operator-approved AI summary for a reporting view. Recipients are existing Client users (visibility is honoured because the metrics are built against the recipient). Every dispatch writes a `client_report_email_sends` audit row that surfaces as a "Recent sends" history. The `lodgely:report-emails:dispatch` artisan command runs hourly via the scheduler and advances each schedule's `next_run_at`.
@@ -393,6 +393,17 @@ and are listed in the roadmap.
 | `LODGELY_AI_ENABLED` | Master kill-switch for the AI module. When `false`, all AI routes 404, buttons are hidden, and jobs no-op. Per-tenant config at `/settings/ai` only matters when this is true. | `false` |
 | `LODGELY_AI_MAX_CALLS_PER_DAY` | Maximum completed AI generations per tenant per day. `0` disables the cap. | `100` |
 | `LODGELY_AI_TIMEOUT` | HTTP timeout (seconds) for a single LLM provider call. | `60` |
+| `LODGELY_AD_METRICS_SOURCES` | Comma-separated list of ad source adapters to activate. Available: `meta_mock`, `google_mock`, `meta`, `google`. | `meta_mock,google_mock` |
+| `LODGELY_AD_METRICS_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound ad platform API calls. | `30` |
+| `LODGELY_META_ADS_ACCESS_TOKEN` | Meta Marketing API long-lived (system-user) access token. Required when `meta` is in `LODGELY_AD_METRICS_SOURCES`. | — |
+| `LODGELY_META_ADS_ACCOUNT_ID` | Meta ad account id, with or without the `act_` prefix. | — |
+| `LODGELY_META_ADS_API_VERSION` | Graph API version. | `v21.0` |
+| `LODGELY_META_ADS_CURRENCY` | Currency code matching the ad account currency (lodgely stores cents + this code). | `USD` |
+| `LODGELY_GOOGLE_ADS_CLIENT_ID` / `LODGELY_GOOGLE_ADS_CLIENT_SECRET` / `LODGELY_GOOGLE_ADS_REFRESH_TOKEN` | OAuth installed-application credentials. Required when `google` is in `LODGELY_AD_METRICS_SOURCES`. | — |
+| `LODGELY_GOOGLE_ADS_DEVELOPER_TOKEN` | Approved Google Ads API developer token. | — |
+| `LODGELY_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager (MCC) account id. Set only when the OAuth user authenticates via a manager account. | — |
+| `LODGELY_GOOGLE_ADS_CUSTOMER_ID` | Target Google Ads account id (digits only or hyphenated). | — |
+| `LODGELY_GOOGLE_ADS_API_VERSION` | Google Ads REST API version. | `v18` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |
 

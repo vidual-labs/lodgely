@@ -6,6 +6,31 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Live Meta Ads and Google Ads API adapters.** Two new ad metrics sources
+  ship alongside the existing mocks: `MetaAdsSource` (Marketing API
+  `/act_{id}/insights`, campaign-level only) and `GoogleAdsSource` (REST
+  `googleAds:search` over a GAQL campaign query, OAuth refresh-token flow
+  with the access token cached for 55 minutes). Both adapters implement
+  the existing `AdMetricsSource` contract and feed `MetricsIngestor`
+  unchanged — aggregate metrics only, no PII leaves either platform.
+  Activate by setting `LODGELY_AD_METRICS_SOURCES=meta,google` and
+  providing the relevant credentials (`LODGELY_META_ADS_ACCESS_TOKEN`,
+  `LODGELY_META_ADS_ACCOUNT_ID`, `LODGELY_GOOGLE_ADS_CLIENT_ID`,
+  `LODGELY_GOOGLE_ADS_CLIENT_SECRET`, `LODGELY_GOOGLE_ADS_REFRESH_TOKEN`,
+  `LODGELY_GOOGLE_ADS_DEVELOPER_TOKEN`, `LODGELY_GOOGLE_ADS_CUSTOMER_ID`,
+  optional `LODGELY_GOOGLE_ADS_LOGIN_CUSTOMER_ID`). Mocks remain the
+  default for demo installs.
+
+### Changed
+
+- **`lodgely:import:ad-metrics` now honours `LODGELY_AD_METRICS_SOURCES`.**
+  The command previously fanned out across every registered adapter; it
+  now filters to the comma-separated list of source keys in
+  `config('lodgely.reporting.sources')`. This is what the env var was
+  always advertised to do, but the wiring was missing.
+
 ### Fixed
 
 - **HTML sanitization on report email intro text.** `ReportEmailComposer` now
