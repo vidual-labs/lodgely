@@ -10,6 +10,7 @@ semantic-ish versioning once a 1.0 is tagged.
 
 - Bumped Docker base image from `php:8.3-fpm-alpine` to `php:8.4-fpm-alpine` to match the PHP 8.4 requirement of the locked Symfony 8.x dependencies; composer install now succeeds without errors.
 - Added `package-lock.json` so `npm ci` works in clean Docker/CI environments.
+- Removed `imap`, `imap-dev`, `krb5-dev` and the `docker-php-ext-configure imap` step from the Dockerfile; PHP 8.4 dropped the `imap` extension from its bundled set, causing `docker build` to fail. The IMAP email driver is optional (default `LODGELY_EMAIL_IMPORT_DRIVER=mock`) — see the config reference for how to enable it with a custom image.
 
 ### Added
 
