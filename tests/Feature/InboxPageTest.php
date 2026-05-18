@@ -286,6 +286,73 @@ class InboxPageTest extends TestCase
         $this->assertNull($hers->fresh()->called_at);
     }
 
+    public function test_column_picker_defaults_differ_for_clients_and_operators(): void
+    {
+        $op = $this->operator();
+        $client = $this->clientFor('Acme');
+
+        $opPicks = Livewire::actingAs($op)->test(InboxPage::class)->get('pickedColumns');
+        $clientPicks = Livewire::actingAs($client)->test(InboxPage::class)->get('pickedColumns');
+
+        $this->assertContains('client', $opPicks, 'Operators get the client column by default');
+        $this->assertNotContains('client', $clientPicks, 'Clients drop the client column (redundant)');
+        $this->assertContains('outreach', $clientPicks);
+    }
+
+    public function test_toggling_a_column_persists_to_user_preferences(): void
+    {
+        $client = $this->clientFor('Acme');
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('togglePickedColumn', 'phone')
+            ->call('saveColumnPicker');
+
+        $stored = $client->fresh()->inbox_columns;
+        $this->assertIsArray($stored);
+        $this->assertContains('phone', $stored['columns']);
+    }
+
+    public function test_column_picker_enforces_total_cap(): void
+    {
+        $client = $this->clientFor('Acme');
+        $cmp = Livewire::actingAs($client)->test(InboxPage::class);
+
+        // Add columns until cap is reached
+        foreach (['phone', 'campaign', 'form', 'platform'] as $col) {
+            $cmp->call('togglePickedColumn', $col);
+        }
+
+        $picked = $cmp->get('pickedColumns');
+        $this->assertLessThanOrEqual(
+            InboxPage::MAX_TOTAL_COLUMNS,
+            count($picked),
+            'Picked columns should never exceed MAX_TOTAL_COLUMNS'
+        );
+    }
+
+    public function test_custom_question_columns_render_answers_from_leads_in_scope(): void
+    {
+        $client = $this->clientFor('Acme');
+        Lead::factory()->meta()->create([
+            'client_name' => 'Acme',
+            'custom_answers' => [
+                ['question' => 'Event size', 'answer' => 'Large'],
+            ],
+        ]);
+
+        $cmp = Livewire::actingAs($client)->test(InboxPage::class);
+
+        $this->assertContains('Event size', $cmp->viewData('availableQuestions'));
+
+        $cmp->call('togglePickedQuestion', 'Event size')
+            ->call('saveColumnPicker');
+
+        $stored = $client->fresh()->inbox_columns;
+        $this->assertContains('Event size', $stored['questions']);
+        $this->assertContains('Event size', $cmp->viewData('activeQuestions'));
+    }
+
     public function test_add_note_creates_a_note_and_writes_an_audit_event(): void
     {
         $op = $this->operator();
