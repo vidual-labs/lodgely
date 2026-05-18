@@ -8,6 +8,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **GitHub Actions CI workflow.** `.github/workflows/ci.yml` runs on every
+  push to `main` and on every pull request: installs composer deps on
+  PHP 8.3 (with composer cache) and runs the full `vendor/bin/phpunit`
+  suite against the in-memory SQLite config in `phpunit.xml`. No
+  external services, no matrix — one green check per PR. (Pint is
+  intentionally left out for now; the codebase isn't Pint-clean and
+  enforcing it would block every PR until a separate formatting pass.)
+
 - **Live Meta Ads and Google Ads API adapters.** Two new ad metrics sources
   ship alongside the existing mocks: `MetaAdsSource` (Marketing API
   `/act_{id}/insights`, campaign-level only) and `GoogleAdsSource` (REST
