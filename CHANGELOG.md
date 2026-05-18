@@ -6,6 +6,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **HTML sanitization on report email intro text.** `ReportEmailComposer` now
+  runs `strip_tags()` with an explicit allowlist over the CommonMark-rendered
+  intro HTML before passing it to the email view, preventing any script or
+  unsafe tags from reaching `{!! $data['intro_html'] !!}` in the Blade template.
+- **Webhook endpoint tenant scoping.** `WebhooksPage::toggleActive()`,
+  `delete()`, and `revealToken()` now scope `WebhookEndpoint` lookups to
+  `Tenant::DEFAULT_ID`, ensuring an authenticated operator cannot manipulate
+  endpoints belonging to another tenant.
+
 ### Added
 
 - **Password recovery and per-user profile page (v0.14.0).** Public
