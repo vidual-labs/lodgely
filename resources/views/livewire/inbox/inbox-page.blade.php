@@ -255,7 +255,7 @@
                         <th class="px-3 py-2 w-[140px]">{{ __('Source') }}</th>
                         <th class="px-3 py-2 w-[120px]">{{ __('Status') }}</th>
                         <th class="px-3 py-2 w-[110px]">{{ __('Priority') }}</th>
-                        <th class="px-3 py-2 w-[80px]"></th>
+                        <th class="px-3 py-2 w-[140px] text-right">{{ __('Outreach') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -299,10 +299,24 @@
                                 </span>
                             </td>
                             <td class="px-3 py-2 text-right">
-                                @if($lead->duplicate_flag)
-                                    <span aria-label="{{ __('Potential duplicate') }}" title="{{ __('Potential duplicate') }}"
-                                          class="inline-flex items-center rounded bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 ring-1 ring-rose-600/20 dark:ring-rose-500/30">DUP</span>
-                                @endif
+                                <div class="inline-flex items-center gap-1">
+                                    @if($lead->qualified_at)
+                                        <span aria-label="{{ __('Qualified') }}" title="{{ __('Qualified · :when', ['when' => $lead->qualified_at->format('Y-m-d H:i')]) }}"
+                                              class="inline-flex items-center rounded bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20 dark:ring-emerald-500/30">Q</span>
+                                    @endif
+                                    @if($lead->called_at)
+                                        <span aria-label="{{ __('Called') }}" title="{{ __('Called · :when', ['when' => $lead->called_at->format('Y-m-d H:i')]) }}"
+                                              class="inline-flex items-center rounded bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-400 ring-1 ring-sky-600/20 dark:ring-sky-500/30">C</span>
+                                    @endif
+                                    @if($lead->mailed_at)
+                                        <span aria-label="{{ __('Mailed') }}" title="{{ __('Mailed · :when', ['when' => $lead->mailed_at->format('Y-m-d H:i')]) }}"
+                                              class="inline-flex items-center rounded bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-600/20 dark:ring-indigo-500/30">M</span>
+                                    @endif
+                                    @if($lead->duplicate_flag)
+                                        <span aria-label="{{ __('Potential duplicate') }}" title="{{ __('Potential duplicate') }}"
+                                              class="inline-flex items-center rounded bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 ring-1 ring-rose-600/20 dark:ring-rose-500/30">DUP</span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

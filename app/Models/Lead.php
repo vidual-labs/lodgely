@@ -20,10 +20,11 @@ class Lead extends Model
         'client_name', 'campaign_name',
         'full_name', 'email', 'phone',
         'email_normalized', 'phone_normalized',
-        'message', 'raw_payload',
+        'message', 'raw_payload', 'custom_answers',
         'status', 'priority',
         'duplicate_flag', 'duplicate_of_id',
         'retention_until',
+        'qualified_at', 'called_at', 'mailed_at',
         'meta_lead_id',
         'ad_id', 'ad_name',
         'adset_id', 'adset_name',
@@ -36,9 +37,13 @@ class Lead extends Model
     {
         return [
             'raw_payload'     => 'array',
+            'custom_answers'  => 'array',
             'duplicate_flag'  => 'boolean',
             'is_organic'      => 'boolean',
             'retention_until' => 'datetime',
+            'qualified_at'    => 'datetime',
+            'called_at'       => 'datetime',
+            'mailed_at'       => 'datetime',
             'status'          => LeadStatus::class,
             'priority'        => LeadPriority::class,
         ];

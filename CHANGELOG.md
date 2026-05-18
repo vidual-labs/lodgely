@@ -6,6 +6,33 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Meta Lead Ads sample data and "Meta-aware" lead detail view.** The lead
+  detail panel now renders three additional sections when applicable:
+  *Ad source* (platform, organic/paid badge, campaign / adset / ad / form
+  names), *Custom questions* (Q&A pairs as they came back from the lead
+  form), and *Outreach* (Qualified / Called / Mailed pill toggles). The
+  outreach pills are settable by **clients** themselves — the request comes
+  from the in-tool worker, not from the upstream lead source — and clicking
+  a pill toggles a timestamped state that also surfaces as `Q` / `C` / `M`
+  badges on the inbox row. Each toggle writes a `lead.outreach_toggled`
+  audit event.
+- **Database migration** `2026_05_18_000220_add_meta_lead_view_fields_to_leads_table`
+  adds `custom_answers` (JSONB), `qualified_at`, `called_at` and
+  `mailed_at` (timestamps) plus tenant-scoped indexes on the three
+  outreach columns. Backward compatible — all columns nullable.
+- **Seeder coverage for Meta leads.** `LeadFactory::meta()` state populates
+  a realistic ad / adset / form combination, a Meta lead ID, platform
+  (Facebook / Instagram), an organic-vs-paid flag, and 2–4 randomized
+  custom-question answers drawn from a pool of plausible Lead Ads
+  questions. `DatabaseSeeder` now creates six Meta leads per demo client
+  (Northwind Studio, Acme Wellness) and pre-marks a handful as
+  qualified / called / mailed so both client logins land on a populated,
+  Meta-aware inbox out of the box.
+- **`meta_ads` source label** added to the inbox source filter ("Meta Lead
+  Ads"). Existing labels unchanged.
+
 ### Changed
 
 - **Footer GitHub link target is now hardcoded** to `https://github.com/vidual-labs/lodgely` and no longer reads `LODGELY_GITHUB_URL` from the environment. The link is part of GPL-3.0 source-attribution for the project and should not be a deployment-time toggle. Forks are free to change the constant in `config/lodgely.php`. Removed `LODGELY_GITHUB_URL` from `.env.example`.

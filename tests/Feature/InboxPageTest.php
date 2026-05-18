@@ -234,6 +234,58 @@ class InboxPageTest extends TestCase
         $this->assertNotNull($lead->retention_until, 'LeadIngestor must set retention_until');
     }
 
+    public function test_client_can_toggle_outreach_fields_on_visible_lead(): void
+    {
+        $client = $this->clientFor('Acme');
+        $lead = Lead::factory()->create(['client_name' => 'Acme']);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('toggleOutreach', $lead->id, 'called_at');
+
+        $lead->refresh();
+        $this->assertNotNull($lead->called_at, 'Client should be able to set called_at');
+        $this->assertNull($lead->qualified_at);
+        $this->assertNull($lead->mailed_at);
+        $this->assertSame(
+            1,
+            LeadEvent::where('lead_id', $lead->id)->where('type', 'lead.outreach_toggled')->count()
+        );
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('toggleOutreach', $lead->id, 'called_at');
+
+        $this->assertNull($lead->fresh()->called_at, 'Toggling again clears the timestamp');
+    }
+
+    public function test_toggle_outreach_rejects_unknown_field(): void
+    {
+        $client = $this->clientFor('Acme');
+        $own = Lead::factory()->create(['client_name' => 'Acme']);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('toggleOutreach', $own->id, 'status')
+            ->assertStatus(422);
+
+        $this->assertNull($own->fresh()->called_at);
+    }
+
+    public function test_toggle_outreach_cannot_touch_leads_outside_client_scope(): void
+    {
+        $client = $this->clientFor('Acme');
+        $hers = Lead::factory()->create(['client_name' => 'Other']);
+
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('toggleOutreach', $hers->id, 'called_at');
+
+        $this->assertNull($hers->fresh()->called_at);
+    }
+
     public function test_add_note_creates_a_note_and_writes_an_audit_event(): void
     {
         $op = $this->operator();
