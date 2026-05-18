@@ -38,7 +38,11 @@ class InboxPage extends Component
         'email_imap' => 'Email (IMAP)',
         'manual' => 'Manual',
         'webhook' => 'Webhook',
+        'meta_ads' => 'Meta Lead Ads',
     ];
+
+    /** Outreach toggle fields — settable by clients and operators alike. */
+    private const OUTREACH_FIELDS = ['qualified_at', 'called_at', 'mailed_at'];
 
     public ?int $selectedLeadId = null;
 
@@ -117,6 +121,27 @@ class InboxPage extends Component
         $audit->record($lead, 'lead.priority_changed', [
             'from' => $previous,
             'to' => $priority->value,
+        ]);
+    }
+
+    /**
+     * Toggle one of the client-driven outreach fields (qualified / called /
+     * mailed). Both operators and clients may call this — these fields
+     * represent in-tool activity, not data from the upstream source.
+     */
+    public function toggleOutreach(int $leadId, string $field, AuditLogger $audit): void
+    {
+        abort_unless(in_array($field, self::OUTREACH_FIELDS, true), 422);
+
+        $lead = $this->guardedLead($leadId);
+
+        $previous = $lead->{$field};
+        $lead->{$field} = $previous ? null : now();
+        $lead->save();
+
+        $audit->record($lead, 'lead.outreach_toggled', [
+            'field' => $field,
+            'set'   => $previous === null,
         ]);
     }
 

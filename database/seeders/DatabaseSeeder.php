@@ -58,6 +58,32 @@ class DatabaseSeeder extends Seeder
         // Neutral demo leads spread across sources, statuses and clients.
         Lead::factory()->count(60)->create();
 
+        // Meta Lead Ads sample set — six per demo client so both client
+        // logins land on a populated, varied Meta inbox showing custom
+        // questions, ad/adset/form attribution and outreach state.
+        foreach (['Northwind Studio', 'Acme Wellness'] as $clientName) {
+            Lead::factory()->count(6)->meta()->create(['client_name' => $clientName]);
+        }
+
+        // Mark a couple of Meta leads as already qualified / called / mailed
+        // so the client view shows the outreach toggles in their "on" state
+        // immediately after seeding.
+        Lead::query()
+            ->where('source', 'meta_ads')
+            ->orderBy('id')
+            ->limit(4)
+            ->get()
+            ->each(function (Lead $l, int $i): void {
+                $l->qualified_at = now()->subDays($i + 1);
+                if ($i % 2 === 0) {
+                    $l->called_at = now()->subDays($i)->subHours(2);
+                }
+                if ($i % 3 === 0) {
+                    $l->mailed_at = now()->subDays($i)->subHours(1);
+                }
+                $l->save();
+            });
+
         // Two clear duplicates so the UI feature is visible out of the box.
         $primary = Lead::factory()->create([
             'full_name' => 'Jordan Bennett',

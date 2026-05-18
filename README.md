@@ -65,7 +65,16 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 🧹 **Duplicate detection** — leads with a matching normalized email or
   phone are flagged automatically; you can re-check on demand.
 - 📝 **Side-panel review** — open any lead, change status & priority,
-  add notes, see the audit trail.
+  add notes, see the audit trail. For Meta Lead Ads leads the panel also
+  shows the ad-source attribution (platform, organic/paid, campaign,
+  adset, ad and form names) and the form's custom-question answers — so
+  clients can see at a glance *where* a lead came from and what they said.
+- ✅ **Outreach state (Qualified / Called / Mailed)** — three timestamped
+  pill toggles on every lead, settable by both operators and clients,
+  with corresponding `Q` / `C` / `M` badges on the inbox row. The
+  toggles represent activity inside lodgely (not data from the upstream
+  lead source) and write a `lead.outreach_toggled` audit event so the
+  history is preserved.
 - 📂 **CSV importer** — common header names recognized (`name`, `email`,
   `phone`, `message`, `client`, `campaign`). Up to 10k rows per file.
 - ✉️ **Email importer** — mock generator for demos, plus a real IMAP backend
