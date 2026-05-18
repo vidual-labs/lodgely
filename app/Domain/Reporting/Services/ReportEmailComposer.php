@@ -91,7 +91,7 @@ class ReportEmailComposer
             'recipient'  => $recipient,
             'period'     => $period,
             'intro_html' => $email->intro_markdown
-                ? Str::markdown($email->intro_markdown)
+                ? strip_tags(Str::markdown($email->intro_markdown), '<p><br><strong><em><ul><ol><li><a><h1><h2><h3><h4><blockquote><code><pre>')
                 : null,
             'columns'    => $columns,
             'rows'       => $rows,

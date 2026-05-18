@@ -71,14 +71,14 @@ class WebhooksPage extends Component
     public function toggleActive(int $id): void
     {
         $this->guardOperator();
-        $endpoint = WebhookEndpoint::findOrFail($id);
+        $endpoint = WebhookEndpoint::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($id);
         $endpoint->update(['is_active' => ! $endpoint->is_active]);
     }
 
     public function delete(int $id): void
     {
         $this->guardOperator();
-        WebhookEndpoint::findOrFail($id)->delete();
+        WebhookEndpoint::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($id)->delete();
         if ($this->revealedId === $id) {
             $this->revealedId = null;
         }
@@ -88,6 +88,8 @@ class WebhooksPage extends Component
     public function revealToken(int $id): void
     {
         $this->guardOperator();
+        // Only toggle reveal for endpoints this tenant owns
+        WebhookEndpoint::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($id);
         $this->revealedId = ($this->revealedId === $id) ? null : $id;
     }
 
