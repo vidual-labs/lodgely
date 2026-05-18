@@ -382,7 +382,7 @@ and are listed in the roadmap.
 | `APP_URL`  | Public URL of the install | `http://localhost:8080` |
 | `LODGELY_BRAND_NAME` / `LODGELY_BRAND_TAGLINE` | Optional white-label-ish strings (still under the lodgely identity) | `lodgely` / `Lead intake, unified.` |
 | `LODGELY_CSV_MAX_ROWS` | Hard cap on rows ingested per CSV | `10000` |
-| `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
+| `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` | Note: the `imap` driver requires the PHP `imap` extension. PHP 8.4 removed it from the bundled set; extend the Dockerfile with `pecl install imap` if you need it. |
 | `LODGELY_IMAP_HOST` | IMAP server hostname (activates real email backend) | — |
 | `LODGELY_IMAP_PORT` | IMAP port | `993` |
 | `LODGELY_IMAP_ENCRYPTION` | `ssl`, `tls`, or `notls` | `ssl` |
