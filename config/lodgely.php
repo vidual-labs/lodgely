@@ -29,7 +29,10 @@ return [
     'brand' => [
         'name' => env('LODGELY_BRAND_NAME', 'lodgely'),
         'tagline' => env('LODGELY_BRAND_TAGLINE', 'Lead intake, unified.'),
-        'github_url' => env('LODGELY_GITHUB_URL', 'https://github.com/vidual-labs/lodgely'),
+        // Hardcoded on purpose: lodgely is GPL-3.0, and the footer link to the
+        // upstream source repository is part of preserving attribution. Forks may
+        // edit this value in their own copy, but it must not be a deploy-time toggle.
+        'github_url' => 'https://github.com/vidual-labs/lodgely',
     ],
 
     'importers' => [
