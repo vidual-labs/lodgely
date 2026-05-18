@@ -10,7 +10,7 @@ semantic-ish versioning once a 1.0 is tagged.
 
 - **GitHub Actions CI workflow.** `.github/workflows/ci.yml` runs on every
   push to `main` and on every pull request: installs composer deps on
-  PHP 8.3 (with composer cache) and runs the full `vendor/bin/phpunit`
+  PHP 8.4 (with composer cache) and runs the full `vendor/bin/phpunit`
   suite against the in-memory SQLite config in `phpunit.xml`. No
   external services, no matrix — one green check per PR. (Pint is
   intentionally left out for now; the codebase isn't Pint-clean and
