@@ -6,6 +6,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Roomier inputs and selects.** Text inputs, selects and textareas now
+  get explicit `0.5rem` block / `0.75rem` inline padding via global CSS
+  in `resources/css/app.css`, instead of relying on browser defaults
+  which felt cramped next to the `text-sm` font used throughout the app.
+  No view changes — applies everywhere automatically.
+
 ### Added
 
 - **Per-user inbox column picker.** A new "Columns" button in the filter

@@ -29,6 +29,15 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* Native form elements — give inputs/selects breathing room.
+   Browser defaults are too tight for the text-sm font used across the app. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]),
+select,
+textarea {
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem;
+}
+
 /* Dark mode native form elements — avoids repeating dark: on every input */
 .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
 .dark select,
