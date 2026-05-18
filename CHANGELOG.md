@@ -6,6 +6,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bumped Docker base image from `php:8.3-fpm-alpine` to `php:8.4-fpm-alpine` to match the PHP 8.4 requirement of the locked Symfony 8.x dependencies; composer install now succeeds without errors.
+- Added `package-lock.json` so `npm ci` works in clean Docker/CI environments.
+
 ### Added
 
 - **GitHub Actions CI workflow.** `.github/workflows/ci.yml` runs on every

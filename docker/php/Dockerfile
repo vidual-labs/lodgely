@@ -1,5 +1,5 @@
 # Lean PHP-FPM image for lodgely. Tuned for small home-server / single-VPS use.
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_NO_INTERACTION=1
