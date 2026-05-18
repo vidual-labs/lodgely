@@ -117,6 +117,15 @@ clean place to *triage* leads before anything else happens, you are at home.
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded
   automatically on each inbox visit.
+- 🧱 **Per-user column picker** — a "Columns" panel in the filter bar lets each
+  user toggle which fields the inbox table renders (`name`, `email`, `phone`,
+  `client`, `source`, `campaign`, `form`, `platform`, `status`, `priority`,
+  `outreach`). Picks are persisted to `users.inbox_columns`. The picker also
+  auto-discovers questions present in the user's leads' `custom_answers` and
+  offers each as a column — clients whose Meta form asks "Event size" can
+  promote it to its own column. Capped at 7 columns total (3 custom-question
+  columns max) to keep the table readable. Defaults are role-aware: operators
+  see `client`, clients drop it as redundant.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
 - 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads, plus live API adapters that pull aggregate campaign metrics from Meta's Marketing API and Google Ads' REST API once credentials are configured (see [Configuration reference](#configuration-reference)). Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.

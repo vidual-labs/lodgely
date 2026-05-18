@@ -11,6 +11,7 @@ use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
 use App\Domain\Leads\Services\LeadKpis;
 use App\Livewire\Inbox\Concerns\WithBulkLeadActions;
+use App\Livewire\Inbox\Concerns\WithColumnPicker;
 use App\Livewire\Inbox\Concerns\WithLeadFilters;
 use App\Livewire\Inbox\Concerns\WithManualLeadForm;
 use App\Livewire\Inbox\Concerns\WithSavedFilters;
@@ -27,6 +28,7 @@ use Livewire\WithPagination;
 class InboxPage extends Component
 {
     use WithBulkLeadActions;
+    use WithColumnPicker;
     use WithLeadFilters;
     use WithManualLeadForm;
     use WithPagination;
@@ -60,6 +62,8 @@ class InboxPage extends Component
         if (! request()->hasAny(self::FILTER_URL_KEYS)) {
             $this->loadDefaultSavedFilter();
         }
+
+        $this->loadColumnPicker();
     }
 
     public function updating($name): void
@@ -236,6 +240,13 @@ class InboxPage extends Component
                 ->first();
         }
 
+        $availableQuestions = $this->availableQuestionsFor($base);
+
+        // Drop picked questions that no longer have any matching leads
+        // (e.g. retention purge or form removal). Don't persist the trim —
+        // the question might come back. Just hide from this render pass.
+        $activeQuestions = array_values(array_intersect($this->pickedQuestions, $availableQuestions));
+
         return view('livewire.inbox.inbox-page', [
             'leads' => $leads,
             'kpis' => $kpis->compute($base),
@@ -246,6 +257,9 @@ class InboxPage extends Component
             'priorityOptions' => LeadPriority::options(),
             'savedFilters' => $this->userSavedFilters(),
             'leadAiSummary' => $leadAiSummary,
+            'activeColumns' => $this->pickedColumns,
+            'activeQuestions' => $activeQuestions,
+            'availableQuestions' => $availableQuestions,
         ]);
     }
 

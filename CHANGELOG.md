@@ -8,6 +8,32 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Per-user inbox column picker.** A new "Columns" button in the filter
+  bar opens a panel where each user (operator or client) toggles which
+  columns the inbox table renders. Pickable static columns: `name`,
+  `email`, `phone`, `client`, `source`, `campaign`, `form`, `platform`,
+  `status`, `priority`, `outreach`. The `Received` column is always
+  on as the anchor. Picks are persisted to a new `users.inbox_columns`
+  JSONB column (nullable — null = role-based default), so each user
+  carries their layout across sessions and devices.
+- **Custom form-question columns.** The picker also auto-discovers
+  questions present in `custom_answers` across the user's visible leads
+  and offers each as a toggleable column. The cell renders that lead's
+  answer to that exact question, or "—" if absent. Use case: clients
+  whose Meta form asks "Event size" can promote it to its own column
+  alongside the standard fields.
+- **Caps to keep the table readable.** Max 7 picked columns total
+  (combined static + question), max 3 of which can be custom-question
+  columns. Attempts to exceed either cap surface a "limit reached"
+  toast. The picker also offers a one-click "Reset to default" that
+  drops back to the role-based default (operators keep `client`;
+  clients drop it as redundant).
+- **Database migration** `2026_05_18_000230_add_inbox_columns_to_users_table`
+  adds the JSONB column. Backward compatible — existing users land on
+  the role-based default automatically.
+
+
+
 - **Meta Lead Ads sample data and "Meta-aware" lead detail view.** The lead
   detail panel now renders three additional sections when applicable:
   *Ad source* (platform, organic/paid badge, campaign / adset / ad / form

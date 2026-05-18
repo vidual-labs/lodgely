@@ -121,6 +121,8 @@
                 </select>
             </div>
             <div class="flex items-center gap-3">
+                <button type="button" wire:click="openColumnPicker"
+                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
                 @if(!$showSaveDialog)
                     <button type="button" wire:click="openSaveDialog"
                             class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>
@@ -129,6 +131,84 @@
                         class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Clear filters') }}</button>
             </div>
         </div>
+
+        {{-- ── column picker panel ── --}}
+        @if($showColumnPicker)
+            @php
+                $picked = $activeColumns;
+                $pickedQs = $activeQuestions;
+                $total = count($picked) + count($pickedQs);
+                $colLabelsPicker = [
+                    'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
+                    'client' => __('Client'), 'source' => __('Source'),
+                    'campaign' => __('Campaign'), 'form' => __('Form'), 'platform' => __('Platform'),
+                    'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
+                ];
+            @endphp
+            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="text-xs text-slate-600 dark:text-slate-400">
+                        {{ __('Visible columns') }}
+                        <span class="ml-1 text-slate-400 dark:text-slate-500">
+                            ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs">
+                        <button type="button" wire:click="resetColumnPicker"
+                                class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset to default') }}</button>
+                        <button type="button" wire:click="saveColumnPicker"
+                                class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Save') }}</button>
+                        <button type="button" wire:click="closeColumnPicker"
+                                class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">{{ __('Cancel') }}</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
+                        @php $isOn = in_array($key, $picked, true); @endphp
+                        <button type="button"
+                                wire:click="togglePickedColumn('{{ $key }}')"
+                                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors
+                                       {{ $isOn
+                                            ? 'bg-slate-900 text-white ring-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:ring-slate-200'
+                                            : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                            <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                            <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
+                        </button>
+                    @endforeach
+                </div>
+
+                @if(!empty($availableQuestions))
+                    <div>
+                        <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
+                            {{ __('Custom form questions') }}
+                            <span class="ml-1 text-slate-400 dark:text-slate-500">
+                                ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach($availableQuestions as $q)
+                                @php $isOn = in_array($q, $pickedQs, true); @endphp
+                                <button type="button"
+                                        wire:click="togglePickedQuestion(@js($q))"
+                                        title="{{ $q }}"
+                                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors
+                                               {{ $isOn
+                                                    ? 'bg-indigo-600 text-white ring-indigo-600 dark:bg-indigo-500 dark:ring-indigo-500'
+                                                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                    <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                                    <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                        {{ __('No custom-question columns available — leads with form answers will populate this list automatically.') }}
+                    </p>
+                @endif
+            </div>
+        @endif
 
         {{-- ── save-filter inline form ── --}}
         @if($showSaveDialog)
@@ -233,6 +313,30 @@
     @endauth
 
     {{-- ────────────────── table ───────────────── --}}
+    @php
+        $colLabels = [
+            'name'     => __('Name'),
+            'email'    => __('Email'),
+            'phone'    => __('Phone'),
+            'client'   => __('Client'),
+            'source'   => __('Source'),
+            'campaign' => __('Campaign'),
+            'form'     => __('Form'),
+            'platform' => __('Platform'),
+            'status'   => __('Status'),
+            'priority' => __('Priority'),
+            'outreach' => __('Outreach'),
+        ];
+        $colWidths = [
+            'name' => '', 'email' => 'w-[200px]', 'phone' => 'w-[140px]',
+            'client' => 'w-[140px]', 'source' => 'w-[140px]',
+            'campaign' => 'w-[160px]', 'form' => 'w-[160px]', 'platform' => 'w-[110px]',
+            'status' => 'w-[120px]', 'priority' => 'w-[110px]', 'outreach' => 'w-[140px]',
+        ];
+        $visibleCount = 1 /* received */
+            + count($activeColumns) + count($activeQuestions)
+            + (auth()->user()?->isOperator() ? 1 : 0); /* bulk checkbox */
+    @endphp
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700/50">
@@ -250,16 +354,28 @@
                             @endif
                         @endauth
                         <th class="px-3 py-2 w-[160px]">{{ __('Received') }}</th>
-                        <th class="px-3 py-2">{{ __('Contact') }}</th>
-                        <th class="px-3 py-2 w-[140px]">{{ __('Client') }}</th>
-                        <th class="px-3 py-2 w-[140px]">{{ __('Source') }}</th>
-                        <th class="px-3 py-2 w-[120px]">{{ __('Status') }}</th>
-                        <th class="px-3 py-2 w-[110px]">{{ __('Priority') }}</th>
-                        <th class="px-3 py-2 w-[140px] text-right">{{ __('Outreach') }}</th>
+                        @foreach($activeColumns as $col)
+                            <th class="px-3 py-2 {{ $colWidths[$col] ?? '' }} {{ $col === 'outreach' ? 'text-right' : '' }}">
+                                {{ $colLabels[$col] ?? $col }}
+                            </th>
+                        @endforeach
+                        @foreach($activeQuestions as $q)
+                            <th class="px-3 py-2 w-[160px]" title="{{ $q }}">{{ \Illuminate\Support\Str::limit($q, 24) }}</th>
+                        @endforeach
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @forelse($leads as $lead)
+                        @php
+                            // Index this lead's custom answers by question text for O(1) cell lookup.
+                            $answersByQuestion = [];
+                            foreach ((array) $lead->custom_answers as $qa) {
+                                $q = trim((string) ($qa['question'] ?? ''));
+                                if ($q !== '') {
+                                    $answersByQuestion[$q] = (string) ($qa['answer'] ?? '');
+                                }
+                            }
+                        @endphp
                         <tr wire:key="lead-{{ $lead->id }}"
                             wire:click="selectLead({{ $lead->id }})"
                             class="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 {{ $selected?->id === $lead->id ? 'bg-slate-100 dark:bg-slate-800' : '' }}">
@@ -278,50 +394,88 @@
                                 <div>{{ $lead->created_at?->format('Y-m-d H:i') }}</div>
                                 <div class="text-xs text-slate-400 dark:text-slate-500">{{ $lead->created_at?->diffForHumans() }}</div>
                             </td>
-                            <td class="px-3 py-2 text-sm">
-                                <div class="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[280px]">
-                                    {{ $lead->full_name ?? '—' }}
-                                </div>
-                                <div class="text-xs text-slate-500 dark:text-slate-500 truncate max-w-[280px]">
-                                    {{ $lead->email ?? '' }} @if($lead->email && $lead->phone) · @endif {{ $lead->phone }}
-                                </div>
-                            </td>
-                            <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{{ $lead->client_name ?? '—' }}</td>
-                            <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 capitalize">{{ str_replace('_', ' ', $lead->source) }}</td>
-                            <td class="px-3 py-2">
-                                <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->status->badgeClasses() }}">
-                                    {{ $lead->status->label() }}
-                                </span>
-                            </td>
-                            <td class="px-3 py-2">
-                                <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->priority->badgeClasses() }}">
-                                    {{ $lead->priority->label() }}
-                                </span>
-                            </td>
-                            <td class="px-3 py-2 text-right">
-                                <div class="inline-flex items-center gap-1">
-                                    @if($lead->qualified_at)
-                                        <span aria-label="{{ __('Qualified') }}" title="{{ __('Qualified · :when', ['when' => $lead->qualified_at->format('Y-m-d H:i')]) }}"
-                                              class="inline-flex items-center rounded bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20 dark:ring-emerald-500/30">Q</span>
-                                    @endif
-                                    @if($lead->called_at)
-                                        <span aria-label="{{ __('Called') }}" title="{{ __('Called · :when', ['when' => $lead->called_at->format('Y-m-d H:i')]) }}"
-                                              class="inline-flex items-center rounded bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-400 ring-1 ring-sky-600/20 dark:ring-sky-500/30">C</span>
-                                    @endif
-                                    @if($lead->mailed_at)
-                                        <span aria-label="{{ __('Mailed') }}" title="{{ __('Mailed · :when', ['when' => $lead->mailed_at->format('Y-m-d H:i')]) }}"
-                                              class="inline-flex items-center rounded bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-600/20 dark:ring-indigo-500/30">M</span>
-                                    @endif
-                                    @if($lead->duplicate_flag)
-                                        <span aria-label="{{ __('Potential duplicate') }}" title="{{ __('Potential duplicate') }}"
-                                              class="inline-flex items-center rounded bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 ring-1 ring-rose-600/20 dark:ring-rose-500/30">DUP</span>
-                                    @endif
-                                </div>
-                            </td>
+                            @foreach($activeColumns as $col)
+                                @switch($col)
+                                    @case('name')
+                                        <td class="px-3 py-2 text-sm">
+                                            <div class="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[280px]">
+                                                {{ $lead->full_name ?? '—' }}
+                                            </div>
+                                            @if(! in_array('email', $activeColumns, true) && ! in_array('phone', $activeColumns, true))
+                                                <div class="text-xs text-slate-500 dark:text-slate-500 truncate max-w-[280px]">
+                                                    {{ $lead->email ?? '' }} @if($lead->email && $lead->phone) · @endif {{ $lead->phone }}
+                                                </div>
+                                            @endif
+                                        </td>
+                                        @break
+                                    @case('email')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[220px]">{{ $lead->email ?? '—' }}</td>
+                                        @break
+                                    @case('phone')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ $lead->phone ?? '—' }}</td>
+                                        @break
+                                    @case('client')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{{ $lead->client_name ?? '—' }}</td>
+                                        @break
+                                    @case('source')
+                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 capitalize">{{ str_replace('_', ' ', $lead->source) }}</td>
+                                        @break
+                                    @case('campaign')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[180px]" title="{{ $lead->campaign_name }}">{{ $lead->campaign_name ?? '—' }}</td>
+                                        @break
+                                    @case('form')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[180px]" title="{{ $lead->form_name }}">{{ $lead->form_name ?? '—' }}</td>
+                                        @break
+                                    @case('platform')
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 capitalize">{{ $lead->platform ?? '—' }}</td>
+                                        @break
+                                    @case('status')
+                                        <td class="px-3 py-2">
+                                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->status->badgeClasses() }}">
+                                                {{ $lead->status->label() }}
+                                            </span>
+                                        </td>
+                                        @break
+                                    @case('priority')
+                                        <td class="px-3 py-2">
+                                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->priority->badgeClasses() }}">
+                                                {{ $lead->priority->label() }}
+                                            </span>
+                                        </td>
+                                        @break
+                                    @case('outreach')
+                                        <td class="px-3 py-2 text-right">
+                                            <div class="inline-flex items-center gap-1">
+                                                @if($lead->qualified_at)
+                                                    <span aria-label="{{ __('Qualified') }}" title="{{ __('Qualified · :when', ['when' => $lead->qualified_at->format('Y-m-d H:i')]) }}"
+                                                          class="inline-flex items-center rounded bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-600/20 dark:ring-emerald-500/30">Q</span>
+                                                @endif
+                                                @if($lead->called_at)
+                                                    <span aria-label="{{ __('Called') }}" title="{{ __('Called · :when', ['when' => $lead->called_at->format('Y-m-d H:i')]) }}"
+                                                          class="inline-flex items-center rounded bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-400 ring-1 ring-sky-600/20 dark:ring-sky-500/30">C</span>
+                                                @endif
+                                                @if($lead->mailed_at)
+                                                    <span aria-label="{{ __('Mailed') }}" title="{{ __('Mailed · :when', ['when' => $lead->mailed_at->format('Y-m-d H:i')]) }}"
+                                                          class="inline-flex items-center rounded bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 ring-1 ring-indigo-600/20 dark:ring-indigo-500/30">M</span>
+                                                @endif
+                                                @if($lead->duplicate_flag)
+                                                    <span aria-label="{{ __('Potential duplicate') }}" title="{{ __('Potential duplicate') }}"
+                                                          class="inline-flex items-center rounded bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 ring-1 ring-rose-600/20 dark:ring-rose-500/30">DUP</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        @break
+                                @endswitch
+                            @endforeach
+                            @foreach($activeQuestions as $q)
+                                <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[180px]" title="{{ $answersByQuestion[$q] ?? '' }}">
+                                    {{ $answersByQuestion[$q] ?? '—' }}
+                                </td>
+                            @endforeach
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()?->isOperator() ? 8 : 7 }}"
+                            <td colspan="{{ $visibleCount }}"
                                 class="px-3 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                                 {{ __('No leads match these filters yet.') }}
                             </td>
