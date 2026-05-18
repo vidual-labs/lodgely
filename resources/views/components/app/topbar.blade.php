@@ -28,7 +28,7 @@
             <a href="{{ route('inbox') }}" class="flex items-center group shrink-0" aria-label="{{ config('lodgely.brand.name') }}">
                 <img src="{{ asset('img/logo.png') }}"
                      alt="{{ config('lodgely.brand.name') }}"
-                     class="h-8 w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
+                     class="h-10 w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
             </a>
 
             {{-- Desktop nav --}}
