@@ -26,9 +26,12 @@
     <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
         <div class="flex items-center gap-6 min-w-0">
             <a href="{{ route('inbox') }}" class="flex items-center group shrink-0" aria-label="{{ config('lodgely.brand.name') }}">
+                {{-- height set inline so it doesn't depend on Tailwind utilities being present
+                     in the compiled CSS bundle (avoids "wrong size after pulling without npm build"). --}}
                 <img src="{{ asset('img/logo.png') }}"
                      alt="{{ config('lodgely.brand.name') }}"
-                     class="h-10 w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
+                     style="height: 2.5rem;"
+                     class="w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
             </a>
 
             {{-- Desktop nav --}}

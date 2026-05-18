@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- Topbar logo height is now set inline (`style="height: 2.5rem"`) instead of via the Tailwind `h-10` utility. Tailwind v4 only ships classes it can find at build time, so when a deploy pulled the latest blade template without re-running `npm run build`, `h-10` was missing from the compiled CSS bundle and the browser fell back to the image's natural 1774×887 size — the logo filled the page. Inline style sidesteps the build dependency entirely.
+
+
+### Fixed
+
 - Added `'unsafe-eval'` to the `script-src` directive in `SecurityHeaders` middleware. Alpine.js (bundled with Livewire 3) evaluates `x-show`, `@click`, `:class`, etc. via `new Function()`, which the previous CSP blocked — so every Alpine directive silently failed. Symptoms: dropdowns (Reporting / Imports / AI) stuck visible, light/dark toggle inert, several `wire:click` handlers dead.
 - Bumped the topbar brand logo from `h-8` to `h-10` so the wordmark reads cleanly at the topbar's `h-14` row.
 - Removed the manual `alpinejs` import from `resources/js/app.js`. Livewire 3 bundles its own Alpine and starts it automatically; importing Alpine a second time mounted it twice, which left `x-data` dropdowns (Reporting, Imports, AI) permanently open, broke the light/dark theme toggle, and disabled `wire:click` handlers (clicking a lead row in the inbox did nothing).
