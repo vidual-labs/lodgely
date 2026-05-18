@@ -32,6 +32,15 @@ semantic-ish versioning once a 1.0 is tagged.
   Meta-aware inbox out of the box.
 - **`meta_ads` source label** added to the inbox source filter ("Meta Lead
   Ads"). Existing labels unchanged.
+- **`lodgely:import:meta-mock` artisan command** for injecting Meta lead
+  demo data into an existing install without re-running the seeder.
+  Accepts `--count=N` (default 6, per client) and one or more
+  `--client="Name"` flags; if no client is passed, the command spreads the
+  leads across whichever `client_name` values already exist in the DB.
+  Uses `LeadFactory::meta()` so each lead arrives with full ad attribution
+  (campaign / adset / ad / form / platform / organic flag) and 2–4
+  custom-question answers. Dev installs only — `fakerphp/faker` is a
+  `require-dev` dependency.
 
 ### Changed
 

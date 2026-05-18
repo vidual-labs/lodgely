@@ -84,5 +84,6 @@ changelog.
 php artisan migrate --seed                     # bootstrap a demo install
 php artisan lodgely:user:create --role=client  # add a scoped client
 php artisan lodgely:import:email-mock --count=5
+php artisan lodgely:import:meta-mock --count=6 # Meta Lead Ads demo data
 php artisan lodgely:leads:purge --dry-run      # GDPR cleanup, preview only
 ```
