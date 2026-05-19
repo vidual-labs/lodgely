@@ -240,7 +240,7 @@
                                         <td class="py-2 pr-4 text-slate-700 dark:text-slate-300 font-medium">
                                             {{ $col['display'] }}
                                         </td>
-                                        <td class="py-2">
+                                        <td class="py-2 space-y-1.5" x-data>
                                             <select wire:model="detectedColumns.{{ $i }}.field"
                                                     class="block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
                                                 <option value="">— {{ __('skip') }} —</option>
@@ -248,6 +248,13 @@
                                                     <option value="{{ $key }}">{{ $fieldLabel }}</option>
                                                 @endforeach
                                             </select>
+                                            <div x-show="$wire.detectedColumns[{{ $i }}]?.field === 'custom_answer'" x-cloak>
+                                                <input type="text"
+                                                       wire:model="detectedColumns.{{ $i }}.custom_key"
+                                                       placeholder="{{ __('key name, e.g. event_size') }}"
+                                                       class="block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('Stored as this key inside custom answers.') }}</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

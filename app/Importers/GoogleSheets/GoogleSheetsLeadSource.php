@@ -54,10 +54,25 @@ class GoogleSheetsLeadSource implements LeadSource
             array_shift($dataRows);
         }
 
-        $columnMap = is_array($source->column_map) ? $source->column_map : [];
+        $rawMap = is_array($source->column_map) ? $source->column_map : [];
+
+        // Split regular field entries from named custom_answer:* entries.
+        $columnMap = [];
+        $namedAnswerMap = []; // column index (int) => custom_answers key
+        foreach ($rawMap as $indexStr => $fieldValue) {
+            if (str_starts_with((string) $fieldValue, 'custom_answer:')) {
+                $key = substr((string) $fieldValue, strlen('custom_answer:'));
+                if ($key !== '') {
+                    $namedAnswerMap[(int) $indexStr] = $key;
+                }
+            } else {
+                $columnMap[$indexStr] = $fieldValue;
+            }
+        }
 
         $customAnswerKeys = [
             'is_quality', 'is_converted',
+            'created_time',
             'question_01', 'question_02', 'question_03', 'question_04',
             'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
         ];
@@ -72,6 +87,14 @@ class GoogleSheetsLeadSource implements LeadSource
                 }
             }
 
+            // Populate named custom answers (custom_answer:key_name mapping).
+            foreach ($namedAnswerMap as $index => $key) {
+                $value = $row[$index] ?? null;
+                if ($value !== null && $value !== '') {
+                    $customAnswers[$key] = is_string($value) ? $value : (string) $value;
+                }
+            }
+
             yield new IncomingLead(
                 source:        $fields['source']        ?? $this->key(),
                 clientName:    $fields['client_name']   ?? $source->default_client_name,
@@ -81,6 +104,8 @@ class GoogleSheetsLeadSource implements LeadSource
                 phone:         $fields['phone']         ?? null,
                 message:       $fields['message']       ?? null,
                 rawPayload:    $row,
+                metaLeadId:    $fields['lead_id']       ?? null,
+                formId:        $fields['form_id']       ?? null,
                 platform:      $fields['platform']      ?? null,
                 status:        $fields['status']        ?? null,
                 priority:      $fields['priority']      ?? null,

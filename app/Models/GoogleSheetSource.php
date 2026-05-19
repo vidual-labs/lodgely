@@ -77,6 +77,10 @@ class GoogleSheetSource extends Model
             'email'          => 'Email',
             'phone'          => 'Phone',
             'message'        => 'Message',
+            // Identity / source tracking
+            'lead_id'        => 'Lead ID (external)',
+            'form_id'        => 'Form ID',
+            'created_time'   => 'Created time',
             // Assignment
             'client_name'    => 'Client name',
             'campaign_name'  => 'Campaign name',
@@ -103,6 +107,8 @@ class GoogleSheetSource extends Model
             'utm_campaign'   => 'UTM campaign',
             'utm_content'    => 'UTM content',
             'utm_term'       => 'UTM term',
+            // Named custom answer — operator supplies the key
+            'custom_answer'  => 'Custom answer (named key)…',
         ];
     }
 }

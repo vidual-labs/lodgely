@@ -6,6 +6,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Google Sheets column mapping: `lead_id`, `form_id`, `created_time` fields.**
+  Operators can now map sheet columns to the external lead ID (`lead_id` →
+  `meta_lead_id`), form ID (`form_id`), and creation timestamp (`created_time`,
+  stored in `custom_answers`).
+- **Named custom-answer columns.** Selecting "Custom answer (named key)…" in the
+  column-mapping dropdown reveals a key-name text field. The value is stored as
+  `custom_answer:<key>` in `column_map` and surfaces under that key in the
+  lead's `custom_answers` JSON — e.g. mapping a column to `event_size` writes
+  `{"event_size": "Large"}` into `custom_answers`.
+
 ---
 
 ## [0.20.0] · 2026-05-19

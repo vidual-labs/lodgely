@@ -195,9 +195,9 @@ class GoogleSheetsImportPageTest extends TestCase
             ->call('loadColumns')
             ->assertSet('columnsLoaded', true)
             ->assertSet('detectedColumns', [
-                ['index' => 0, 'display' => 'Name',  'field' => 'full_name'],
-                ['index' => 1, 'display' => 'Email', 'field' => 'email'],
-                ['index' => 2, 'display' => 'Phone', 'field' => 'phone'],
+                ['index' => 0, 'display' => 'Name',  'field' => 'full_name', 'custom_key' => ''],
+                ['index' => 1, 'display' => 'Email', 'field' => 'email',     'custom_key' => ''],
+                ['index' => 2, 'display' => 'Phone', 'field' => 'phone',     'custom_key' => ''],
             ]);
     }
 
@@ -216,8 +216,8 @@ class GoogleSheetsImportPageTest extends TestCase
             ->call('loadColumns')
             ->assertSet('columnsLoaded', true)
             ->assertSet('detectedColumns', [
-                ['index' => 0, 'display' => 'Column A', 'field' => ''],
-                ['index' => 1, 'display' => 'Column B', 'field' => ''],
+                ['index' => 0, 'display' => 'Column A', 'field' => '', 'custom_key' => ''],
+                ['index' => 1, 'display' => 'Column B', 'field' => '', 'custom_key' => ''],
             ]);
     }
 
@@ -249,8 +249,8 @@ class GoogleSheetsImportPageTest extends TestCase
             ->call('loadColumns')
             ->assertSet('columnsLoaded', true)
             ->assertSet('detectedColumns', [
-                ['index' => 0, 'display' => 'Name',          'field' => 'full_name'],
-                ['index' => 1, 'display' => 'Email Address', 'field' => 'email'],
+                ['index' => 0, 'display' => 'Name',          'field' => 'full_name', 'custom_key' => ''],
+                ['index' => 1, 'display' => 'Email Address', 'field' => 'email',     'custom_key' => ''],
             ]);
     }
 
