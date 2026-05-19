@@ -84,13 +84,17 @@ clean place to *triage* leads before anything else happens, you are at home.
   any HTTP client can POST JSON leads and they flow through the full ingest
   pipeline instantly.
 - ✍️ **Manual entry** — quick "new lead" modal for phone calls and walk-ins.
-- 📊 **Google Sheets connection** — operators connect a Google account at
-  `/settings/google-sheets` (Imports nav) by entering an OAuth 2.0 client ID
-  and secret and clicking "Connect to Google". Credentials are stored
-  encrypted in the database; no `.env` editing needed. The connection can be
-  tested and disconnected from the same page. Backs the planned
-  Sheets-backed leads source (the `GoogleSheetsClient` service is ready to
-  call `fetchValues($spreadsheetId, $range)`).
+- 📊 **Google Sheets lead source** — configure multiple Google Sheets as
+  recurring lead sources at `/imports/google-sheets` (Imports nav). Each
+  sheet source has its own spreadsheet ID, named range, header-row toggle,
+  per-column field mapping, default client/campaign, refresh interval (hourly
+  to weekly), and active toggle. A "Load columns" button fetches the first
+  row of the sheet and surfaces each header as a labeled dropdown so operators
+  can map columns to lead fields without touching code. "Fetch now" triggers
+  an immediate import and shows a result toast. The scheduler pulls all due
+  sources hourly via `lodgely:google-sheets:fetch`. Google OAuth credentials
+  (client ID + secret, stored encrypted in the DB) are managed at
+  `/settings/google-sheets`.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose
@@ -312,7 +316,8 @@ app/
 │   ├── Inbox/InboxPage      the main UI
 │   │   └── Concerns/        URL filters, saved views, bulk actions,
 │   │                        manual-lead modal (composed via traits)
-│   ├── Imports/*            CSV + email (mock & IMAP) import UIs
+│   ├── Imports/*            CSV + email (mock & IMAP) import UIs;
+│   │                        GoogleSheetsImportPage (sheet sources CRUD)
 │   ├── Reporting/
 │   │   ├── ReportingPage    operator ad spend + campaign rollup dashboard
 │   │   ├── ReportingViewsPage  operator CRUD for client reporting views
@@ -330,7 +335,7 @@ app/
 │                            ClientReportingView, AiSetting, AiSummary,
 │                            AiEvent, ClientReportEmail,
 │                            ClientReportEmailSchedule, ClientReportEmailSend,
-│                            GoogleSheetsSetting
+│                            GoogleSheetsSetting, GoogleSheetSource
 ├── Providers/AppServiceProvider
 └── Support/Audit/           AuditLogger, AiAuditLogger
 ```
@@ -475,7 +480,7 @@ and are listed in the roadmap.
 
 ### Completed
 
-- ~~**Google Sheets OAuth connection**~~ ✓ Done in v0.19.0 — `/settings/google-sheets` settings page where operators enter an OAuth 2.0 client ID/secret and connect a Google account. Credentials stored encrypted in DB. `GoogleSheetsClient` service ready for the planned Sheets-backed leads source.
+- ~~**Google Sheets lead source**~~ ✓ Done in v0.20.0 — `/imports/google-sheets` page where operators configure multiple sheets as recurring lead sources with per-column field mapping, per-sheet refresh interval, "Fetch now" button, and a `lodgely:google-sheets:fetch` hourly cron. OAuth credentials managed at `/settings/google-sheets` (done in v0.19.0).
 - ~~**Password recovery + per-user profile page**~~ ✓ Done in v0.14.0 — public `/forgot-password` flow with rate-limited reset emails, operator "Reset link" action on the `/users` table, and a `/profile` page that lets every role manage their name, email, password, language and theme.
 - ~~**Custom client report emails**~~ ✓ Done in v0.12.0 — `/reporting/emails` for composing modular templates (intro, KPI strip, monthly table, latest approved AI summary), send-now / one-off / weekly / monthly schedules, audited `client_report_email_sends` history, `lodgely:report-emails:dispatch` hourly cron.
 - ~~**Custom client reporting views**~~ ✓ Done in v0.10.0 — `/reporting/views` for operators to define named views and assign per-client column sets, `/my-reports` per-client monthly time-series.
