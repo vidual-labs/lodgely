@@ -52,6 +52,7 @@ trait WithSavedFilters
         ]);
 
         $this->closeSaveDialog();
+        $this->dispatch('inbox-saved-filter-stored');
         $this->dispatch('toast', message: __('Filter saved.'));
     }
 

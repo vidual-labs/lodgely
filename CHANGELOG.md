@@ -6,6 +6,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Inbox toolbar: Columns and Save view are real dropdown menus.** Both buttons
+  now open an Alpine.js dropdown anchored to the trigger (positioned below, right-
+  aligned), rather than expanding a full-width panel below the toolbar. Click
+  outside or press `Escape` closes them. "Save view" is renamed to "Save current
+  view" and gets a clearer form (named field, "Set as my default view" checkbox,
+  `Enter` submits). The dropdown auto-closes after a successful save via a new
+  `inbox-saved-filter-stored` Livewire event (validation errors keep it open).
+
 ### Fixed
 
 - **Inbox toolbar: Columns / Save view / Clear were not clickable.** Livewire's
