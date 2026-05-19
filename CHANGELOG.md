@@ -6,33 +6,9 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
-### Changed
+---
 
-- Inbox custom-question column limit raised from 3 to 5 — operators can now
-  pin up to five custom-answer columns in the inbox table alongside the
-  standard fields.
-
-### Changed
-
-- **Inbox "Received" column is now pickable.** Previously the first column
-  (lead `created_at`) was a fixed anchor; now it's listed alongside the other
-  columns in the column picker. Operators who track a different "date" in
-  custom answers (e.g. a mapped `created_time` from Google Sheets) can hide
-  Received and surface that custom column instead. Total column cap bumped
-  from 7 to 8 to accommodate Received as a default pick.
-
-### Added
-
-- **Delete import** — each row in the "Recent imports" table on the Google Sheets
-  page now has a Delete button. Deleting an import also removes all leads it
-  created (confirmed before proceeding with an exact lead count).
-
-### Fixed
-
-- **"Custom answer (named key)…" key input now appears immediately** when the
-  field dropdown is switched to that option. Changed from Alpine `x-show`
-  (which didn't react to `wire:model` without `.live`) to `wire:model.live`
-  + Blade `@if`, matching the pattern used elsewhere in the codebase.
+## [0.21.0] · 2026-05-19
 
 ### Added
 
@@ -41,9 +17,25 @@ semantic-ish versioning once a 1.0 is tagged.
   `meta_lead_id`), form ID (`form_id`), and creation timestamp (`created_time`,
   stored in `custom_answers`).
 - **Named custom-answer columns.** Selecting "Custom answer (named key)…" in the
-  column-mapping dropdown reveals a key-name text field. The value is stored as
-  `custom_answer:<key>` in `column_map` and surfaces under that key in the
-  lead's `custom_answers` JSON.
+  Google Sheets column-mapping dropdown reveals a key-name text field. The value
+  is stored as `custom_answer:<key>` in `column_map` and surfaces under that key
+  in the lead's `custom_answers` JSON, with the sheet column header used as the
+  question label in the inbox.
+- **Delete import.** Each row in the Google Sheets "Recent imports" table now
+  has a Delete button that removes the Import record and cascades to delete all
+  leads it created (confirmed with an exact lead count before proceeding).
+
+### Changed
+
+- **Inbox "Received" column is now pickable.** The first column (lead
+  `created_at`) was previously a fixed anchor; it's now listed alongside the
+  other columns in the column picker. Operators who track a different date in
+  custom answers (e.g. a mapped `created_time`) can hide Received and surface
+  that custom column instead. Total column cap raised 7 → 8 to accommodate
+  Received as a default pick.
+- **Inbox custom-question column limit raised 3 → 5.** Operators can now pin
+  up to five custom-answer columns in the inbox table alongside the standard
+  fields.
 
 ### Fixed
 
@@ -55,6 +47,10 @@ semantic-ish versioning once a 1.0 is tagged.
   makes UTM tags, `question_01–04`, `is_quality`, `is_converted`, `created_time`
   and operator-named custom answers show up in the inbox column picker under
   "Custom form questions" and in the lead-detail panel.
+- **"Custom answer (named key)…" key input now appears immediately** when the
+  field dropdown is switched to that option. Switched from Alpine `x-show`
+  (which didn't react to `wire:model` without `.live`) to `wire:model.live`
+  + Blade `@if`, matching the pattern used elsewhere in the codebase.
 
 ---
 
