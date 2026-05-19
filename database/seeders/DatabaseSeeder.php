@@ -59,11 +59,18 @@ class DatabaseSeeder extends Seeder
         Lead::factory()->count(60)->create();
 
         // Meta Lead Ads sample set — six per demo client so both client
-        // logins land on a populated, varied Meta inbox showing custom
-        // questions, ad/adset/form attribution and outreach state.
+        // logins land on a populated, varied Meta inbox with ad/adset/form
+        // attribution and outreach state. Seeded leads do NOT carry mock
+        // custom-question answers — real Meta ingestion populates those.
         foreach (['Northwind Studio', 'Acme Wellness'] as $clientName) {
             Lead::factory()->count(6)->meta()->create(['client_name' => $clientName]);
         }
+
+        // Defensive: clear any stale custom_answers left in the DB from
+        // earlier seed runs that used the now-removed mock CUSTOM_QUESTIONS
+        // pool — so the Columns dropdown doesn't surface "What is your
+        // budget?" / "Preferred contact method?" etc on existing dev DBs.
+        Lead::query()->whereNotNull('custom_answers')->update(['custom_answers' => null]);
 
         // Mark a couple of Meta leads as already qualified / called / mailed
         // so the client view shows the outreach toggles in their "on" state
