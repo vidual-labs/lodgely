@@ -1,6 +1,6 @@
 <div class="space-y-6">
-    {{-- ────────────────── header / KPI row ───────────────── --}}
-    <div class="flex flex-col gap-4">
+    {{-- ────────────────── header + KPI toggle ───────────────── --}}
+    <div x-data="{ kpiOpen: false }">
         <div class="flex items-end justify-between gap-4">
             <div>
                 <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">{{ __('Lead inbox') }}</h1>
@@ -15,122 +15,154 @@
                 </p>
             </div>
 
-            @auth
-                @if(auth()->user()->isOperator())
-                    <div class="flex items-center gap-2" wire:ignore.self>
-                        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
-                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                {{ __('Export CSV') }}
-                            </a>
-                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
-                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
-                                {{ __('Export JSON') }}
-                            </a>
+            <div class="flex items-center gap-3">
+                {{-- KPI toggle --}}
+                <button type="button" @click="kpiOpen = !kpiOpen"
+                        class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-1">
+                    <span x-text="kpiOpen ? '{{ __('Hide stats') }}' : '{{ __('Show stats') }}'"></span>
+                    <svg :class="kpiOpen ? 'rotate-180' : ''"
+                         class="w-3 h-3 transition-transform"
+                         viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 4l4 4 4-4"/>
+                    </svg>
+                </button>
+
+                @auth
+                    @if(auth()->user()->isOperator())
+                        <div class="flex items-center gap-2" wire:ignore.self>
+                            <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                                <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    {{ __('Export CSV') }}
+                                </a>
+                                <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
+                                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
+                                    {{ __('Export JSON') }}
+                                </a>
+                            </div>
+                            <button type="button" wire:click="openManualForm"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
+                                + {{ __('New lead') }}
+                            </button>
                         </div>
-                        <button type="button" wire:click="openManualForm"
-                                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
-                            + {{ __('New lead') }}
-                        </button>
-                    </div>
-                @endif
-            @endauth
+                    @endif
+                @endauth
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {{-- KPI strip — hidden by default --}}
+        <div x-show="kpiOpen" x-cloak
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
             <x-kpi-card :label="__('New')"        :value="$kpis['new']"        tone="blue"  />
             <x-kpi-card :label="__('Duplicates')" :value="$kpis['duplicates']" tone="rose"  />
             <x-kpi-card :label="__('Incomplete')" :value="$kpis['incomplete']" tone="amber" />
             <x-kpi-card :label="__('Total')"      :value="$kpis['total']"      tone="slate" />
         </div>
-
-        @if($kpis['by_source']->isNotEmpty())
-            <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm">
-                <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-2">{{ __('Leads by source') }}</div>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($kpis['by_source'] as $row)
-                        <span class="inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
-                            {{ $row->source }}
-                            <span class="text-slate-400 dark:text-slate-500">·</span>
-                            <span>{{ $row->total }}</span>
-                        </span>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     </div>
 
-    {{-- ────────────────── filters ───────────────── --}}
+    {{-- ────────────────── filter bar + sources ───────────────── --}}
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-            <div class="md:col-span-4">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Search') }}</label>
-                <input type="search" wire:model.live.debounce.300ms="search"
-                       placeholder="{{ __('Search name, email, phone, message…') }}"
-                       class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500">
-            </div>
 
-            <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Status') }}</label>
-                <select wire:model.live="status" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">{{ __('All') }}</option>
-                    @foreach($statusOptions as $o)
-                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                    @endforeach
-                </select>
-            </div>
+        {{-- ── toolbar row ── --}}
+        @php
+            $activeFilterCount = (int)($search !== '') + (int)($status !== '')
+                + (int)($priority !== '') + (int)($source !== '') + (int)($client !== '');
+        @endphp
+        <div class="flex flex-wrap items-center gap-2">
 
-            <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Priority') }}</label>
-                <select wire:model.live="priority" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">{{ __('All') }}</option>
-                    @foreach($priorityOptions as $o)
-                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <input type="search" wire:model.live.debounce.300ms="search"
+                   placeholder="{{ __('Search name, email, phone, message…') }}"
+                   class="min-w-[160px] grow rounded-lg border-slate-300 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 px-2.5">
 
-            <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Source') }}</label>
-                <select wire:model.live="source" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">{{ __('All') }}</option>
-                    @foreach($sourceOptions as $o)
-                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <select wire:model.live="status"
+                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                <option value="">{{ __('Status') }}</option>
+                @foreach($statusOptions as $o)
+                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                @endforeach
+            </select>
 
-            <div class="md:col-span-2">
-                <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Client') }}</label>
-                <select wire:model.live="client" class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">{{ __('All') }}</option>
-                    @foreach($clientOptions as $c)
-                        <option value="{{ $c }}">{{ $c }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+            <select wire:model.live="priority"
+                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                <option value="">{{ __('Priority') }}</option>
+                @foreach($priorityOptions as $o)
+                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                @endforeach
+            </select>
 
-        <div class="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <div class="flex items-center gap-3">
-                <span>{{ __('Sort:') }}</span>
-                <select wire:model.live="sort" class="rounded-lg border-slate-300 text-xs focus:border-brand-500 focus:ring-brand-500">
-                    <option value="created_desc">{{ __('Newest first') }}</option>
-                    <option value="created_asc">{{ __('Oldest first') }}</option>
-                    <option value="priority_desc">{{ __('Priority (high→low)') }}</option>
-                </select>
-            </div>
-            <div class="flex items-center gap-3">
+            <select wire:model.live="source"
+                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                <option value="">{{ __('Source') }}</option>
+                @foreach($sourceOptions as $o)
+                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                @endforeach
+            </select>
+
+            @auth
+                @if(auth()->user()->isOperator())
+                    <select wire:model.live="client"
+                            class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                        <option value="">{{ __('Client') }}</option>
+                        @foreach($clientOptions as $c)
+                            <option value="{{ $c }}">{{ $c }}</option>
+                        @endforeach
+                    </select>
+                @endif
+            @endauth
+
+            <select wire:model.live="sort"
+                    class="rounded-lg border-slate-300 text-xs focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7 text-slate-600 dark:text-slate-400">
+                <option value="created_desc">{{ __('Newest first') }}</option>
+                <option value="created_asc">{{ __('Oldest first') }}</option>
+                <option value="priority_desc">{{ __('Priority ↓') }}</option>
+            </select>
+
+            {{-- active-filter count badge --}}
+            @if($activeFilterCount > 0)
+                <span class="inline-flex items-center rounded-full bg-brand-100 dark:bg-brand-900/40 px-2 py-0.5 text-xs font-medium text-brand-600 dark:text-brand-400 ring-1 ring-brand-200 dark:ring-brand-900/60">
+                    {{ $activeFilterCount }}
+                </span>
+            @endif
+
+            {{-- action buttons + lead count --}}
+            <div class="flex items-center gap-2 ml-auto text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none">
+                    {{ number_format($leads->total()) }}&thinsp;{{ trans_choice('lead|leads', $leads->total()) }}
+                </span>
+                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
                 <button type="button" wire:click="openColumnPicker"
-                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
+                        class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
                 @if(!$showSaveDialog)
                     <button type="button" wire:click="openSaveDialog"
-                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>
+                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>
                 @endif
                 <button type="button" wire:click="clearFilters"
-                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Clear filters') }}</button>
+                        class="transition-colors {{ $activeFilterCount > 0
+                            ? 'text-brand-600 dark:text-brand-400 font-medium hover:text-brand-500 dark:hover:text-brand-200'
+                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200' }}">
+                    {{ __('Clear') }}
+                </button>
             </div>
         </div>
+
+        {{-- ── sources row ── --}}
+        @if($kpis['by_source']->isNotEmpty())
+            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 font-medium mr-1">{{ __('Sources:') }}</span>
+                @foreach($kpis['by_source'] as $row)
+                    <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {{ $row->source }}
+                        <span class="font-normal text-slate-400 dark:text-slate-500">{{ $row->total }}</span>
+                    </span>
+                @endforeach
+            </div>
+        @endif
 
         {{-- ── column picker panel ── --}}
         @if($showColumnPicker)

@@ -6,6 +6,23 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Inbox page: leaner UI.** KPI stat cards are now hidden by default behind a
+  "Show stats" toggle (Alpine.js, no server roundtrip). The standalone "Leads by
+  source" panel is merged into the filter bar as a compact source-pill sub-row.
+  The filter bar is condensed to a single compact toolbar row with
+  placeholder-as-label selects instead of a two-row labeled grid. The sort
+  control moves inline. An active-filter count badge, an inline lead count, and a
+  "Clear" button that highlights when filters are active are added to the toolbar.
+
+### Removed
+
+- **`LeadFactory::CUSTOM_QUESTIONS`.** Removed the mock custom-question pool and
+  its usage in the `meta()` factory state. Seeded Meta leads no longer carry
+  synthetic form answers; the rendering path continues to work for real ingested
+  leads.
+
 ---
 
 ## [0.21.0] · 2026-05-19
