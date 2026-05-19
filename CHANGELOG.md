@@ -15,8 +15,18 @@ semantic-ish versioning once a 1.0 is tagged.
 - **Named custom-answer columns.** Selecting "Custom answer (named key)…" in the
   column-mapping dropdown reveals a key-name text field. The value is stored as
   `custom_answer:<key>` in `column_map` and surfaces under that key in the
-  lead's `custom_answers` JSON — e.g. mapping a column to `event_size` writes
-  `{"event_size": "Large"}` into `custom_answers`.
+  lead's `custom_answers` JSON.
+
+### Fixed
+
+- **Google Sheets custom answers now appear in the inbox.** `GoogleSheetsLeadSource`
+  now emits `custom_answers` as a list of `{question, answer}` objects (matching
+  the Meta Lead Ads convention) instead of a flat key-value map. The sheet column
+  header becomes the question label when present; named custom-answer keys fall
+  back to a humanised version of the key (e.g. `event_size` → "Event size"). This
+  makes UTM tags, `question_01–04`, `is_quality`, `is_converted`, `created_time`
+  and operator-named custom answers show up in the inbox column picker under
+  "Custom form questions" and in the lead-detail panel.
 
 ---
 

@@ -185,6 +185,69 @@ class GoogleSheetsLeadSourceTest extends TestCase
         iterator_to_array($source->pull($import));
     }
 
+    public function test_pull_emits_custom_answers_as_question_answer_list(): void
+    {
+        $sheet = $this->makeSheetSource([
+            'column_map' => [
+                '0' => 'full_name',
+                '1' => 'email',
+                '2' => 'utm_source',
+                '3' => 'custom_answer:event_size',
+                '4' => 'question_01',
+            ],
+        ]);
+        $import = $this->makeImport($sheet->id);
+
+        $client = $this->mock(GoogleSheetsClient::class);
+        $client->shouldReceive('fetchValues')->andReturn([
+            ['Name', 'Email', 'UTM Source', 'Event Size', 'Service requested'],
+            ['Alice', 'alice@example.com', 'facebook', 'Large', 'Consultation'],
+        ]);
+
+        $source = new GoogleSheetsLeadSource($client);
+        $leads = iterator_to_array($source->pull($import));
+
+        $this->assertCount(1, $leads);
+
+        $answers = $leads[0]->customAnswers;
+        $this->assertIsArray($answers);
+        // Plain list of {question, answer} objects — shape the inbox expects.
+        $this->assertSame(array_keys($answers[0]), ['question', 'answer']);
+
+        $byQuestion = [];
+        foreach ($answers as $qa) {
+            $byQuestion[$qa['question']] = $qa['answer'];
+        }
+        $this->assertSame('facebook',     $byQuestion['UTM Source']);
+        $this->assertSame('Large',        $byQuestion['Event Size']);
+        $this->assertSame('Consultation', $byQuestion['Service requested']);
+    }
+
+    public function test_pull_uses_humanised_key_when_no_header_row(): void
+    {
+        $sheet = $this->makeSheetSource([
+            'has_header_row' => false,
+            'column_map'     => [
+                '0' => 'full_name',
+                '1' => 'custom_answer:event_size',
+            ],
+        ]);
+        $import = $this->makeImport($sheet->id);
+
+        $client = $this->mock(GoogleSheetsClient::class);
+        $client->shouldReceive('fetchValues')->andReturn([
+            ['Alice', 'Large'],
+        ]);
+
+        $source = new GoogleSheetsLeadSource($client);
+        $leads = iterator_to_array($source->pull($import));
+
+        $this->assertCount(1, $leads);
+        $this->assertSame([
+            ['question' => 'Event size', 'answer' => 'Large'],
+        ], $leads[0]->customAnswers);
+    }
+
     public function test_google_sheet_source_is_due_when_never_fetched(): void
     {
         $sheet = $this->makeSheetSource(['last_fetched_at' => null]);
