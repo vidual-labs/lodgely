@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\LeadExportController;
 use App\Http\Controllers\OAuth\GoogleSheetsOAuthController;
+use App\Livewire\Imports\GoogleSheetsImportPage;
 use App\Livewire\Settings\GoogleSheetsSettingsPage;
 use App\Livewire\Ai\DraftsPage;
 use App\Livewire\Inbox\InboxPage;
@@ -60,7 +61,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/inbox/export',    LeadExportController::class)->name('inbox.export');
     Route::get('/imports/csv',        CsvImportPage::class)->name('imports.csv');
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
-    Route::get('/imports/email-imap', EmailImapImportPage::class)->name('imports.email-imap');
+    Route::get('/imports/email-imap',    EmailImapImportPage::class)->name('imports.email-imap');
+    Route::get('/imports/google-sheets', GoogleSheetsImportPage::class)->name('imports.google-sheets');
     Route::get('/users',           UsersPage::class)->name('users');
     Route::get('/webhooks',        WebhooksPage::class)->name('webhooks');
     Route::get('/reporting',       ReportingPage::class)->name('reporting');

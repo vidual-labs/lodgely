@@ -6,6 +6,34 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+---
+
+## [0.20.0] · 2026-05-19
+
+### Added
+
+- **Google Sheets lead source.** Operators can now configure multiple Google
+  Sheets as recurring lead sources at `/imports/google-sheets`. Each sheet
+  source stores its own spreadsheet ID, range, header-row flag, column
+  mapping, default client/campaign names, refresh interval, and active flag.
+  - **Column mapping UI.** A "Load columns" button fetches the first row of
+    the sheet and surfaces each column by its header name (or letter when no
+    header). Operators assign each column to a lead field via dropdown.
+    Mappings are stored as an index-based JSON map so header renames do not
+    break imports.
+  - **Per-sheet refresh interval.** Choose hourly, every 6/12/24 hours,
+    2 days, or weekly. The `google_sheet_sources` table records
+    `last_fetched_at` so each source skips itself if not yet due.
+  - **"Fetch now" button** in the list view triggers an immediate import and
+    shows the result count as a toast notification.
+  - **`GoogleSheetsLeadSource`** importer registered in `AppServiceProvider`
+    under key `google_sheets`; passes `IncomingLead` DTOs to `LeadIngestor`
+    via the existing `ImportRunner` contract.
+  - **`lodgely:google-sheets:fetch` artisan command** with `--source=<id>`
+    and `--force` flags; scheduled to run hourly via `routes/console.php`.
+  - **`google_sheet_sources` migration** with indexes on
+    `(tenant_id, is_active)`.
+
 ### Fixed
 
 - **Google Sheets redirect URI now uses `APP_URL`** instead of `route()`,
@@ -21,6 +49,9 @@ semantic-ish versioning once a 1.0 is tagged.
   Library, OAuth consent screen, Credentials), a one-click copy button for
   the redirect URI, and an HTTPS warning banner when `APP_URL` is not
   `https://`.
+- **Imports nav** now includes a "Google Sheets" entry pointing to
+  `/imports/google-sheets` and a separate "Google Sheets settings" entry for
+  the OAuth/credential page.
 
 ---
 

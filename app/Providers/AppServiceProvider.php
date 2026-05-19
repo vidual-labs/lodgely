@@ -12,6 +12,7 @@ use App\Importers\Csv\CsvLeadSource;
 use App\Importers\Email\ImapLeadSource;
 use App\Importers\EmailMock\EmailMockLeadSource;
 use App\Importers\Google\GoogleAdsSource;
+use App\Importers\GoogleSheets\GoogleSheetsLeadSource;
 use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
 use App\Importers\Meta\MetaAdsSource;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         'email_mock' => EmailMockLeadSource::class,
         'email_imap' => ImapLeadSource::class,
         'manual' => ManualLeadSource::class,
+        'google_sheets' => GoogleSheetsLeadSource::class,
     ];
 
     /**
