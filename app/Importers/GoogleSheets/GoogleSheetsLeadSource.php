@@ -49,6 +49,10 @@ class GoogleSheetsLeadSource implements LeadSource
             return;
         }
 
+        // Capture the header row (if any) so custom-answer columns can use the
+        // operator's sheet column names as their question labels in the inbox.
+        $headerRow = $source->has_header_row ? ($rows[0] ?? []) : [];
+
         $dataRows = $rows;
         if ($source->has_header_row) {
             array_shift($dataRows);
@@ -70,6 +74,13 @@ class GoogleSheetsLeadSource implements LeadSource
             }
         }
 
+        // Reverse lookup: field key → column index (for resolving the header label
+        // of a fixed custom-answer field like utm_source or question_01).
+        $fieldToIndex = [];
+        foreach ($columnMap as $indexStr => $field) {
+            $fieldToIndex[$field] = (int) $indexStr;
+        }
+
         $customAnswerKeys = [
             'is_quality', 'is_converted',
             'created_time',
@@ -77,22 +88,35 @@ class GoogleSheetsLeadSource implements LeadSource
             'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
         ];
 
+        $leadFieldLabels = GoogleSheetSource::leadFields();
+
         foreach ($dataRows as $row) {
             $fields = $this->applyMap($row, $columnMap);
 
+            // Build custom answers as a list of {question, answer} objects so they
+            // surface in the inbox column picker and lead-detail panel.
             $customAnswers = [];
             foreach ($customAnswerKeys as $key) {
-                if (isset($fields[$key]) && $fields[$key] !== '') {
-                    $customAnswers[$key] = $fields[$key];
+                if (! isset($fields[$key]) || $fields[$key] === '') {
+                    continue;
                 }
+                $customAnswers[] = [
+                    'question' => $this->labelFor($key, $fieldToIndex, $headerRow, $leadFieldLabels),
+                    'answer'   => (string) $fields[$key],
+                ];
             }
 
             // Populate named custom answers (custom_answer:key_name mapping).
             foreach ($namedAnswerMap as $index => $key) {
                 $value = $row[$index] ?? null;
-                if ($value !== null && $value !== '') {
-                    $customAnswers[$key] = is_string($value) ? $value : (string) $value;
+                if ($value === null || $value === '') {
+                    continue;
                 }
+                $header = isset($headerRow[$index]) ? trim((string) $headerRow[$index]) : '';
+                $customAnswers[] = [
+                    'question' => $header !== '' ? $header : $this->humaniseKey($key),
+                    'answer'   => is_string($value) ? $value : (string) $value,
+                ];
             }
 
             yield new IncomingLead(
@@ -115,6 +139,31 @@ class GoogleSheetsLeadSource implements LeadSource
                 customAnswers: $customAnswers ?: null,
             );
         }
+    }
+
+    /**
+     * Question label for a fixed custom-answer field: prefer the operator's
+     * sheet column header, fall back to the static label from leadFields().
+     *
+     * @param  array<string, int>  $fieldToIndex
+     * @param  array<int, mixed>   $headerRow
+     * @param  array<string, string>  $labels
+     */
+    private function labelFor(string $field, array $fieldToIndex, array $headerRow, array $labels): string
+    {
+        if (isset($fieldToIndex[$field], $headerRow[$fieldToIndex[$field]])) {
+            $header = trim((string) $headerRow[$fieldToIndex[$field]]);
+            if ($header !== '') {
+                return $header;
+            }
+        }
+
+        return $labels[$field] ?? $field;
+    }
+
+    private function humaniseKey(string $key): string
+    {
+        return ucfirst(str_replace('_', ' ', $key));
     }
 
     private function isTruthy(?string $value): ?bool
