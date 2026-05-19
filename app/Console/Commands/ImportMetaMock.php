@@ -11,7 +11,7 @@ class ImportMetaMock extends Command
         {--count=6 : Number of Meta lead rows to generate per client}
         {--client=* : One or more client_name values to attribute the leads to}';
 
-    protected $description = 'Generate simulated Meta Lead Ads leads (with ad attribution and custom-question answers). Demo data only — uses fakerphp, dev installs only.';
+    protected $description = 'Generate simulated Meta Lead Ads leads (with ad/adset/form attribution). Demo data only — uses fakerphp, dev installs only.';
 
     public function handle(): int
     {

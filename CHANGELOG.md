@@ -6,6 +6,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Removed
+
+- **Stale mock custom-answers wiped on seed.** `DatabaseSeeder` now nullifies
+  any leftover `custom_answers` rows from earlier runs of the now-removed
+  `CUSTOM_QUESTIONS` factory pool. This stops "What is your budget?",
+  "Preferred contact method?", "When would you like to start?" and friends
+  from surfacing in the Columns dropdown's custom-question list on dev DBs
+  that were seeded before the pool was removed. Re-run `php artisan db:seed`
+  (no need to `migrate:fresh`) to clean up. Updated stale comments and the
+  `lodgely:import:meta-mock` command description accordingly.
+
 ### Changed
 
 - **Inbox toolbar: Columns and Save view are real dropdown menus.** Both buttons
