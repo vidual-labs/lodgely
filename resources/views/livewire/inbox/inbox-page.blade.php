@@ -130,25 +130,35 @@
                 </span>
             @endif
 
-            {{-- action buttons + lead count --}}
-            <div class="flex items-center gap-2 ml-auto text-xs text-slate-500 dark:text-slate-400 shrink-0">
+            {{-- right-side: lead count · Show group · actions --}}
+            <div class="flex items-center gap-x-2 gap-y-1 ml-auto text-xs text-slate-500 dark:text-slate-400 shrink-0 flex-wrap justify-end">
+                {{-- lead count --}}
                 <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none">
                     {{ number_format($leads->total()) }}&thinsp;{{ trans_choice('lead|leads', $leads->total()) }}
                 </span>
+
                 <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+
+                {{-- Show: group (all three always present in the label) --}}
+                <span class="text-slate-400 dark:text-slate-500 select-none">{{ __('Show:') }}</span>
                 @if($kpis['by_source']->isNotEmpty())
                     <button type="button" @click="sourcesOpen = !sourcesOpen"
-                            :class="sourcesOpen ? 'text-slate-700 dark:text-slate-200' : ''"
+                            :class="sourcesOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Sources') }}</button>
+                    <span class="text-slate-200 dark:text-slate-700 select-none">·</span>
                 @endif
                 @if($savedFilters->isNotEmpty())
                     <button type="button" @click="savedOpen = !savedOpen"
-                            :class="savedOpen ? 'text-slate-700 dark:text-slate-200' : ''"
-                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved') }}</button>
+                            :class="savedOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
+                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
+                    <span class="text-slate-200 dark:text-slate-700 select-none">·</span>
                 @endif
-                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
                 <button type="button" wire:click="openColumnPicker"
-                        class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
+                        class="transition-colors {{ $showColumnPicker ? 'text-slate-800 dark:text-slate-100 font-medium' : 'hover:text-slate-900 dark:hover:text-slate-100' }}">{{ __('Columns') }}</button>
+
+                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+
+                {{-- standalone actions --}}
                 @if(!$showSaveDialog)
                     <button type="button" wire:click="openSaveDialog"
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>

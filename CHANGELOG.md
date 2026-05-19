@@ -8,6 +8,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Inbox filter bar: "Show:" group label.** Sources, Saved views, and Columns
+  are now grouped under a `Show:` prefix in the toolbar action row, making their
+  purpose obvious. Columns is always visible (was conditionally hidden by a stray
+  double-separator bug when no sources/saved filters existed). Save view and Clear
+  remain separate after a `|` divider. Active toggles go bold so you can see what's
+  open at a glance.
 - **Inbox filter bar: Sources and Saved toggles moved inline.** Both are now
   plain text buttons in the toolbar's right-side action row (alongside Columns /
   Save view / Clear), removing the separate sub-row toggle headers entirely.
