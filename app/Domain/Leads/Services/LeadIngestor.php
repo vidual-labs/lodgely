@@ -48,6 +48,12 @@ class LeadIngestor
      *   form_name?: ?string,
      *   platform?: ?string,
      *   is_organic?: ?bool,
+     *   status?: LeadStatus|string|null,
+     *   priority?: LeadPriority|string|null,
+     *   is_qualified?: ?bool,
+     *   is_called?: ?bool,
+     *   is_mailed?: ?bool,
+     *   custom_answers?: array<string, mixed>|null,
      * }  $payload
      */
     public function ingest(array $payload, ?Import $import = null, ?int $tenantId = null, ?int $actorId = null): Lead
@@ -103,6 +109,10 @@ class LeadIngestor
                 'duplicate_flag'    => $existingMatchId !== null,
                 'duplicate_of_id'   => $existingMatchId,
                 'retention_until'   => $retentionUntil,
+                'qualified_at'      => ($payload['is_qualified'] ?? false) ? now() : null,
+                'called_at'         => ($payload['is_called']    ?? false) ? now() : null,
+                'mailed_at'         => ($payload['is_mailed']    ?? false) ? now() : null,
+                'custom_answers'    => $payload['custom_answers'] ?? null,
             ]);
 
             $this->audit->record($lead, 'lead.created', [
