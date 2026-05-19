@@ -85,16 +85,21 @@ clean place to *triage* leads before anything else happens, you are at home.
   pipeline instantly.
 - ✍️ **Manual entry** — quick "new lead" modal for phone calls and walk-ins.
 - 📊 **Google Sheets lead source** — configure multiple Google Sheets as
-  recurring lead sources at `/imports/google-sheets` (Imports nav). Each
-  sheet source has its own spreadsheet ID, named range, header-row toggle,
-  per-column field mapping, default client/campaign, refresh interval (hourly
-  to weekly), and active toggle. A "Load columns" button fetches the first
-  row of the sheet and surfaces each header as a labeled dropdown so operators
-  can map columns to lead fields without touching code. "Fetch now" triggers
-  an immediate import and shows a result toast. The scheduler pulls all due
-  sources hourly via `lodgely:google-sheets:fetch`. Google OAuth credentials
-  (client ID + secret, stored encrypted in the DB) are managed at
-  `/settings/google-sheets`.
+  recurring lead sources at `/imports/google-sheets` (Imports nav). Paste the
+  full sheet URL (or just the ID) and the page strips it down automatically.
+  "Load columns" fetches the first row and **auto-maps** recognised headers
+  (`name`, `email`, `phone`, `utm_*`, `created_time`, etc.) — operators review
+  and adjust as needed. 27 mappable lead fields are supported, including the
+  external `lead_id` / `form_id` / `created_time`, status / priority,
+  outreach toggles, UTM attribution, and a free-form **"Custom answer (named
+  key)…"** option that lets operators choose their own key for any extra
+  column (the sheet header becomes the question label in the inbox).
+  Each sheet source has its own refresh interval (hourly to weekly), default
+  client/campaign, and active toggle. "Fetch now" triggers an immediate import
+  and shows a result toast; a Delete button on each import row removes the
+  import and its leads. The scheduler pulls all due sources hourly via
+  `lodgely:google-sheets:fetch`. Google OAuth credentials (client ID + secret,
+  stored encrypted in the DB) are managed at `/settings/google-sheets`.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose
@@ -129,14 +134,16 @@ clean place to *triage* leads before anything else happens, you are at home.
   as chips in the filter bar; one can be starred as the user's default, loaded
   automatically on each inbox visit.
 - 🧱 **Per-user column picker** — a "Columns" panel in the filter bar lets each
-  user toggle which fields the inbox table renders (`name`, `email`, `phone`,
-  `client`, `source`, `campaign`, `form`, `platform`, `status`, `priority`,
-  `outreach`). Picks are persisted to `users.inbox_columns`. The picker also
-  auto-discovers questions present in the user's leads' `custom_answers` and
-  offers each as a column — clients whose Meta form asks "Event size" can
-  promote it to its own column. Capped at 7 columns total (3 custom-question
-  columns max) to keep the table readable. Defaults are role-aware: operators
-  see `client`, clients drop it as redundant.
+  user toggle which fields the inbox table renders (`received`, `name`, `email`,
+  `phone`, `client`, `source`, `campaign`, `form`, `platform`, `status`,
+  `priority`, `outreach`). Picks are persisted to `users.inbox_columns`. The
+  picker also auto-discovers questions present in the user's leads'
+  `custom_answers` and offers each as a column — clients whose Meta form asks
+  "Event size" can promote it to its own column. Capped at 8 columns total
+  (5 custom-question columns max) to keep the table readable. Defaults are
+  role-aware: operators see `client`, clients drop it as redundant. Even
+  `received` is removable — operators tracking a different date in custom
+  answers can swap it for that custom column.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
 - 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads, plus live API adapters that pull aggregate campaign metrics from Meta's Marketing API and Google Ads' REST API once credentials are configured (see [Configuration reference](#configuration-reference)). Run `php artisan lodgely:import:ad-metrics --days=30` to seed demo data. Scheduled to pull yesterday's data daily at 05:00.
