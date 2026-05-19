@@ -195,9 +195,9 @@ class GoogleSheetsImportPageTest extends TestCase
             ->call('loadColumns')
             ->assertSet('columnsLoaded', true)
             ->assertSet('detectedColumns', [
-                ['index' => 0, 'display' => 'Name',  'field' => ''],
-                ['index' => 1, 'display' => 'Email', 'field' => ''],
-                ['index' => 2, 'display' => 'Phone', 'field' => ''],
+                ['index' => 0, 'display' => 'Name',  'field' => 'full_name'],
+                ['index' => 1, 'display' => 'Email', 'field' => 'email'],
+                ['index' => 2, 'display' => 'Phone', 'field' => 'phone'],
             ]);
     }
 

@@ -107,12 +107,18 @@ class GoogleSheetsImportPage extends Component
         $this->columnsLoaded = false;
         $this->detectedColumns = [];
 
-        $spreadsheetId = trim((string) ($this->form['spreadsheet_id'] ?? ''));
+        // Accept a full Google Sheets URL and strip it down to the bare ID.
+        $raw = trim((string) ($this->form['spreadsheet_id'] ?? ''));
+        $spreadsheetId = $this->extractSpreadsheetId($raw);
+        if ($spreadsheetId !== $raw) {
+            $this->form['spreadsheet_id'] = $spreadsheetId;
+        }
+
         $range = trim((string) ($this->form['sheet_range'] ?? 'Sheet1'));
         $hasHeader = (bool) ($this->form['has_header_row'] ?? true);
 
         if ($spreadsheetId === '') {
-            $this->loadError = __('Enter a spreadsheet ID before loading columns.');
+            $this->loadError = __('Enter a spreadsheet ID or URL before loading columns.');
             return;
         }
 
@@ -143,10 +149,16 @@ class GoogleSheetsImportPage extends Component
                 ? (string) ($cell !== '' && $cell !== null ? $cell : 'Column '.$this->indexToLetter($i))
                 : 'Column '.$this->indexToLetter($i);
 
+            // Use saved mapping first; fall back to auto-detection from header text.
+            $field = (string) ($existingMap[(string) $i] ?? '');
+            if ($field === '' && $hasHeader && $cell !== '' && $cell !== null) {
+                $field = $this->autoMapField((string) $cell);
+            }
+
             $this->detectedColumns[] = [
                 'index'   => $i,
                 'display' => $display,
-                'field'   => (string) ($existingMap[(string) $i] ?? ''),
+                'field'   => $field,
             ];
         }
 
@@ -156,6 +168,11 @@ class GoogleSheetsImportPage extends Component
     public function saveSource(): void
     {
         abort_unless(auth()->user()?->isOperator(), 403);
+
+        // Normalise URL → ID in case the user never clicked "Load columns".
+        $this->form['spreadsheet_id'] = $this->extractSpreadsheetId(
+            trim((string) ($this->form['spreadsheet_id'] ?? ''))
+        );
 
         $data = $this->validate([
             'form.label'                => ['required', 'string', 'max:120'],
@@ -279,6 +296,110 @@ class GoogleSheetsImportPage extends Component
                 168 => __('Weekly'),
             ],
         ]);
+    }
+
+    /**
+     * Extract a bare spreadsheet ID from a full Google Sheets URL or return
+     * the input unchanged if it already looks like a plain ID.
+     *
+     * Handles URLs like:
+     *   https://docs.google.com/spreadsheets/d/{ID}/edit#gid=0
+     *   https://docs.google.com/spreadsheets/d/{ID}/edit?usp=sharing
+     */
+    private function extractSpreadsheetId(string $input): string
+    {
+        if (preg_match('|/spreadsheets/d/([a-zA-Z0-9_-]+)|', $input, $m)) {
+            return $m[1];
+        }
+
+        return $input;
+    }
+
+    /**
+     * Best-effort map of a column header string to a lead field key.
+     * Returns '' when no confident match is found.
+     */
+    private function autoMapField(string $header): string
+    {
+        // Normalise: lowercase, collapse non-alphanumeric runs to underscore.
+        $key = strtolower(trim($header));
+        $key = preg_replace('/[^a-z0-9]+/', '_', $key);
+        $key = trim((string) $key, '_');
+
+        $aliases = [
+            // full_name
+            'full_name'           => 'full_name',
+            'name'                => 'full_name',
+            'naam'                => 'full_name',
+            'contact_name'        => 'full_name',
+            // email
+            'email'               => 'email',
+            'e_mail'              => 'email',
+            'email_address'       => 'email',
+            'emailaddress'        => 'email',
+            // phone
+            'phone'               => 'phone',
+            'phone_number'        => 'phone',
+            'telephone'           => 'phone',
+            'tel'                 => 'phone',
+            'mobile'              => 'phone',
+            'cell'                => 'phone',
+            'telefon'             => 'phone',
+            // message
+            'message'             => 'message',
+            'notes'               => 'message',
+            'note'                => 'message',
+            'comment'             => 'message',
+            'comments'            => 'message',
+            'remark'              => 'message',
+            // client_name
+            'client'              => 'client_name',
+            'client_name'         => 'client_name',
+            'account'             => 'client_name',
+            // campaign_name
+            'campaign'            => 'campaign_name',
+            'campaign_name'       => 'campaign_name',
+            // source
+            'source'              => 'source',
+            'lead_source'         => 'source',
+            // platform
+            'platform'            => 'platform',
+            // status
+            'status'              => 'status',
+            'lead_status'         => 'status',
+            'state'               => 'status',
+            // priority
+            'priority'            => 'priority',
+            // outreach toggles
+            'qualified'           => 'is_qualified',
+            'is_qualified'        => 'is_qualified',
+            'called'              => 'is_called',
+            'is_called'           => 'is_called',
+            'mailed'              => 'is_mailed',
+            'is_mailed'           => 'is_mailed',
+            // extra flags
+            'quality'             => 'is_quality',
+            'is_quality'          => 'is_quality',
+            'converted'           => 'is_converted',
+            'is_converted'        => 'is_converted',
+            // custom answers
+            'question_1'          => 'question_01',
+            'question_01'         => 'question_01',
+            'question_2'          => 'question_02',
+            'question_02'         => 'question_02',
+            'question_3'          => 'question_03',
+            'question_03'         => 'question_03',
+            'question_4'          => 'question_04',
+            'question_04'         => 'question_04',
+            // UTM
+            'utm_source'          => 'utm_source',
+            'utm_medium'          => 'utm_medium',
+            'utm_campaign'        => 'utm_campaign',
+            'utm_content'         => 'utm_content',
+            'utm_term'            => 'utm_term',
+        ];
+
+        return $aliases[$key] ?? '';
     }
 
     private function indexToLetter(int $i): string
