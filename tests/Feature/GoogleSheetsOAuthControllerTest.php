@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\GoogleSheetsSetting;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,10 +14,15 @@ class GoogleSheetsOAuthControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+        Tenant::firstOrCreate(['id' => Tenant::DEFAULT_ID], ['slug' => 'default', 'name' => 'lodgely']);
+    }
+
     private function operator(): User
     {
-        Tenant::firstOrCreate(['id' => Tenant::DEFAULT_ID], ['slug' => 'default', 'name' => 'lodgely']);
-
         return User::create([
             'name' => 'Op', 'email' => 'op@example.com', 'password' => Hash::make('p'),
             'role' => 'operator', 'is_active' => true,
@@ -25,29 +31,18 @@ class GoogleSheetsOAuthControllerTest extends TestCase
 
     private function client(): User
     {
-        Tenant::firstOrCreate(['id' => Tenant::DEFAULT_ID], ['slug' => 'default', 'name' => 'lodgely']);
-
         return User::create([
             'name' => 'C', 'email' => 'c@example.com', 'password' => Hash::make('p'),
             'role' => 'client', 'is_active' => true,
         ]);
     }
 
-    private function configureCredentials(): void
+    private function configureDbCredentials(): void
     {
-        config()->set('lodgely.importers.google_sheets', [
-            'client_id' => 'cid',
-            'client_secret' => 'csec',
-            'refresh_token' => '',
-            'scopes' => ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-            'http_timeout_sec' => 30,
-        ]);
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->withoutVite();
+        $row = GoogleSheetsSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->client_id = 'cid';
+        $row->setClientSecret('csec');
+        $row->save();
     }
 
     public function test_connect_requires_authentication(): void
@@ -57,8 +52,6 @@ class GoogleSheetsOAuthControllerTest extends TestCase
 
     public function test_client_role_is_forbidden(): void
     {
-        $this->configureCredentials();
-
         $this->actingAs($this->client())
             ->get('/settings/google-sheets/connect')
             ->assertForbidden();
@@ -66,7 +59,7 @@ class GoogleSheetsOAuthControllerTest extends TestCase
 
     public function test_operator_is_redirected_to_google_consent_with_state(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         $response = $this->actingAs($this->operator())
             ->get('/settings/google-sheets/connect');
@@ -83,47 +76,41 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         $this->assertSame($params['state'], session('google_sheets_oauth_state'));
     }
 
-    public function test_connect_renders_error_view_when_client_id_missing(): void
+    public function test_connect_redirects_with_error_when_client_id_missing(): void
     {
-        config()->set('lodgely.importers.google_sheets', [
-            'client_id' => '',
-            'client_secret' => '',
-            'refresh_token' => '',
-            'scopes' => [],
-            'http_timeout_sec' => 30,
-        ]);
+        GoogleSheetsSetting::forTenant(Tenant::DEFAULT_ID);
 
         $this->actingAs($this->operator())
             ->get('/settings/google-sheets/connect')
-            ->assertOk()
-            ->assertSee('LODGELY_GOOGLE_SHEETS_CLIENT_ID');
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_error');
     }
 
     public function test_callback_rejects_state_mismatch(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         $this->actingAs($this->operator())
             ->withSession(['google_sheets_oauth_state' => 'EXPECTED'])
             ->get('/settings/google-sheets/callback?code=abc&state=WRONG')
-            ->assertOk()
-            ->assertSee('state mismatch', false);
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_error', fn ($v) => str_contains($v, 'state mismatch'));
     }
 
     public function test_callback_rejects_google_error_query(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         $this->actingAs($this->operator())
             ->withSession(['google_sheets_oauth_state' => 'S'])
             ->get('/settings/google-sheets/callback?error=access_denied&state=S')
-            ->assertOk()
-            ->assertSee('access_denied');
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_error', fn ($v) => str_contains($v, 'access_denied'));
     }
 
-    public function test_callback_exchanges_code_and_displays_refresh_token(): void
+    public function test_callback_saves_refresh_token_to_db_and_redirects(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         Http::fake([
             'oauth2.googleapis.com/token' => Http::response([
@@ -136,9 +123,12 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         $this->actingAs($this->operator())
             ->withSession(['google_sheets_oauth_state' => 'STATE-OK'])
             ->get('/settings/google-sheets/callback?code=AUTH_CODE&state=STATE-OK')
-            ->assertOk()
-            ->assertSee('NEW-REFRESH-TOKEN')
-            ->assertSee('LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN=NEW-REFRESH-TOKEN');
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_success');
+
+        $row = GoogleSheetsSetting::forTenant(Tenant::DEFAULT_ID);
+        $this->assertSame('NEW-REFRESH-TOKEN', $row->refreshToken());
+        $this->assertTrue($row->isConnected());
 
         Http::assertSent(function ($request) {
             return str_contains($request->url(), 'oauth2.googleapis.com/token')
@@ -147,9 +137,9 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         });
     }
 
-    public function test_callback_warns_when_no_refresh_token_returned(): void
+    public function test_callback_redirects_with_error_when_no_refresh_token_returned(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         Http::fake([
             'oauth2.googleapis.com/token' => Http::response([
@@ -161,13 +151,13 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         $this->actingAs($this->operator())
             ->withSession(['google_sheets_oauth_state' => 'S'])
             ->get('/settings/google-sheets/callback?code=AUTH_CODE&state=S')
-            ->assertOk()
-            ->assertSee('did not return a refresh token');
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_error', fn ($v) => str_contains($v, 'refresh token'));
     }
 
-    public function test_callback_shows_error_when_token_exchange_fails(): void
+    public function test_callback_redirects_with_error_when_token_exchange_fails(): void
     {
-        $this->configureCredentials();
+        $this->configureDbCredentials();
 
         Http::fake([
             'oauth2.googleapis.com/token' => Http::response(['error' => 'invalid_grant'], 400),
@@ -176,7 +166,7 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         $this->actingAs($this->operator())
             ->withSession(['google_sheets_oauth_state' => 'S'])
             ->get('/settings/google-sheets/callback?code=BAD&state=S')
-            ->assertOk()
-            ->assertSee('Google OAuth code exchange failed (400)');
+            ->assertRedirect(route('settings.google-sheets'))
+            ->assertSessionHas('oauth_error', fn ($v) => str_contains($v, 'code exchange failed'));
     }
 }

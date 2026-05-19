@@ -8,17 +8,20 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
-- **Google Sheets OAuth handshake.** New operator-only flow at
-  `/settings/google-sheets/connect` that walks the installed-app OAuth dance
-  for the Google Sheets v4 API and surfaces the resulting refresh token,
-  ready to be pasted into `.env` as `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN`.
-  Long-lived credentials stay in environment config to match the existing
-  `GoogleAdsSource` pattern. Backed by a new `App\Importers\GoogleSheets\GoogleSheetsClient`
-  service that caches access tokens for 55 minutes and exposes a
-  `fetchValues($spreadsheetId, $range)` helper, ready for the planned
-  Sheets-backed leads source. Configure via `LODGELY_GOOGLE_SHEETS_CLIENT_ID`,
-  `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` and the redirect URI
-  `${APP_URL}/settings/google-sheets/callback`.
+- **Google Sheets settings page.** New operator-only page at
+  `/settings/google-sheets` (reachable from the Imports nav) where operators
+  enter their Google OAuth client ID and secret, click "Connect to Google" to
+  run the consent flow, and disconnect or test the connection — all without
+  touching `.env`. Credentials are stored encrypted in a new
+  `google_sheets_settings` DB table via a `GoogleSheetsSetting` model.
+  The `GoogleSheetsClient` service reads from the DB first (falling back to
+  the legacy `LODGELY_GOOGLE_SHEETS_*` env vars for existing installs).
+  The OAuth callback now saves the refresh token to the DB automatically
+  and redirects back to the settings page with a flash confirmation.
+- **`phpunit.xml` self-contained.** Added `APP_KEY` and
+  `LODGELY_DEFAULT_RETENTION_DAYS` so the test suite runs without a local
+  `.env` file — removes a silent dependency that caused failures in fresh
+  CI environments.
 
 ### Changed
 

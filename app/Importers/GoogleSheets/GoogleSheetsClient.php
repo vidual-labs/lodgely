@@ -2,6 +2,8 @@
 
 namespace App\Importers\GoogleSheets;
 
+use App\Models\GoogleSheetsSetting;
+use App\Models\Tenant;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -9,12 +11,14 @@ use RuntimeException;
 /**
  * Thin client for the Google Sheets v4 REST API.
  *
- * Holds the OAuth + HTTP plumbing in one place so future code (e.g. a leads
- * source backed by a sheet, or an ad-hoc data fetcher) can just call
- * fetchValues() without re-implementing the refresh-token dance.
+ * Credentials are resolved in priority order:
+ *   1. Database row via GoogleSheetsSetting::forTenant() (set through the
+ *      /settings/google-sheets page — preferred).
+ *   2. Env/config fallback via config('lodgely.importers.google_sheets')
+ *      for installs that still use the legacy .env approach.
  *
- * Access tokens are exchanged from a long-lived refresh token and cached for
- * just under the 1 h Google validity window, mirroring GoogleAdsSource.
+ * Access tokens are cached for just under the 1 h Google validity window,
+ * mirroring GoogleAdsSource.
  */
 class GoogleSheetsClient
 {
@@ -196,10 +200,30 @@ class GoogleSheetsClient
     }
 
     /**
+     * Resolve credentials, preferring the DB-backed settings row over the
+     * legacy env/config fallback so that the /settings/google-sheets page
+     * remains the canonical source of truth.
+     *
      * @return array<string, mixed>
      */
     private function config(): array
     {
-        return (array) config('lodgely.importers.google_sheets');
+        $base = (array) config('lodgely.importers.google_sheets');
+
+        try {
+            $row = GoogleSheetsSetting::forTenant(Tenant::DEFAULT_ID);
+
+            if ($row->hasCredentials() || $row->refreshToken() !== null) {
+                return array_merge($base, [
+                    'client_id'     => $row->client_id,
+                    'client_secret' => $row->clientSecret() ?? '',
+                    'refresh_token' => $row->refreshToken() ?? '',
+                ]);
+            }
+        } catch (\Throwable) {
+            // DB not yet migrated (e.g. during artisan migrate runs): fall through.
+        }
+
+        return $base;
     }
 }

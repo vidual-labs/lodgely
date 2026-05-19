@@ -446,8 +446,7 @@ and are listed in the roadmap.
 | `LODGELY_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager (MCC) account id. Set only when the OAuth user authenticates via a manager account. | — |
 | `LODGELY_GOOGLE_ADS_CUSTOMER_ID` | Target Google Ads account id (digits only or hyphenated). | — |
 | `LODGELY_GOOGLE_ADS_API_VERSION` | Google Ads REST API version. | `v18` |
-| `LODGELY_GOOGLE_SHEETS_CLIENT_ID` / `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` | OAuth 2.0 web-application credentials for the Google Sheets API. Authorized redirect URI in Google Cloud Console must match `${APP_URL}/settings/google-sheets/callback`. | — |
-| `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN` | Long-lived refresh token issued by the in-app authorize flow at `/settings/google-sheets/connect`. Paste the value the callback page displays. | — |
+| `LODGELY_GOOGLE_SHEETS_CLIENT_ID` / `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` / `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN` | Legacy env-based fallback for Google Sheets OAuth credentials. Prefer the in-app settings page at `/settings/google-sheets` — credentials entered there are stored encrypted in the DB and take precedence over these env vars. | — |
 | `LODGELY_GOOGLE_SHEETS_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound calls to Google Sheets / OAuth endpoints. | `30` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |

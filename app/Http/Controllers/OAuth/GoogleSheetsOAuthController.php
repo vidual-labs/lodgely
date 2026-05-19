@@ -4,26 +4,26 @@ namespace App\Http\Controllers\OAuth;
 
 use App\Http\Controllers\Controller;
 use App\Importers\GoogleSheets\GoogleSheetsClient;
-use Illuminate\Contracts\View\View;
+use App\Models\GoogleSheetsSetting;
+use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Operator-only flow that walks an installed-app OAuth handshake for the
- * Google Sheets API and surfaces the resulting refresh token, ready to be
- * pasted into `.env` as `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN`.
+ * Operator-only OAuth handshake for the Google Sheets API.
  *
- * lodgely deliberately keeps long-lived credentials in environment config
- * rather than the DB — this matches the existing GoogleAdsSource pattern and
- * keeps secrets out of automated backups.
+ * The resulting refresh token is persisted in the database via
+ * GoogleSheetsSetting, so operators configure credentials entirely through
+ * the /settings/google-sheets UI without touching .env.
  */
 class GoogleSheetsOAuthController extends Controller
 {
     private const STATE_SESSION_KEY = 'google_sheets_oauth_state';
 
-    public function connect(Request $request, GoogleSheetsClient $client): RedirectResponse|View
+    public function connect(Request $request, GoogleSheetsClient $client): RedirectResponse
     {
         abort_unless($request->user()?->isOperator(), 403);
 
@@ -35,13 +35,12 @@ class GoogleSheetsOAuthController extends Controller
 
             return redirect()->away($url);
         } catch (Throwable $e) {
-            return view('oauth.google-sheets.error', [
-                'message' => $e->getMessage(),
-            ]);
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', $e->getMessage());
         }
     }
 
-    public function callback(Request $request, GoogleSheetsClient $client): View
+    public function callback(Request $request, GoogleSheetsClient $client): RedirectResponse
     {
         abort_unless($request->user()?->isOperator(), 403);
 
@@ -49,38 +48,46 @@ class GoogleSheetsOAuthController extends Controller
         $receivedState = (string) $request->query('state', '');
 
         if ($expectedState === null || $expectedState === '' || ! hash_equals($expectedState, $receivedState)) {
-            return view('oauth.google-sheets.error', [
-                'message' => __('OAuth state mismatch. Restart the authorize flow from the beginning.'),
-            ]);
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', __('OAuth state mismatch. Restart the authorize flow from the beginning.'));
         }
 
         if ($error = $request->query('error')) {
-            return view('oauth.google-sheets.error', [
-                'message' => __('Google returned an error: :error', ['error' => (string) $error]),
-            ]);
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', __('Google returned an error: :error', ['error' => (string) $error]));
         }
 
         $code = (string) $request->query('code', '');
         if ($code === '') {
-            return view('oauth.google-sheets.error', [
-                'message' => __('Google did not return an authorization code.'),
-            ]);
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', __('Google did not return an authorization code.'));
         }
 
         try {
             $payload = $client->exchangeAuthorizationCode($code, $this->redirectUri());
         } catch (Throwable $e) {
-            return view('oauth.google-sheets.error', [
-                'message' => $e->getMessage(),
-            ]);
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', $e->getMessage());
         }
 
         $refreshToken = is_string($payload['refresh_token'] ?? null) ? $payload['refresh_token'] : null;
 
-        return view('oauth.google-sheets.callback', [
-            'refreshToken' => $refreshToken,
-            'scope' => (string) ($payload['scope'] ?? ''),
-        ]);
+        if ($refreshToken === null) {
+            return redirect()->route('settings.google-sheets')
+                ->with('oauth_error', __('Google did not return a refresh token. Revoke access at https://myaccount.google.com/permissions and try again.'));
+        }
+
+        $row = GoogleSheetsSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->setRefreshToken($refreshToken);
+        $row->save();
+
+        // Bust the cached access token so the new refresh token takes effect
+        // on the next API call without waiting for the 55-minute window.
+        $cacheKey = 'lodgely.google_sheets.access_token.'.sha1($row->client_id.'|'.$refreshToken);
+        Cache::forget($cacheKey);
+
+        return redirect()->route('settings.google-sheets')
+            ->with('oauth_success', __('Google Sheets connected successfully.'));
     }
 
     private function redirectUri(): string
