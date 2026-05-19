@@ -8,6 +8,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Inbox filter bar: Sources and Saved toggles moved inline.** Both are now
+  plain text buttons in the toolbar's right-side action row (alongside Columns /
+  Save view / Clear), removing the separate sub-row toggle headers entirely.
+  Clicking the name in the toolbar expands/collapses the content panel below.
+- **Pagination dark mode fixed.** Published a custom Tailwind paginator view
+  (`resources/views/vendor/pagination/tailwind.blade.php`) using the app's
+  `slate-*` color tokens and `dark:` variants so page numbers, prev/next buttons,
+  and the active-page indicator all render correctly in dark mode.
 - **Inbox filter bar: Sources and Saved views are now collapsible.** Both rows
   are hidden by default behind Alpine.js toggle buttons showing the item count
   (e.g. "Sources (3) ▾", "Saved views (2) ▾"). No server roundtrip.
