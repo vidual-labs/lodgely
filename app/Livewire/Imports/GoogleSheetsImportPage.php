@@ -251,6 +251,17 @@ class GoogleSheetsImportPage extends Component
         $this->dispatch('toast', message: __('Sheet source deleted.'), type: 'success');
     }
 
+    public function deleteImport(int $id): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        $import = Import::where('source', 'google_sheets')->findOrFail($id);
+        $deleted = $import->leads()->delete();
+        $import->delete();
+
+        $this->dispatch('toast', message: __('Import deleted — :count leads removed.', ['count' => $deleted]), type: 'success');
+    }
+
     public function toggleActive(int $id): void
     {
         abort_unless(auth()->user()?->isOperator(), 403);

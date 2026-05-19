@@ -8,6 +8,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Delete import** — each row in the "Recent imports" table on the Google Sheets
+  page now has a Delete button. Deleting an import also removes all leads it
+  created (confirmed before proceeding with an exact lead count).
+
+### Fixed
+
+- **"Custom answer (named key)…" key input now appears immediately** when the
+  field dropdown is switched to that option. Changed from Alpine `x-show`
+  (which didn't react to `wire:model` without `.live`) to `wire:model.live`
+  + Blade `@if`, matching the pattern used elsewhere in the codebase.
+
+### Added
+
 - **Google Sheets column mapping: `lead_id`, `form_id`, `created_time` fields.**
   Operators can now map sheet columns to the external lead ID (`lead_id` →
   `meta_lead_id`), form ID (`form_id`), and creation timestamp (`created_time`,
