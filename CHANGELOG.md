@@ -6,6 +6,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Inbox "Received" column is now pickable.** Previously the first column
+  (lead `created_at`) was a fixed anchor; now it's listed alongside the other
+  columns in the column picker. Operators who track a different "date" in
+  custom answers (e.g. a mapped `created_time` from Google Sheets) can hide
+  Received and surface that custom column instead. Total column cap bumped
+  from 7 to 8 to accommodate Received as a default pick.
+
 ### Added
 
 - **Delete import** — each row in the "Recent imports" table on the Google Sheets
