@@ -6,6 +6,26 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Google Sheets redirect URI now uses `APP_URL`** instead of `route()`,
+  so the generated URI always carries the scheme from the operator's
+  configured public address. Previously, when PHP received plain HTTP from
+  a reverse proxy (Caddy, nginx, Cloudflare), the redirect URI was `http://`
+  even on HTTPS sites, causing Google Cloud Console to reject it.
+
+### Changed
+
+- **Google Sheets settings page setup guide** expanded into a numbered
+  step-by-step card with direct links to Google Cloud Console (Sheets API
+  Library, OAuth consent screen, Credentials), a one-click copy button for
+  the redirect URI, and an HTTPS warning banner when `APP_URL` is not
+  `https://`.
+
+---
+
+## [0.19.0] · 2026-05-19
+
 ### Added
 
 - **Google Sheets settings page.** New operator-only page at
@@ -16,86 +36,31 @@ semantic-ish versioning once a 1.0 is tagged.
   `google_sheets_settings` DB table via a `GoogleSheetsSetting` model.
   The `GoogleSheetsClient` service reads from the DB first (falling back to
   the legacy `LODGELY_GOOGLE_SHEETS_*` env vars for existing installs).
-  The OAuth callback now saves the refresh token to the DB automatically
+  The OAuth callback saves the refresh token to the DB automatically
   and redirects back to the settings page with a flash confirmation.
 - **`phpunit.xml` self-contained.** Added `APP_KEY` and
   `LODGELY_DEFAULT_RETENTION_DAYS` so the test suite runs without a local
-  `.env` file — removes a silent dependency that caused failures in fresh
-  CI environments.
+  `.env` file.
+- **Per-user inbox column picker.** A "Columns" button in the filter
+  bar lets each user toggle which columns the inbox table renders. Pickable
+  static columns: `name`, `email`, `phone`, `client`, `source`, `campaign`,
+  `form`, `platform`, `status`, `priority`, `outreach`. Picks are persisted
+  to `users.inbox_columns` (JSONB). The picker also auto-discovers
+  custom-question keys from `custom_answers` across visible leads and offers
+  each as a toggleable column. Capped at 7 total / 3 custom-question columns.
+- **Meta Lead Ads sample data and "Meta-aware" lead detail view.** The lead
+  detail panel renders *Ad source*, *Custom questions*, and *Outreach* sections
+  when applicable. Outreach pills (Qualified / Called / Mailed) are settable
+  by clients and write `lead.outreach_toggled` audit events. New
+  `lodgely:import:meta-mock` artisan command seeds Meta demo data without
+  re-running the full seeder.
 
 ### Changed
 
 - **Roomier inputs and selects.** Text inputs, selects and textareas now
-  get explicit `0.5rem` block / `0.75rem` inline padding via global CSS
-  in `resources/css/app.css`, instead of relying on browser defaults
-  which felt cramped next to the `text-sm` font used throughout the app.
-  No view changes — applies everywhere automatically.
-
-### Added
-
-- **Per-user inbox column picker.** A new "Columns" button in the filter
-  bar opens a panel where each user (operator or client) toggles which
-  columns the inbox table renders. Pickable static columns: `name`,
-  `email`, `phone`, `client`, `source`, `campaign`, `form`, `platform`,
-  `status`, `priority`, `outreach`. The `Received` column is always
-  on as the anchor. Picks are persisted to a new `users.inbox_columns`
-  JSONB column (nullable — null = role-based default), so each user
-  carries their layout across sessions and devices.
-- **Custom form-question columns.** The picker also auto-discovers
-  questions present in `custom_answers` across the user's visible leads
-  and offers each as a toggleable column. The cell renders that lead's
-  answer to that exact question, or "—" if absent. Use case: clients
-  whose Meta form asks "Event size" can promote it to its own column
-  alongside the standard fields.
-- **Caps to keep the table readable.** Max 7 picked columns total
-  (combined static + question), max 3 of which can be custom-question
-  columns. Attempts to exceed either cap surface a "limit reached"
-  toast. The picker also offers a one-click "Reset to default" that
-  drops back to the role-based default (operators keep `client`;
-  clients drop it as redundant).
-- **Database migration** `2026_05_18_000230_add_inbox_columns_to_users_table`
-  adds the JSONB column. Backward compatible — existing users land on
-  the role-based default automatically.
-
-
-
-- **Meta Lead Ads sample data and "Meta-aware" lead detail view.** The lead
-  detail panel now renders three additional sections when applicable:
-  *Ad source* (platform, organic/paid badge, campaign / adset / ad / form
-  names), *Custom questions* (Q&A pairs as they came back from the lead
-  form), and *Outreach* (Qualified / Called / Mailed pill toggles). The
-  outreach pills are settable by **clients** themselves — the request comes
-  from the in-tool worker, not from the upstream lead source — and clicking
-  a pill toggles a timestamped state that also surfaces as `Q` / `C` / `M`
-  badges on the inbox row. Each toggle writes a `lead.outreach_toggled`
-  audit event.
-- **Database migration** `2026_05_18_000220_add_meta_lead_view_fields_to_leads_table`
-  adds `custom_answers` (JSONB), `qualified_at`, `called_at` and
-  `mailed_at` (timestamps) plus tenant-scoped indexes on the three
-  outreach columns. Backward compatible — all columns nullable.
-- **Seeder coverage for Meta leads.** `LeadFactory::meta()` state populates
-  a realistic ad / adset / form combination, a Meta lead ID, platform
-  (Facebook / Instagram), an organic-vs-paid flag, and 2–4 randomized
-  custom-question answers drawn from a pool of plausible Lead Ads
-  questions. `DatabaseSeeder` now creates six Meta leads per demo client
-  (Northwind Studio, Acme Wellness) and pre-marks a handful as
-  qualified / called / mailed so both client logins land on a populated,
-  Meta-aware inbox out of the box.
-- **`meta_ads` source label** added to the inbox source filter ("Meta Lead
-  Ads"). Existing labels unchanged.
-- **`lodgely:import:meta-mock` artisan command** for injecting Meta lead
-  demo data into an existing install without re-running the seeder.
-  Accepts `--count=N` (default 6, per client) and one or more
-  `--client="Name"` flags; if no client is passed, the command spreads the
-  leads across whichever `client_name` values already exist in the DB.
-  Uses `LeadFactory::meta()` so each lead arrives with full ad attribution
-  (campaign / adset / ad / form / platform / organic flag) and 2–4
-  custom-question answers. Dev installs only — `fakerphp/faker` is a
-  `require-dev` dependency.
-
-### Changed
-
-- **Footer GitHub link target is now hardcoded** to `https://github.com/vidual-labs/lodgely` and no longer reads `LODGELY_GITHUB_URL` from the environment. The link is part of GPL-3.0 source-attribution for the project and should not be a deployment-time toggle. Forks are free to change the constant in `config/lodgely.php`. Removed `LODGELY_GITHUB_URL` from `.env.example`.
+  use explicit `0.5rem` block / `0.75rem` inline padding via global CSS.
+- **Footer GitHub link hardcoded** to the upstream repo as part of GPL-3.0
+  attribution; removed the `LODGELY_GITHUB_URL` env toggle.
 
 ### Fixed
 

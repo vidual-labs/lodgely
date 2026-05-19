@@ -84,6 +84,13 @@ clean place to *triage* leads before anything else happens, you are at home.
   any HTTP client can POST JSON leads and they flow through the full ingest
   pipeline instantly.
 - ✍️ **Manual entry** — quick "new lead" modal for phone calls and walk-ins.
+- 📊 **Google Sheets connection** — operators connect a Google account at
+  `/settings/google-sheets` (Imports nav) by entering an OAuth 2.0 client ID
+  and secret and clicking "Connect to Google". Credentials are stored
+  encrypted in the database; no `.env` editing needed. The connection can be
+  tested and disconnected from the same page. Backs the planned
+  Sheets-backed leads source (the `GoogleSheetsClient` service is ready to
+  call `fetchValues($spreadsheetId, $range)`).
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose
@@ -145,13 +152,14 @@ These have architecture seams reserved but are not yet implemented:
 
 ## Tech stack
 
-- PHP 8.3, Laravel 12
+- PHP 8.4, Laravel 12
 - Livewire 3 + Alpine.js, Blade-first server rendering
 - Tailwind CSS 4
 - PostgreSQL 16
 - Caddy 2 (reverse proxy)
 - Database-driver queues (no Redis required)
 - Docker Compose for local + small-VPS deployments
+- Google Sheets v4 REST API + OAuth 2.0 (optional; for the Sheets import source)
 
 A typical lodgely install runs comfortably on ~512 MB RAM.
 
@@ -286,6 +294,7 @@ app/
 │                            AiSummarizer + PromptBuilder + Pseudonymizer
 ├── Http/
 │   ├── Controllers/Auth/    LoginController, PasswordResetController
+│   ├── Controllers/OAuth/   GoogleSheetsOAuthController
 │   ├── Controllers/         WebhookController
 │   └── Middleware/          SetLocale, EnsureAiEnabled, SecurityHeaders
 ├── Importers/
@@ -294,6 +303,7 @@ app/
 │   ├── Email/               ImapLeadSource + MailBodyParser
 │   ├── EmailMock/           EmailMockLeadSource adapter
 │   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
+│   ├── GoogleSheets/        GoogleSheetsClient (OAuth + Sheets v4 API)
 │   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
 ├── Jobs/                    GenerateAiSummary, SendClientReportEmail
@@ -308,8 +318,9 @@ app/
 │   │   ├── ReportingViewsPage  operator CRUD for client reporting views
 │   │   ├── ReportEmailsPage    operator-composed scheduled report emails
 │   │   └── MyReportsPage    per-client monthly reporting tab
-│   ├── Settings/AiSettingsPage  operator AI provider config
-│   ├── Settings/ProfilePage     per-user profile + password change
+│   ├── Settings/AiSettingsPage              operator AI provider config
+│   ├── Settings/GoogleSheetsSettingsPage    Google Sheets OAuth + credential mgmt
+│   ├── Settings/ProfilePage                 per-user profile + password change
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
 ├── Mail/                    ClientReportEmailMessage
@@ -318,7 +329,8 @@ app/
 │                            WebhookEndpoint, AdSpendReport,
 │                            ClientReportingView, AiSetting, AiSummary,
 │                            AiEvent, ClientReportEmail,
-│                            ClientReportEmailSchedule, ClientReportEmailSend
+│                            ClientReportEmailSchedule, ClientReportEmailSend,
+│                            GoogleSheetsSetting
 ├── Providers/AppServiceProvider
 └── Support/Audit/           AuditLogger, AiAuditLogger
 ```
@@ -463,6 +475,7 @@ and are listed in the roadmap.
 
 ### Completed
 
+- ~~**Google Sheets OAuth connection**~~ ✓ Done in v0.19.0 — `/settings/google-sheets` settings page where operators enter an OAuth 2.0 client ID/secret and connect a Google account. Credentials stored encrypted in DB. `GoogleSheetsClient` service ready for the planned Sheets-backed leads source.
 - ~~**Password recovery + per-user profile page**~~ ✓ Done in v0.14.0 — public `/forgot-password` flow with rate-limited reset emails, operator "Reset link" action on the `/users` table, and a `/profile` page that lets every role manage their name, email, password, language and theme.
 - ~~**Custom client report emails**~~ ✓ Done in v0.12.0 — `/reporting/emails` for composing modular templates (intro, KPI strip, monthly table, latest approved AI summary), send-now / one-off / weekly / monthly schedules, audited `client_report_email_sends` history, `lodgely:report-emails:dispatch` hourly cron.
 - ~~**Custom client reporting views**~~ ✓ Done in v0.10.0 — `/reporting/views` for operators to define named views and assign per-client column sets, `/my-reports` per-client monthly time-series.

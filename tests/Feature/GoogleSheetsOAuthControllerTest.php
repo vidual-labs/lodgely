@@ -71,7 +71,10 @@ class GoogleSheetsOAuthControllerTest extends TestCase
         parse_str(parse_url($location, PHP_URL_QUERY), $params);
 
         $this->assertSame('cid', $params['client_id']);
-        $this->assertSame(route('settings.google-sheets.callback'), $params['redirect_uri']);
+        // Redirect URI is built from APP_URL (not route()) so it always
+        // matches the operator's configured public HTTPS address, even when
+        // PHP receives plain HTTP from a reverse proxy.
+        $this->assertSame(rtrim(config('app.url'), '/').'/settings/google-sheets/callback', $params['redirect_uri']);
         $this->assertNotEmpty($params['state']);
         $this->assertSame($params['state'], session('google_sheets_oauth_state'));
     }
