@@ -4,7 +4,7 @@
     $imapEnabled = (bool) config('lodgely.importers.email.imap.host');
 
     // Group memberships so we can highlight a dropdown when any of its children is active
-    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap'];
+    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
 
@@ -71,6 +71,11 @@
                                         {{ __('Email (IMAP)') }}
                                     </a>
                                 @endif
+                                <hr class="my-1 border-slate-100 dark:border-slate-800">
+                                <a href="{{ route('settings.google-sheets') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Google Sheets') }}
+                                </a>
                             </div>
                         </div>
 
@@ -267,6 +272,8 @@
                         <a href="{{ route('imports.email-imap') }}"
                            class="{{ $menuItem }} {{ request()->routeIs('imports.email-imap') ? $menuItemActive : $menuItemIdle }}">{{ __('Email (IMAP)') }}</a>
                     @endif
+                    <a href="{{ route('settings.google-sheets') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">{{ __('Google Sheets') }}</a>
 
                     <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('Reporting') }}</div>
                     <a href="{{ route('reporting') }}"

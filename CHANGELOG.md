@@ -6,6 +6,23 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Google Sheets settings page.** New operator-only page at
+  `/settings/google-sheets` (reachable from the Imports nav) where operators
+  enter their Google OAuth client ID and secret, click "Connect to Google" to
+  run the consent flow, and disconnect or test the connection — all without
+  touching `.env`. Credentials are stored encrypted in a new
+  `google_sheets_settings` DB table via a `GoogleSheetsSetting` model.
+  The `GoogleSheetsClient` service reads from the DB first (falling back to
+  the legacy `LODGELY_GOOGLE_SHEETS_*` env vars for existing installs).
+  The OAuth callback now saves the refresh token to the DB automatically
+  and redirects back to the settings page with a flash confirmation.
+- **`phpunit.xml` self-contained.** Added `APP_KEY` and
+  `LODGELY_DEFAULT_RETENTION_DAYS` so the test suite runs without a local
+  `.env` file — removes a silent dependency that caused failures in fresh
+  CI environments.
+
 ### Changed
 
 - **Roomier inputs and selects.** Text inputs, selects and textareas now

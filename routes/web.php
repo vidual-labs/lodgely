@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\LeadExportController;
+use App\Http\Controllers\OAuth\GoogleSheetsOAuthController;
+use App\Livewire\Settings\GoogleSheetsSettingsPage;
 use App\Livewire\Ai\DraftsPage;
 use App\Livewire\Inbox\InboxPage;
 use App\Livewire\Imports\CsvImportPage;
@@ -70,4 +72,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings/ai', AiSettingsPage::class)->name('settings.ai');
         Route::get('/ai/drafts',   DraftsPage::class)->name('ai.drafts');
     });
+
+    Route::get('/settings/google-sheets', GoogleSheetsSettingsPage::class)->name('settings.google-sheets');
+
+    // Google Sheets OAuth handshake. Operator-only enforcement lives in the
+    // controller; the callback URL must match the redirect URI configured on
+    // the OAuth client in Google Cloud Console.
+    Route::get('/settings/google-sheets/connect',  [GoogleSheetsOAuthController::class, 'connect'])->name('settings.google-sheets.connect');
+    Route::get('/settings/google-sheets/callback', [GoogleSheetsOAuthController::class, 'callback'])->name('settings.google-sheets.callback');
 });
