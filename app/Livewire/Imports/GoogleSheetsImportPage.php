@@ -35,7 +35,8 @@ class GoogleSheetsImportPage extends Component
     public bool $columnsLoaded = false;
 
     /**
-     * Each element: ['index' => int, 'display' => string, 'field' => string]
+     * Each element: ['index' => int, 'display' => string, 'field' => string, 'custom_key' => string]
+     * custom_key is only used when field === 'custom_answer'.
      *
      * @var array<int, array<string, mixed>>
      */
@@ -87,11 +88,18 @@ class GoogleSheetsImportPage extends Component
         // Restore saved column mapping as detectedColumns for display.
         $map = is_array($source->column_map) ? $source->column_map : [];
         $this->detectedColumns = [];
-        foreach ($map as $indexStr => $field) {
+        foreach ($map as $indexStr => $fieldValue) {
+            $field = (string) ($fieldValue ?? '');
+            $customKey = '';
+            if (str_starts_with($field, 'custom_answer:')) {
+                $customKey = substr($field, strlen('custom_answer:'));
+                $field = 'custom_answer';
+            }
             $this->detectedColumns[] = [
-                'index'   => (int) $indexStr,
-                'display' => 'Column '.($this->indexToLetter((int) $indexStr)),
-                'field'   => (string) ($field ?? ''),
+                'index'      => (int) $indexStr,
+                'display'    => 'Column '.($this->indexToLetter((int) $indexStr)),
+                'field'      => $field,
+                'custom_key' => $customKey,
             ];
         }
         $this->columnsLoaded = ! empty($this->detectedColumns);
@@ -150,15 +158,22 @@ class GoogleSheetsImportPage extends Component
                 : 'Column '.$this->indexToLetter($i);
 
             // Use saved mapping first; fall back to auto-detection from header text.
-            $field = (string) ($existingMap[(string) $i] ?? '');
+            $rawField = (string) ($existingMap[(string) $i] ?? '');
+            $customKey = '';
+            if (str_starts_with($rawField, 'custom_answer:')) {
+                $customKey = substr($rawField, strlen('custom_answer:'));
+                $rawField = 'custom_answer';
+            }
+            $field = $rawField;
             if ($field === '' && $hasHeader && $cell !== '' && $cell !== null) {
                 $field = $this->autoMapField((string) $cell);
             }
 
             $this->detectedColumns[] = [
-                'index'   => $i,
-                'display' => $display,
-                'field'   => $field,
+                'index'      => $i,
+                'display'    => $display,
+                'field'      => $field,
+                'custom_key' => $customKey,
             ];
         }
 
@@ -189,9 +204,18 @@ class GoogleSheetsImportPage extends Component
         $columnMap = [];
         foreach ($this->detectedColumns as $col) {
             $field = trim((string) ($col['field'] ?? ''));
-            if ($field !== '') {
-                $columnMap[(string) $col['index']] = $field;
+            if ($field === '') {
+                continue;
             }
+            if ($field === 'custom_answer') {
+                $key = preg_replace('/[^a-z0-9_]/', '_', strtolower(trim((string) ($col['custom_key'] ?? ''))));
+                $key = trim((string) $key, '_');
+                if ($key === '') {
+                    continue; // skip unnamed custom answer columns
+                }
+                $field = 'custom_answer:'.$key;
+            }
+            $columnMap[(string) $col['index']] = $field;
         }
 
         $payload = [
@@ -397,6 +421,16 @@ class GoogleSheetsImportPage extends Component
             'utm_campaign'        => 'utm_campaign',
             'utm_content'         => 'utm_content',
             'utm_term'            => 'utm_term',
+            // Identity / tracking
+            'lead_id'             => 'lead_id',
+            'id'                  => 'lead_id',
+            'external_id'         => 'lead_id',
+            'form_id'             => 'form_id',
+            'created_time'        => 'created_time',
+            'created_at'          => 'created_time',
+            'date'                => 'created_time',
+            'submission_date'     => 'created_time',
+            'timestamp'           => 'created_time',
         ];
 
         return $aliases[$key] ?? '';
