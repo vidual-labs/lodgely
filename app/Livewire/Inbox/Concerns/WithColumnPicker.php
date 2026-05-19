@@ -41,7 +41,7 @@ trait WithColumnPicker
     public const MAX_TOTAL_COLUMNS = 8;
 
     /** Sub-cap on custom-question columns so they don't crowd out core fields. */
-    public const MAX_QUESTION_COLUMNS = 3;
+    public const MAX_QUESTION_COLUMNS = 5;
 
     /** @return list<string> */
     protected function defaultPickedColumns(): array

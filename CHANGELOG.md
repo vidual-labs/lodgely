@@ -8,6 +8,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- Inbox custom-question column limit raised from 3 to 5 — operators can now
+  pin up to five custom-answer columns in the inbox table alongside the
+  standard fields.
+
+### Changed
+
 - **Inbox "Received" column is now pickable.** Previously the first column
   (lead `created_at`) was a fixed anchor; now it's listed alongside the other
   columns in the column picker. Operators who track a different "date" in
