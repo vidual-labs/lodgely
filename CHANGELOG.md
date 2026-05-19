@@ -6,6 +6,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Google Sheets redirect URI now uses `APP_URL`** instead of `route()`,
+  so the generated URI always carries the scheme from the operator's
+  configured public address. Previously, when PHP received plain HTTP from
+  a reverse proxy (Caddy, nginx, Cloudflare), the redirect URI was `http://`
+  even on HTTPS sites, causing Google Cloud Console to reject it.
+
+### Changed
+
+- **Google Sheets settings page setup guide** expanded into a numbered
+  step-by-step card with direct links to Google Cloud Console (Sheets API
+  Library, OAuth consent screen, Credentials), a one-click copy button for
+  the redirect URI, and an HTTPS warning banner when `APP_URL` is not
+  `https://`.
+
 ---
 
 ## [0.19.0] · 2026-05-19

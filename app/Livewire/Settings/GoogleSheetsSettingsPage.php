@@ -113,8 +113,13 @@ class GoogleSheetsSettingsPage extends Component
 
     public function render(): View
     {
+        $appUrl = rtrim((string) config('app.url'), '/');
+        $redirectUri = $appUrl.'/settings/google-sheets/callback';
+
         return view('livewire.settings.google-sheets-settings-page', [
-            'connectUrl' => route('settings.google-sheets.connect'),
+            'connectUrl'  => route('settings.google-sheets.connect'),
+            'redirectUri' => $redirectUri,
+            'appUrlIsHttps' => str_starts_with($appUrl, 'https://'),
             'oauthSuccess' => session('oauth_success'),
             'oauthError'   => session('oauth_error'),
         ]);

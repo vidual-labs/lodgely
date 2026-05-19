@@ -92,6 +92,11 @@ class GoogleSheetsOAuthController extends Controller
 
     private function redirectUri(): string
     {
-        return route('settings.google-sheets.callback');
+        // Build from APP_URL so the scheme always matches the operator's
+        // configured public URL, even when PHP receives plain HTTP from a
+        // reverse proxy (Caddy, nginx, Cloudflare). Using route() would
+        // inherit the proxy-side HTTP scheme and make Google reject the
+        // non-SSL redirect URI.
+        return rtrim((string) config('app.url'), '/').'/settings/google-sheets/callback';
     }
 }
