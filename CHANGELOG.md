@@ -8,6 +8,9 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Inbox filter bar: Sources and Saved views are now collapsible.** Both rows
+  are hidden by default behind Alpine.js toggle buttons showing the item count
+  (e.g. "Sources (3) ▾", "Saved views (2) ▾"). No server roundtrip.
 - **Inbox page: leaner UI.** KPI stat cards are now hidden by default behind a
   "Show stats" toggle (Alpine.js, no server roundtrip). The standalone "Leads by
   source" panel is merged into the filter bar as a compact source-pill sub-row.

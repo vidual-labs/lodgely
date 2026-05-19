@@ -67,7 +67,7 @@
     </div>
 
     {{-- ────────────────── filter bar + sources ───────────────── --}}
-    <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
+    <div x-data="{ sourcesOpen: false, savedOpen: false }" class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
 
         {{-- ── toolbar row ── --}}
         @php
@@ -151,16 +151,29 @@
             </div>
         </div>
 
-        {{-- ── sources row ── --}}
+        {{-- ── sources row (collapsible) ── --}}
         @if($kpis['by_source']->isNotEmpty())
-            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
-                <span class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 font-medium mr-1">{{ __('Sources:') }}</span>
-                @foreach($kpis['by_source'] as $row)
-                    <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                        {{ $row->source }}
-                        <span class="font-normal text-slate-400 dark:text-slate-500">{{ $row->total }}</span>
-                    </span>
-                @endforeach
+            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" @click="sourcesOpen = !sourcesOpen"
+                        class="flex items-center gap-1 text-[11px] uppercase tracking-wide font-medium text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    {{ __('Sources') }}
+                    <span class="tabular-nums">({{ $kpis['by_source']->count() }})</span>
+                    <svg :class="sourcesOpen ? 'rotate-180' : ''" class="w-2.5 h-2.5 transition-transform" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3.5l3 3 3-3"/>
+                    </svg>
+                </button>
+                <div x-show="sourcesOpen" x-cloak
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 -translate-y-0.5"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="mt-1.5 flex flex-wrap gap-1.5">
+                    @foreach($kpis['by_source'] as $row)
+                        <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                            {{ $row->source }}
+                            <span class="font-normal text-slate-400 dark:text-slate-500">{{ $row->total }}</span>
+                        </span>
+                    @endforeach
+                </div>
             </div>
         @endif
 
@@ -266,10 +279,22 @@
             </div>
         @endif
 
-        {{-- ── saved filter chips ── --}}
+        {{-- ── saved filter chips (collapsible) ── --}}
         @if($savedFilters->isNotEmpty())
-            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-wrap items-center gap-2">
-                <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Saved:') }}</span>
+            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" @click="savedOpen = !savedOpen"
+                        class="flex items-center gap-1 text-[11px] uppercase tracking-wide font-medium text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    {{ __('Saved views') }}
+                    <span class="tabular-nums">({{ $savedFilters->count() }})</span>
+                    <svg :class="savedOpen ? 'rotate-180' : ''" class="w-2.5 h-2.5 transition-transform" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3.5l3 3 3-3"/>
+                    </svg>
+                </button>
+                <div x-show="savedOpen" x-cloak
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 -translate-y-0.5"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="mt-1.5 flex flex-wrap items-center gap-2">
                 @foreach($savedFilters as $sf)
                     <span wire:key="sf-{{ $sf->id }}"
                           class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1
@@ -295,6 +320,7 @@
                         </button>
                     </span>
                 @endforeach
+                </div>
             </div>
         @endif
     </div>
