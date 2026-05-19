@@ -139,6 +139,7 @@
                 $pickedQs = $activeQuestions;
                 $total = count($picked) + count($pickedQs);
                 $colLabelsPicker = [
+                    'received' => __('Received'),
                     'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
                     'client' => __('Client'), 'source' => __('Source'),
                     'campaign' => __('Campaign'), 'form' => __('Form'), 'platform' => __('Platform'),
@@ -315,6 +316,7 @@
     {{-- ────────────────── table ───────────────── --}}
     @php
         $colLabels = [
+            'received' => __('Received'),
             'name'     => __('Name'),
             'email'    => __('Email'),
             'phone'    => __('Phone'),
@@ -328,13 +330,13 @@
             'outreach' => __('Outreach'),
         ];
         $colWidths = [
+            'received' => 'w-[160px]',
             'name' => '', 'email' => 'w-[200px]', 'phone' => 'w-[140px]',
             'client' => 'w-[140px]', 'source' => 'w-[140px]',
             'campaign' => 'w-[160px]', 'form' => 'w-[160px]', 'platform' => 'w-[110px]',
             'status' => 'w-[120px]', 'priority' => 'w-[110px]', 'outreach' => 'w-[140px]',
         ];
-        $visibleCount = 1 /* received */
-            + count($activeColumns) + count($activeQuestions)
+        $visibleCount = count($activeColumns) + count($activeQuestions)
             + (auth()->user()?->isOperator() ? 1 : 0); /* bulk checkbox */
     @endphp
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
@@ -353,7 +355,6 @@
                                 </th>
                             @endif
                         @endauth
-                        <th class="px-3 py-2 w-[160px]">{{ __('Received') }}</th>
                         @foreach($activeColumns as $col)
                             <th class="px-3 py-2 {{ $colWidths[$col] ?? '' }} {{ $col === 'outreach' ? 'text-right' : '' }}">
                                 {{ $colLabels[$col] ?? $col }}
@@ -390,12 +391,14 @@
                                     </td>
                                 @endif
                             @endauth
-                            <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                <div>{{ $lead->created_at?->format('Y-m-d H:i') }}</div>
-                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ $lead->created_at?->diffForHumans() }}</div>
-                            </td>
                             @foreach($activeColumns as $col)
                                 @switch($col)
+                                    @case('received')
+                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                            <div>{{ $lead->created_at?->format('Y-m-d H:i') }}</div>
+                                            <div class="text-xs text-slate-400 dark:text-slate-500">{{ $lead->created_at?->diffForHumans() }}</div>
+                                        </td>
+                                        @break
                                     @case('name')
                                         <td class="px-3 py-2 text-sm">
                                             <div class="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[280px]">

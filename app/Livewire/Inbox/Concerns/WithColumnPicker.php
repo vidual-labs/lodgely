@@ -27,16 +27,18 @@ trait WithColumnPicker
 
     /**
      * All static columns available to the picker, in display order.
-     * "received" is always rendered as the anchor column and is not pickable.
+     * "received" maps to leads.created_at; picking a custom-question column
+     * (e.g. a mapped `created_time`) lets operators replace it with their own.
      */
     public const AVAILABLE_COLUMNS = [
+        'received',
         'name', 'email', 'phone',
         'client', 'source', 'campaign', 'form', 'platform',
         'status', 'priority', 'outreach',
     ];
 
     /** Hard cap on combined picks (static + question). Keeps the table readable. */
-    public const MAX_TOTAL_COLUMNS = 7;
+    public const MAX_TOTAL_COLUMNS = 8;
 
     /** Sub-cap on custom-question columns so they don't crowd out core fields. */
     public const MAX_QUESTION_COLUMNS = 3;
@@ -47,10 +49,10 @@ trait WithColumnPicker
         $user = auth()->user();
         if ($user && $user->isClient()) {
             // Clients only ever see one client_name — no point in a Client column.
-            return ['name', 'email', 'source', 'status', 'priority', 'outreach'];
+            return ['received', 'name', 'email', 'source', 'status', 'priority', 'outreach'];
         }
 
-        return ['name', 'client', 'source', 'status', 'priority', 'outreach'];
+        return ['received', 'name', 'client', 'source', 'status', 'priority', 'outreach'];
     }
 
     protected function loadColumnPicker(): void
