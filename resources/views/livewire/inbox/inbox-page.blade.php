@@ -131,15 +131,15 @@
             @endif
 
             {{-- right-side: lead count · Show group · actions --}}
-            <div class="flex items-center gap-x-2 gap-y-1 ml-auto text-xs text-slate-500 dark:text-slate-400 shrink-0 flex-wrap justify-end">
+            <div class="flex flex-wrap items-center justify-end gap-2 ml-auto text-xs text-slate-500 dark:text-slate-400 shrink-0">
                 {{-- lead count --}}
                 <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none">
                     {{ number_format($leads->total()) }}&thinsp;{{ trans_choice('lead|leads', $leads->total()) }}
                 </span>
 
-                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+                <span class="text-slate-200 dark:text-slate-700 select-none px-0.5">|</span>
 
-                {{-- Show: group (all three always present in the label) --}}
+                {{-- Show: group --}}
                 <span class="text-slate-400 dark:text-slate-500 select-none">{{ __('Show:') }}</span>
                 @if($kpis['by_source']->isNotEmpty())
                     <button type="button" @click="sourcesOpen = !sourcesOpen"
@@ -153,22 +153,26 @@
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
                     <span class="text-slate-200 dark:text-slate-700 select-none">·</span>
                 @endif
-                <button type="button" wire:click="openColumnPicker"
-                        class="transition-colors {{ $showColumnPicker ? 'text-slate-800 dark:text-slate-100 font-medium' : 'hover:text-slate-900 dark:hover:text-slate-100' }}">{{ __('Columns') }}</button>
+                <button type="button" wire:key="inbox-btn-columns" wire:click="openColumnPicker"
+                        @class([
+                            'transition-colors',
+                            'text-slate-800 dark:text-slate-100 font-medium' => $showColumnPicker,
+                            'hover:text-slate-900 dark:hover:text-slate-100' => !$showColumnPicker,
+                        ])>{{ __('Columns') }}</button>
 
-                <span class="text-slate-200 dark:text-slate-700 select-none">|</span>
+                <span class="text-slate-200 dark:text-slate-700 select-none px-0.5">|</span>
 
                 {{-- standalone actions --}}
                 @if(!$showSaveDialog)
-                    <button type="button" wire:click="openSaveDialog"
+                    <button type="button" wire:key="inbox-btn-save-view" wire:click="openSaveDialog"
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save view') }}</button>
                 @endif
-                <button type="button" wire:click="clearFilters"
-                        class="transition-colors {{ $activeFilterCount > 0
-                            ? 'text-brand-600 dark:text-brand-400 font-medium hover:text-brand-500 dark:hover:text-brand-200'
-                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200' }}">
-                    {{ __('Clear') }}
-                </button>
+                <button type="button" wire:key="inbox-btn-clear" wire:click="clearFilters"
+                        @class([
+                            'transition-colors',
+                            'text-brand-600 dark:text-brand-400 font-medium hover:text-brand-500 dark:hover:text-brand-200' => $activeFilterCount > 0,
+                            'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200' => $activeFilterCount === 0,
+                        ])>{{ __('Clear') }}</button>
             </div>
         </div>
 

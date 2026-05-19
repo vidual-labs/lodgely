@@ -6,6 +6,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox toolbar: Columns / Save view / Clear were not clickable.** Livewire's
+  DOM morpher was losing track of these buttons when sibling elements toggled
+  (Save view appearing/disappearing with the save dialog, Sources/Saved-views
+  appearing/disappearing with data). Added `wire:key` to each `wire:click`
+  button and switched the conditional `class` strings to Blade's `@class`
+  directive so the morpher reconciles reliably.
+- **Inbox toolbar spacing collapsed.** Replaced unreliable `gap-x-2 gap-y-1`
+  with `gap-2` and added `px-0.5` padding to the major `|` dividers so toolbar
+  items always have breathing room.
+
 ### Changed
 
 - **Inbox filter bar: "Show:" group label.** Sources, Saved views, and Columns
