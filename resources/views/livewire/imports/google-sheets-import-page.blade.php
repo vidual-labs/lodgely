@@ -140,10 +140,11 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Spreadsheet ID') }}</label>
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Spreadsheet URL or ID') }}</label>
                         <input wire:model="form.spreadsheet_id" type="text"
-                               placeholder="{{ __('From the sheet URL: /spreadsheets/d/{ID}/edit') }}"
+                               placeholder="https://docs.google.com/spreadsheets/d/…/edit"
                                class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Paste the full URL or just the ID — both work.') }}</p>
                         @error('form.spreadsheet_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -206,7 +207,7 @@
                     <div>
                         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ __('Column mapping') }}</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            {{ __('Load columns from your sheet, then map each one to a lead field.') }}
+                            {{ __('Load columns from your sheet. Headers are auto-mapped where recognised — review and adjust as needed.') }}
                         </p>
                     </div>
                     <button type="button"
