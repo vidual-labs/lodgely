@@ -6,6 +6,20 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Google Sheets OAuth handshake.** New operator-only flow at
+  `/settings/google-sheets/connect` that walks the installed-app OAuth dance
+  for the Google Sheets v4 API and surfaces the resulting refresh token,
+  ready to be pasted into `.env` as `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN`.
+  Long-lived credentials stay in environment config to match the existing
+  `GoogleAdsSource` pattern. Backed by a new `App\Importers\GoogleSheets\GoogleSheetsClient`
+  service that caches access tokens for 55 minutes and exposes a
+  `fetchValues($spreadsheetId, $range)` helper, ready for the planned
+  Sheets-backed leads source. Configure via `LODGELY_GOOGLE_SHEETS_CLIENT_ID`,
+  `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` and the redirect URI
+  `${APP_URL}/settings/google-sheets/callback`.
+
 ### Changed
 
 - **Roomier inputs and selects.** Text inputs, selects and textareas now

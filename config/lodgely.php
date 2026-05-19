@@ -39,6 +39,22 @@ return [
         'csv' => [
             'max_rows' => (int) env('LODGELY_CSV_MAX_ROWS', 10000),
         ],
+        'google_sheets' => [
+            // OAuth installed-application credentials for the Google Sheets API.
+            // Operators run the in-app authorize flow at /settings/google-sheets/connect
+            // to exchange a one-time code for a long-lived refresh token, then
+            // paste it back into LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN.
+            'client_id' => env('LODGELY_GOOGLE_SHEETS_CLIENT_ID', ''),
+            'client_secret' => env('LODGELY_GOOGLE_SHEETS_CLIENT_SECRET', ''),
+            'refresh_token' => env('LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN', ''),
+            // OAuth scopes requested during the authorize flow. Read-only is
+            // enough for both ad-hoc data fetches and the planned leads source.
+            'scopes' => [
+                'https://www.googleapis.com/auth/spreadsheets.readonly',
+            ],
+            // HTTP timeout (seconds) for outbound calls to Google APIs.
+            'http_timeout_sec' => (int) env('LODGELY_GOOGLE_SHEETS_HTTP_TIMEOUT', 30),
+        ],
         'email' => [
             // 'mock' generates simulated leads; 'imap' connects to a real mailbox.
             'driver' => env('LODGELY_EMAIL_IMPORT_DRIVER', 'mock'),
