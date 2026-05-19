@@ -78,40 +78,6 @@ class LeadFactory extends Factory
         ],
     ];
 
-    /**
-     * Pool of plausible Meta Lead Ads custom questions. Each lead picks
-     * 2–4 of these so we exercise the "custom_answers" rendering path
-     * with realistic variation.
-     *
-     * @var array<int, array{question: string, answers: array<int, string>}>
-     */
-    private const CUSTOM_QUESTIONS = [
-        [
-            'question' => 'What service are you interested in?',
-            'answers'  => ['Consultation', 'Package A', 'Package B', 'Not sure yet'],
-        ],
-        [
-            'question' => 'When would you like to start?',
-            'answers'  => ['This week', 'This month', 'Next month', 'Just researching'],
-        ],
-        [
-            'question' => 'What is your budget?',
-            'answers'  => ['Under €500', '€500–€1,500', '€1,500–€5,000', '€5,000+'],
-        ],
-        [
-            'question' => 'How did you hear about us?',
-            'answers'  => ['Instagram ad', 'Facebook ad', 'A friend', 'Google search'],
-        ],
-        [
-            'question' => 'Preferred contact method?',
-            'answers'  => ['Phone', 'Email', 'WhatsApp', 'Either is fine'],
-        ],
-        [
-            'question' => 'City',
-            'answers'  => ['Berlin', 'Hamburg', 'Munich', 'Cologne', 'Amsterdam', 'Vienna'],
-        ],
-    ];
-
     public function definition(): array
     {
         $first = $this->faker->firstName();
@@ -144,27 +110,12 @@ class LeadFactory extends Factory
     }
 
     /**
-     * Demo lead originating from Meta Lead Ads — fills the Meta attribution
-     * fields and a small set of custom-question answers so the lead-detail
-     * panel can render the full Meta-aware UI out of the box.
+     * Demo lead originating from Meta Lead Ads — fills the Meta attribution fields.
      */
     public function meta(): static
     {
         return $this->state(function () {
             $form = $this->faker->randomElement(self::META_FORMS);
-
-            $picked = $this->faker->randomElements(
-                self::CUSTOM_QUESTIONS,
-                $this->faker->numberBetween(2, 4),
-            );
-
-            $customAnswers = array_map(
-                fn (array $q) => [
-                    'question' => $q['question'],
-                    'answer'   => $this->faker->randomElement($q['answers']),
-                ],
-                $picked,
-            );
 
             return [
                 'source'        => 'meta_ads',
@@ -179,9 +130,7 @@ class LeadFactory extends Factory
                 'adset_id'      => $form['adset_name'] ? (string) $this->faker->numerify('############') : null,
                 'campaign_id'   => (string) $this->faker->numerify('############'),
                 'form_id'       => (string) $this->faker->numerify('############'),
-                'custom_answers'=> $customAnswers,
-                // Meta leads almost never carry a free-text "message"; the
-                // signal lives in the custom-question answers above.
+                'custom_answers'=> null,
                 'message'       => null,
             ];
         });
