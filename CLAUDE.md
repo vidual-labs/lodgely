@@ -78,12 +78,23 @@ When a batch of [Unreleased] entries represents a coherent release (e.g. a
 milestone or tag), promote `[Unreleased]` to `[x.y.z] · YYYY-MM-DD` in the
 changelog.
 
+## Runtime environment
+
+The production install runs in **Docker**. Always prefix artisan commands with
+`docker compose exec app` — never bare `php artisan`:
+
+```bash
+docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan lodgely:user:create --role=client
+```
+
 ## Commands worth knowing
 
 ```bash
-php artisan migrate --seed                     # bootstrap a demo install
-php artisan lodgely:user:create --role=client  # add a scoped client
-php artisan lodgely:import:email-mock --count=5
-php artisan lodgely:import:meta-mock --count=6 # Meta Lead Ads demo data
-php artisan lodgely:leads:purge --dry-run      # GDPR cleanup, preview only
+docker compose exec app php artisan migrate --seed                     # bootstrap a demo install
+docker compose exec app php artisan lodgely:user:create --role=client  # add a scoped client
+docker compose exec app php artisan lodgely:import:email-mock --count=5
+docker compose exec app php artisan lodgely:import:meta-mock --count=6 # Meta Lead Ads demo data
+docker compose exec app php artisan lodgely:leads:purge --dry-run      # GDPR cleanup, preview only
 ```

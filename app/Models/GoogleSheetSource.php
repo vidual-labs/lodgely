@@ -72,12 +72,37 @@ class GoogleSheetSource extends Model
     public static function leadFields(): array
     {
         return [
-            'full_name'     => 'Full name',
-            'email'         => 'Email',
-            'phone'         => 'Phone',
-            'message'       => 'Message',
-            'client_name'   => 'Client name',
-            'campaign_name' => 'Campaign name',
+            // Core contact
+            'full_name'      => 'Full name',
+            'email'          => 'Email',
+            'phone'          => 'Phone',
+            'message'        => 'Message',
+            // Assignment
+            'client_name'    => 'Client name',
+            'campaign_name'  => 'Campaign name',
+            'source'         => 'Source',
+            'platform'       => 'Platform',
+            // Status & priority
+            'status'         => 'Status (new/reviewed/incomplete/forwarded)',
+            'priority'       => 'Priority (low/medium/high)',
+            // Outreach toggles — any truthy value (yes/1/true) marks the outreach
+            'is_qualified'   => 'Qualified (outreach)',
+            'is_called'      => 'Called (outreach)',
+            'is_mailed'      => 'Mailed (outreach)',
+            // Extra flags stored in custom answers
+            'is_quality'     => 'Is quality',
+            'is_converted'   => 'Is converted',
+            // Custom form answers (stored as custom_answers JSON)
+            'question_01'    => 'Custom answer 1',
+            'question_02'    => 'Custom answer 2',
+            'question_03'    => 'Custom answer 3',
+            'question_04'    => 'Custom answer 4',
+            // UTM attribution (stored as custom_answers JSON)
+            'utm_source'     => 'UTM source',
+            'utm_medium'     => 'UTM medium',
+            'utm_campaign'   => 'UTM campaign',
+            'utm_content'    => 'UTM content',
+            'utm_term'       => 'UTM term',
         ];
     }
 }

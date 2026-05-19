@@ -29,6 +29,15 @@ final readonly class IncomingLead
         public ?string $formName = null,
         public ?string $platform = null,
         public ?bool $isOrganic = null,
+        // Override lead status / priority at import time
+        public ?string $status = null,
+        public ?string $priority = null,
+        // Outreach toggles: truthy value → set the corresponding *_at timestamp
+        public ?bool $isQualified = null,
+        public ?bool $isCalled = null,
+        public ?bool $isMailed = null,
+        /** @var array<string, mixed>|null */
+        public ?array $customAnswers = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -51,8 +60,14 @@ final readonly class IncomingLead
             'campaign_id'    => $this->campaignId,
             'form_id'        => $this->formId,
             'form_name'      => $this->formName,
-            'platform'       => $this->platform,
-            'is_organic'     => $this->isOrganic,
+            'platform'        => $this->platform,
+            'is_organic'      => $this->isOrganic,
+            'status'          => $this->status,
+            'priority'        => $this->priority,
+            'is_qualified'    => $this->isQualified,
+            'is_called'       => $this->isCalled,
+            'is_mailed'       => $this->isMailed,
+            'custom_answers'  => $this->customAnswers,
         ];
     }
 }
