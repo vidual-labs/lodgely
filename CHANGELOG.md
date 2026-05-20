@@ -8,6 +8,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Custom-columns dropdown opens on mobile (round three).** After the move
+  to Livewire-only state in b72e138, `wire:click="$toggle('showColumnPicker')"`
+  on the trigger button stopped opening the panel on mobile — tapping the
+  button did nothing. Moved the open/close state back into Alpine
+  (`x-data="{ open: false }"`) so the trigger toggles instantly without a
+  server round-trip, and added `wire:ignore.self` to the wrapper so chip
+  clicks inside the panel can't reset Alpine state and snap the dropdown
+  shut. Chips, Reset, and Done still use `wire:click` for the Livewire
+  action; Done / Cancel close the panel via Alpine.
+- **Toolbar wraps onto its own row on mobile.** The right-hand "lead count ·
+  Show: · Custom columns · Save current view · Clear" group had `shrink-0`
+  + `ml-auto` + `justify-end`, which forced it onto a single line that
+  overflowed the viewport on `<sm`. Dropped those classes on mobile
+  (`w-full sm:w-auto sm:ml-auto sm:justify-end`) and switched to
+  `gap-x-2 gap-y-1` so when items wrap they stack with a tighter vertical
+  rhythm. Desktop layout is unchanged.
 - **Custom-columns dropdown opens on mobile.** The previous patch anchored
   the panel to `<div class="relative">` wrapping only the trigger text, so
   on `<sm` screens `left-0 right-0 top-full` sized the panel to the
