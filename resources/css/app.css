@@ -33,13 +33,13 @@ body {
    Browser defaults are too tight for the text-sm font used across the app. */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]),
 select {
-  padding-block: 0.625rem;
-  padding-inline: 0.875rem;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
 }
 
 textarea {
-  padding-block: 0.75rem;
-  padding-inline: 0.875rem;
+  padding-block: 0.875rem;
+  padding-inline: 1rem;
 }
 
 /* Dark mode native form elements — avoids repeating dark: on every input */
