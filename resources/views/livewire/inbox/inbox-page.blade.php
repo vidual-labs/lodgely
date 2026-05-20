@@ -153,16 +153,16 @@
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
                     <span class="text-slate-200 dark:text-slate-700 select-none">·</span>
                 @endif
-                {{-- Columns dropdown — Livewire state only (no Alpine), so a stale --}}
+                {{-- Custom columns dropdown — Livewire state only (no Alpine), so a stale --}}
                 {{-- bundle with a second Alpine can't strand $wire / wire:click here. --}}
                 <div class="relative">
                     <button type="button" wire:click="$toggle('showColumnPicker')"
                             @class([
-                                'transition-colors',
+                                'rounded-md -mx-1 px-1.5 py-1 transition-colors',
                                 'text-slate-800 dark:text-slate-100 font-medium' => $showColumnPicker,
                                 'hover:text-slate-900 dark:hover:text-slate-100' => !$showColumnPicker,
                             ])>
-                        {{ __('Columns') }}
+                        {{ __('Custom columns') }}
                     </button>
                     @if($showColumnPicker)
                         @php
@@ -177,11 +177,15 @@
                                 'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
                             ];
                         @endphp
-                        {{-- Mobile-friendly anchoring: full-bleed sheet under the toolbar on <sm, --}}
-                        {{-- anchored dropdown on ≥sm. max-h + overflow-y so chip overflow scrolls. --}}
-                        <div class="absolute z-30 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3 space-y-3 text-left
-                                    left-0 right-0 top-full w-auto
-                                    sm:left-auto sm:right-0 sm:w-[min(420px,calc(100vw-2rem))]">
+                        {{-- Mobile backdrop — tap to dismiss. Hidden on ≥sm. --}}
+                        <div wire:click="closeColumnPicker"
+                             class="sm:hidden fixed inset-0 z-20 bg-slate-900/30 dark:bg-slate-950/50"></div>
+                        {{-- Panel: bottom-sheet on mobile (fixed to viewport), anchored --}}
+                        {{-- dropdown on ≥sm. The previous absolute+left-0+right-0 sized --}}
+                        {{-- against the tiny trigger-only wrapper and rendered ~60px wide. --}}
+                        <div class="fixed left-2 right-2 bottom-2 z-30 max-h-[85vh] overflow-y-auto
+                                    rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3 space-y-3 text-left
+                                    sm:absolute sm:inset-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-[70vh] sm:w-[min(420px,calc(100vw-2rem))]">
                             <div class="flex items-center justify-between gap-2 flex-wrap">
                                 <div class="text-xs text-slate-600 dark:text-slate-400">
                                     {{ __('Visible columns') }}
