@@ -1,9 +1,9 @@
 <x-layouts.guest>
     <div class="w-full max-w-sm">
         <div class="mb-6 text-center">
-            <img src="{{ asset('img/logo.png') }}"
+            <img src="{{ asset('img/logo.png') }}?v={{ filemtime(public_path('img/logo.png')) }}"
                  alt="{{ config('lodgely.brand.name') }}"
-                 class="mx-auto h-14 w-auto rounded-xl shadow-lg">
+                 class="mx-auto h-24 w-auto">
             <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('Choose a new password') }}</p>
         </div>
 
@@ -15,14 +15,14 @@
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Email') }}</label>
                 <input name="email" type="email" required value="{{ old('email', $email) }}"
-                       class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                       class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
                 @error('email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('New password') }}</label>
                 <input name="password" type="password" required autocomplete="new-password"
-                       class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                       class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
                 <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-500">{{ __('Minimum 12 characters.') }}</p>
                 @error('password') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
@@ -30,7 +30,7 @@
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Confirm new password') }}</label>
                 <input name="password_confirmation" type="password" required autocomplete="new-password"
-                       class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                       class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
             </div>
 
             <button type="submit"

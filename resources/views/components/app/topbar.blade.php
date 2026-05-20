@@ -27,8 +27,9 @@
         <div class="flex items-center gap-6 min-w-0">
             <a href="{{ route('inbox') }}" class="flex items-center group shrink-0" aria-label="{{ config('lodgely.brand.name') }}">
                 {{-- height set inline so it doesn't depend on Tailwind utilities being present
-                     in the compiled CSS bundle (avoids "wrong size after pulling without npm build"). --}}
-                <img src="{{ asset('img/logo.png') }}"
+                     in the compiled CSS bundle (avoids "wrong size after pulling without npm build").
+                     ?v=filemtime busts the browser cache whenever the file is replaced. --}}
+                <img src="{{ asset('img/logo.png') }}?v={{ filemtime(public_path('img/logo.png')) }}"
                      alt="{{ config('lodgely.brand.name') }}"
                      style="height: 3rem;"
                      class="w-auto transition-opacity group-hover:opacity-80">

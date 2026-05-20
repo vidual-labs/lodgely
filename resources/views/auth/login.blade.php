@@ -1,7 +1,7 @@
 <x-layouts.guest>
     <div class="w-full max-w-sm">
         <div class="mb-8 text-center">
-            <img src="{{ asset('img/logo.png') }}"
+            <img src="{{ asset('img/logo.png') }}?v={{ filemtime(public_path('img/logo.png')) }}"
                  alt="{{ config('lodgely.brand.name') }}"
                  class="mx-auto h-24 w-auto">
             <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">{{ config('lodgely.brand.tagline') }}</p>
@@ -19,14 +19,14 @@
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Email') }}</label>
                 <input name="email" type="email" required autofocus value="{{ old('email') }}"
-                       class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                       class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
                 @error('email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Password') }}</label>
                 <input name="password" type="password" required
-                       class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                       class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
             </div>
 
             <div class="flex items-center justify-between">
