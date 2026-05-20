@@ -6,6 +6,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Form fields get a little more breathing room.** Native `<input>`, `<select>`
+  and `<textarea>` defaults bumped from `0.5rem / 0.75rem` to `0.625rem / 0.875rem`
+  (and `0.75rem / 0.875rem` for textareas) so values aren't kissing the borders
+  at the app's `text-sm` baseline. Affects every form across the app.
+- **Brand logo treated as transparent.** Both the login screen and the topbar
+  drop the previous `rounded-*` + `shadow-*` chrome that assumed a square
+  dark-background logo. The login logo grows from `h-14` to `h-24`; the topbar
+  logo from `2.5rem` to `3rem`, and the header bumps from `h-14` to `h-16` so
+  the larger mark isn't cramped.
+
 ### Removed
 
 - **Stale mock custom-answers wiped on seed.** `DatabaseSeeder` now nullifies
