@@ -153,92 +153,100 @@
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
                     <span class="text-slate-200 dark:text-slate-700 select-none">·</span>
                 @endif
-                {{-- Columns dropdown --}}
-                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <button type="button" @click="open = !open"
-                            :class="open ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+                {{-- Columns dropdown — Livewire state only (no Alpine), so a stale --}}
+                {{-- bundle with a second Alpine can't strand $wire / wire:click here. --}}
+                <div class="relative">
+                    <button type="button" wire:click="$toggle('showColumnPicker')"
+                            @class([
+                                'transition-colors',
+                                'text-slate-800 dark:text-slate-100 font-medium' => $showColumnPicker,
+                                'hover:text-slate-900 dark:hover:text-slate-100' => !$showColumnPicker,
+                            ])>
                         {{ __('Columns') }}
                     </button>
-                    @php
-                        $picked = $activeColumns;
-                        $pickedQs = $activeQuestions;
-                        $total = count($picked) + count($pickedQs);
-                        $colLabelsPicker = [
-                            'received' => __('Received'),
-                            'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
-                            'client' => __('Client'), 'source' => __('Source'),
-                            'campaign' => __('Campaign'), 'form' => __('Form'), 'platform' => __('Platform'),
-                            'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
-                        ];
-                    @endphp
-                    <div x-show="open" x-cloak @click.outside="open = false"
-                         x-transition:enter="transition ease-out duration-100"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="absolute right-0 top-full mt-2 z-30 w-[min(420px,90vw)] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3 space-y-3 text-left">
-                        <div class="flex items-center justify-between">
-                            <div class="text-xs text-slate-600 dark:text-slate-400">
-                                {{ __('Visible columns') }}
-                                <span class="ml-1 text-slate-400 dark:text-slate-500">
-                                    ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-3 text-xs">
-                                <button type="button" wire:click="resetColumnPicker"
-                                        class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset') }}</button>
-                                <button type="button" @click="$wire.saveColumnPicker(); open = false"
-                                        class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Done') }}</button>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-wrap gap-1.5">
-                            @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
-                                @php $isOn = in_array($key, $picked, true); @endphp
-                                <button type="button"
-                                        wire:click="togglePickedColumn('{{ $key }}')"
-                                        @class([
-                                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
-                                            'bg-slate-900 text-white ring-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:ring-slate-200' => $isOn,
-                                            'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
-                                        ])>
-                                    <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
-                                    <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
-                                </button>
-                            @endforeach
-                        </div>
-
-                        @if(!empty($availableQuestions))
-                            <div>
-                                <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
-                                    {{ __('Custom form questions') }}
+                    @if($showColumnPicker)
+                        @php
+                            $picked = $activeColumns;
+                            $pickedQs = $activeQuestions;
+                            $total = count($picked) + count($pickedQs);
+                            $colLabelsPicker = [
+                                'received' => __('Received'),
+                                'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
+                                'client' => __('Client'), 'source' => __('Source'),
+                                'campaign' => __('Campaign'), 'form' => __('Form'), 'platform' => __('Platform'),
+                                'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
+                            ];
+                        @endphp
+                        {{-- Mobile-friendly anchoring: full-bleed sheet under the toolbar on <sm, --}}
+                        {{-- anchored dropdown on ≥sm. max-h + overflow-y so chip overflow scrolls. --}}
+                        <div class="absolute z-30 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3 space-y-3 text-left
+                                    left-0 right-0 top-full w-auto
+                                    sm:left-auto sm:right-0 sm:w-[min(420px,calc(100vw-2rem))]">
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <div class="text-xs text-slate-600 dark:text-slate-400">
+                                    {{ __('Visible columns') }}
                                     <span class="ml-1 text-slate-400 dark:text-slate-500">
-                                        ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                                        ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
                                     </span>
                                 </div>
-                                <div class="flex flex-wrap gap-1.5">
-                                    @foreach($availableQuestions as $q)
-                                        @php $isOn = in_array($q, $pickedQs, true); @endphp
-                                        <button type="button"
-                                                wire:click="togglePickedQuestion(@js($q))"
-                                                title="{{ $q }}"
-                                                @class([
-                                                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
-                                                    'bg-indigo-600 text-white ring-indigo-600 dark:bg-indigo-500 dark:ring-indigo-500' => $isOn,
-                                                    'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
-                                                ])>
-                                            <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
-                                            <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
-                                        </button>
-                                    @endforeach
+                                <div class="flex items-center gap-3 text-xs">
+                                    <button type="button" wire:click="resetColumnPicker"
+                                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset') }}</button>
+                                    <button type="button" wire:click="closeColumnPicker"
+                                            class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Cancel') }}</button>
+                                    <button type="button" wire:click="saveColumnPicker"
+                                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Done') }}</button>
                                 </div>
                             </div>
-                        @else
-                            <p class="text-[11px] text-slate-400 dark:text-slate-500">
-                                {{ __('No custom-question columns available — leads with form answers will populate this list automatically.') }}
-                            </p>
-                        @endif
-                    </div>
+
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
+                                    @php $isOn = in_array($key, $picked, true); @endphp
+                                    <button type="button"
+                                            wire:click="togglePickedColumn('{{ $key }}')"
+                                            @class([
+                                                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
+                                                'bg-slate-900 text-white ring-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:ring-slate-200' => $isOn,
+                                                'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
+                                            ])>
+                                        <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                                        <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            @if(!empty($availableQuestions))
+                                <div>
+                                    <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
+                                        {{ __('Custom form questions') }}
+                                        <span class="ml-1 text-slate-400 dark:text-slate-500">
+                                            ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach($availableQuestions as $q)
+                                            @php $isOn = in_array($q, $pickedQs, true); @endphp
+                                            <button type="button"
+                                                    wire:click="togglePickedQuestion(@js($q))"
+                                                    title="{{ $q }}"
+                                                    @class([
+                                                        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
+                                                        'bg-indigo-600 text-white ring-indigo-600 dark:bg-indigo-500 dark:ring-indigo-500' => $isOn,
+                                                        'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
+                                                    ])>
+                                                <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                                                <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                                    {{ __('No custom-question columns available — leads with form answers will populate this list automatically.') }}
+                                </p>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <span class="text-slate-200 dark:text-slate-700 select-none px-0.5">|</span>

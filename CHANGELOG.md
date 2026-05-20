@@ -6,8 +6,27 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Columns dropdown actually toggles columns again.** The recent refactor
+  to an Alpine `x-data="{ open: false }"` dropdown wrapped the chips in a
+  scope where `$wire` was never bound (console showed
+  `Alpine Expression Error: $wire is not defined`), which also stranded
+  `wire:click` on the chip buttons — clicking them did nothing and "Done"
+  threw. Rebuilt the picker as a Livewire-only dropdown anchored under the
+  trigger: open state is `$showColumnPicker` (toggled via
+  `wire:click="$toggle('showColumnPicker')"`), the panel renders behind
+  `@if($showColumnPicker)`, and every chip / Reset / Cancel / Done is pure
+  `wire:click`. No more Alpine in the picker, so a stale JS bundle with a
+  second Alpine instance can't break it.
+
 ### Changed
 
+- **Columns dropdown is mobile-friendly.** On `<sm` screens the panel goes
+  full-width under the toolbar (`left-0 right-0 top-full`); on `≥sm` it
+  anchors to the right edge of the trigger and caps at `min(420px,
+  calc(100vw - 2rem))`. Added `max-h-[70vh] overflow-y-auto` so a long
+  custom-question list scrolls instead of overflowing the viewport.
 - **Topbar logo nudged down to baseline-align with nav.** The transparent
   PNG has uneven vertical whitespace around the "lodgely" wordmark, so
   centring the image in the header bar left the text sitting visibly above
