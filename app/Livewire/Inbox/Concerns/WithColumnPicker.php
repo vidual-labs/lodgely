@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Inbox\Concerns;
 
-use App\Models\Lead;
-
 /**
  * Per-user picked column set for the inbox table.
  *
@@ -17,8 +15,6 @@ use App\Models\Lead;
  */
 trait WithColumnPicker
 {
-    public bool $showColumnPicker = false;
-
     /** @var list<string> Picked static-column keys. */
     public array $pickedColumns = [];
 
@@ -73,16 +69,6 @@ trait WithColumnPicker
             : [];
 
         $this->enforceColumnCaps();
-    }
-
-    public function openColumnPicker(): void
-    {
-        $this->showColumnPicker = true;
-    }
-
-    public function closeColumnPicker(): void
-    {
-        $this->showColumnPicker = false;
     }
 
     public function togglePickedColumn(string $key): void
@@ -145,7 +131,6 @@ trait WithColumnPicker
             ])->save();
         }
 
-        $this->showColumnPicker = false;
         $this->dispatch('toast', message: __('Columns updated.'), type: 'success');
     }
 
