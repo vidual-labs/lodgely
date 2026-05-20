@@ -8,6 +8,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Custom-columns dropdown opens on mobile.** The previous patch anchored
+  the panel to `<div class="relative">` wrapping only the trigger text, so
+  on `<sm` screens `left-0 right-0 top-full` sized the panel to the
+  ~60px-wide trigger and it effectively didn't appear. Switched the panel
+  to `fixed left-2 right-2 bottom-2` on mobile (bottom-sheet, viewport-
+  anchored), keeping the anchored `absolute right-0 top-full` dropdown on
+  `≥sm`. Added a mobile backdrop (`sm:hidden fixed inset-0 bg-slate-900/30`)
+  that calls `closeColumnPicker` on tap so users have a tap-to-dismiss
+  affordance without relying on Alpine.
+- **"Columns" → "Custom columns".** Trigger label renamed at the user's
+  request; also gave the bare-text button a tap-target buffer
+  (`-mx-1 px-1.5 py-1`) so it's easier to hit on touch.
 - **Columns dropdown actually toggles columns again.** The recent refactor
   to an Alpine `x-data="{ open: false }"` dropdown wrapped the chips in a
   scope where `$wire` was never bound (console showed
