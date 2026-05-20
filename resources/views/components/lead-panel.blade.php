@@ -149,7 +149,7 @@
                         <div>
                             <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
                             <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
                                 @foreach($statusOptions as $o)
                                     <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
                                 @endforeach
@@ -158,7 +158,7 @@
                         <div>
                             <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
                             <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
                                 @foreach($priorityOptions as $o)
                                     <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
                                 @endforeach
@@ -213,7 +213,7 @@
                 @if(auth()->user()?->isOperator())
                     <form wire:submit.prevent="addNote" class="mt-3">
                         <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
-                                  class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                  class="block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
                         @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                         <div class="mt-2 flex justify-end">
                             <button type="submit"

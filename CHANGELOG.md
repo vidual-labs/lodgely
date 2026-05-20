@@ -15,6 +15,27 @@ semantic-ish versioning once a 1.0 is tagged.
 - **Brand logo swapped to the transparent PNG.** `public/img/logo.png` is now
   the 1080×540 RGBA mark so the gradient renders cleanly on any background
   (login card, topbar, dark mode).
+- **Form padding applied as utility classes too.** Lead panel selects
+  (Status / Priority) and the "Add a short note…" textarea, plus all auth
+  form inputs (login / forgot / reset), now carry `py-3 px-4` inline so the
+  padding survives any CSS rebuild / cache state — the global element-level
+  rule in `app.css` stays as a safety net for everywhere else.
+- **Logo URLs are cache-busted.** `?v=filemtime(...)` appended on every
+  `<img>` for `img/logo.png` so swapping the asset doesn't get masked by a
+  stale browser cache.
+- **Auth forms use the transparent logo treatment everywhere.** The forgot-
+  password and reset-password screens were still using the old
+  `h-14 rounded-xl shadow-lg` chrome; bumped to `h-24 w-auto` to match the
+  login screen.
+
+### Fixed
+
+- **Pagination is dark in dark mode.** Livewire 3 ships its own paginator
+  view at `livewire::tailwind`; the existing custom view lived under
+  `vendor/pagination/` which only overrides Laravel's framework view and was
+  silently ignored by Livewire. Published the same Tailwind+dark template
+  to `resources/views/vendor/livewire/tailwind.blade.php` (with `wire:click`
+  page navigation) so it actually wins.
 
 ### Removed
 
