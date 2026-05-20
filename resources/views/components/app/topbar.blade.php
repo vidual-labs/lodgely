@@ -23,15 +23,15 @@
 
 <header class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm"
         x-data="{ mobileOpen: false }">
-    <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+    <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div class="flex items-center gap-6 min-w-0">
             <a href="{{ route('inbox') }}" class="flex items-center group shrink-0" aria-label="{{ config('lodgely.brand.name') }}">
                 {{-- height set inline so it doesn't depend on Tailwind utilities being present
                      in the compiled CSS bundle (avoids "wrong size after pulling without npm build"). --}}
                 <img src="{{ asset('img/logo.png') }}"
                      alt="{{ config('lodgely.brand.name') }}"
-                     style="height: 2.5rem;"
-                     class="w-auto rounded-md shadow-sm group-hover:shadow-md transition-shadow">
+                     style="height: 3rem;"
+                     class="w-auto transition-opacity group-hover:opacity-80">
             </a>
 
             {{-- Desktop nav --}}
