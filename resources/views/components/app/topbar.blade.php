@@ -31,7 +31,7 @@
                      ?v=filemtime busts the browser cache whenever the file is replaced. --}}
                 <img src="{{ asset('img/logo.png') }}?v={{ filemtime(public_path('img/logo.png')) }}"
                      alt="{{ config('lodgely.brand.name') }}"
-                     style="height: 3rem;"
+                     style="height: 3rem; margin-top: 0.5rem;"
                      class="w-auto transition-opacity group-hover:opacity-80">
             </a>
 

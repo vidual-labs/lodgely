@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Topbar logo nudged down to baseline-align with nav.** The transparent
+  PNG has uneven vertical whitespace around the "lodgely" wordmark, so
+  centring the image in the header bar left the text sitting visibly above
+  "Inbox / Imports / …". Added `margin-top: 0.5rem` to the `<img>` so the
+  text inside the mark lines up with the nav row.
 - **Form fields get more breathing room (round two).** Native `<input>` /
   `<select>` padding bumped to `0.75rem / 1rem`, `<textarea>` to
   `0.875rem / 1rem` — the previous bump still felt cramped against the box
