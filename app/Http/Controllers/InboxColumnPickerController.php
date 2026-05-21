@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Livewire\Inbox\Concerns\WithColumnPicker;
 use App\Livewire\Inbox\InboxPage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +47,7 @@ class InboxColumnPickerController extends Controller
 
         $validated = $request->validate([
             'columns'     => ['nullable', 'array'],
-            'columns.*'   => ['string', Rule::in(WithColumnPicker::AVAILABLE_COLUMNS)],
+            'columns.*'   => ['string', Rule::in(InboxPage::AVAILABLE_COLUMNS)],
             'questions'   => ['nullable', 'array'],
             'questions.*' => ['string', 'max:255'],
         ]);
