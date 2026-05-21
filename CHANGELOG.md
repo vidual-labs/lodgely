@@ -6,21 +6,29 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
-- **Custom-columns chip clicks invoke the action again.** After the
-  inline-row refactor, `wire:click` on the chips still wasn't producing
-  a visible table change in the user's mobile browser — Livewire 3's
-  `wire:click` directive seems to be silently dropped on this
-  particular subtree in some bundle states. Switched the chips to
-  `@click="$wire.togglePickedColumn(@js($key))"` / `@click="$wire.
-  togglePickedQuestion(@js($q))"`, which goes through Alpine's
-  `$wire` magic instead of Livewire's `wire:click` directive scanner.
-  Dropped the per-chip `wire:key` since there's no loop-identity
-  collision to disambiguate.
-- **Each toggle now pops a confirmation toast** ("Column added." /
-  "Column removed.") so users have explicit feedback the action ran,
-  independent of whether they spot the table column appearing.
+- **Column picker is now native HTML checkboxes + `wire:model.live`.**
+  Three rounds of `wire:click` / `@click="$wire.…"` chip refactors all
+  failed to register clicks on the inline picker in production. Rebuilt
+  the picker around the canonical Livewire binding pattern:
+  - Each chip is a `<label>` wrapping a hidden
+    `<input type="checkbox" wire:model.live="pickedColumns" value="…">`.
+    Clicking the chip toggles the checkbox — pure HTML, works without
+    JavaScript.
+  - The chip's visible state flips instantly via Tailwind
+    `has-[:checked]:` / `peer-checked:` variants — no waiting on a
+    server round-trip for visual feedback.
+  - `wire:model.live` sends the new array to the server on every
+    toggle; the new `updatedPickedColumns` / `updatedPickedQuestions`
+    Livewire lifecycle hooks cap-enforce and persist in one place.
+  - Chips at the 8-column / 5-question cap render `disabled`, so the
+    cap is visually obvious before the user clicks.
+  - `togglePickedColumn` / `togglePickedQuestion` are retained as
+    public Livewire actions for tests / programmatic callers.
+  No more `wire:click`, no Alpine `@click="$wire.…"`, no
+  `wire:ignore.self`, no fixed-position panels. The checkbox DOM
+  state is now the source of truth.
 
 ### Changed
 

@@ -232,11 +232,13 @@
         @endif
 
         {{-- ── custom columns picker ── --}}
-        {{-- Inline expansion row, same shape as the Sources / Saved-views --}}
-        {{-- panels. State lives in the parent x-data (columnsOpen) so chip --}}
-        {{-- clicks (which trigger a Livewire morph) can't reset the open --}}
-        {{-- state. Every chip toggle auto-saves to users.inbox_columns — no --}}
-        {{-- separate "Done" step. --}}
+        {{-- Native HTML checkboxes wired with `wire:model.live` — clicking a --}}
+        {{-- chip-styled <label> toggles its hidden <input>, which is the --}}
+        {{-- canonical Livewire binding pattern. No wire:click, no Alpine --}}
+        {{-- magic. `peer-checked:` Tailwind variants flip the chip styling --}}
+        {{-- instantly client-side so the user sees feedback before the --}}
+        {{-- server round-trip. Persistence happens in `updatedPickedColumns` --}}
+        {{-- / `updatedPickedQuestions` lifecycle hooks. --}}
         <div x-show="columnsOpen" x-cloak
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0"
@@ -246,6 +248,8 @@
                 $picked = $activeColumns;
                 $pickedQs = $activeQuestions;
                 $total = count($picked) + count($pickedQs);
+                $atTotalCap = $total >= \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS;
+                $atQuestionCap = count($pickedQs) >= \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS;
                 $colLabelsPicker = [
                     'received' => __('Received'),
                     'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
@@ -268,16 +272,21 @@
             <div class="flex flex-wrap gap-1.5">
                 @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
                     @php $isOn = in_array($key, $picked, true); @endphp
-                    <button type="button"
-                            @click="$wire.togglePickedColumn(@js($key))"
-                            @class([
-                                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
-                                'bg-slate-900 text-white ring-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:ring-slate-200' => $isOn,
-                                'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
-                            ])>
-                        <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                    <label class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
+                                  bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
+                                  has-[:checked]:bg-slate-900 has-[:checked]:text-white has-[:checked]:ring-slate-900
+                                  dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900 dark:has-[:checked]:ring-slate-200
+                                  has-[:disabled]:opacity-40 has-[:disabled]:cursor-not-allowed">
+                        <input type="checkbox"
+                               wire:model.live="pickedColumns"
+                               value="{{ $key }}"
+                               @checked($isOn)
+                               @disabled($atTotalCap && ! $isOn)
+                               class="peer sr-only">
+                        <span aria-hidden="true" class="peer-checked:hidden">+</span>
+                        <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
                         <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
-                    </button>
+                    </label>
                 @endforeach
             </div>
 
@@ -292,17 +301,22 @@
                     <div class="flex flex-wrap gap-1.5">
                         @foreach($availableQuestions as $q)
                             @php $isOn = in_array($q, $pickedQs, true); @endphp
-                            <button type="button"
-                                    @click="$wire.togglePickedQuestion(@js($q))"
-                                    title="{{ $q }}"
-                                    @class([
-                                        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
-                                        'bg-indigo-600 text-white ring-indigo-600 dark:bg-indigo-500 dark:ring-indigo-500' => $isOn,
-                                        'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800' => !$isOn,
-                                    ])>
-                                <span aria-hidden="true">{{ $isOn ? '✓' : '+' }}</span>
+                            <label title="{{ $q }}"
+                                   class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
+                                          bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
+                                          has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:ring-indigo-600
+                                          dark:has-[:checked]:bg-indigo-500 dark:has-[:checked]:ring-indigo-500
+                                          has-[:disabled]:opacity-40 has-[:disabled]:cursor-not-allowed">
+                                <input type="checkbox"
+                                       wire:model.live="pickedQuestions"
+                                       value="{{ $q }}"
+                                       @checked($isOn)
+                                       @disabled(($atTotalCap || $atQuestionCap) && ! $isOn)
+                                       class="peer sr-only">
+                                <span aria-hidden="true" class="peer-checked:hidden">+</span>
+                                <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
                                 <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
-                            </button>
+                            </label>
                         @endforeach
                     </div>
                 </div>
