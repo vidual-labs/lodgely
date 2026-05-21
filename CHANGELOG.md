@@ -8,6 +8,29 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Column picker is now a plain HTML `<form method="POST">` with an
+  Apply button.** Every Livewire-driven variant — `wire:click` on
+  chips, `@click="$wire.…"`, `wire:model.live` on hidden checkboxes
+  with lifecycle hooks — silently dropped clicks for the user in
+  production across four rebuild rounds. Rebuilt as a native form
+  that POSTs to a new `InboxColumnPickerController@update`:
+  - Chips remain `<label>`-wrapped checkboxes with the same CSS-
+    driven `has-[:checked]:` / `peer-checked:` instant visual flip,
+    but they're now `<input name="columns[]" value="…">` /
+    `<input name="questions[]" value="…">` — pure HTML.
+  - Two submit buttons: **Apply** writes the form's checkbox state to
+    `users.inbox_columns`; **Reset to defaults** clears the JSONB
+    column so role-aware defaults take over.
+  - The controller redirects to `/inbox?columns=1` so the picker
+    re-opens on reload and the user sees their picks reflected in the
+    table immediately.
+  - A short "Saved." note appears in the picker after a successful
+    submit (flash session).
+
+  Trade-off: one full page reload per Apply. Fine — the picker is a
+  low-frequency action and everything else in the inbox stays fully
+  Livewire-reactive.
+
 - **Column picker is now native HTML checkboxes + `wire:model.live`.**
   Three rounds of `wire:click` / `@click="$wire.…"` chip refactors all
   failed to register clicks on the inline picker in production. Rebuilt
