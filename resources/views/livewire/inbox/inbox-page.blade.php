@@ -269,8 +269,7 @@
                 @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
                     @php $isOn = in_array($key, $picked, true); @endphp
                     <button type="button"
-                            wire:key="col-chip-{{ $key }}"
-                            wire:click="togglePickedColumn('{{ $key }}')"
+                            @click="$wire.togglePickedColumn(@js($key))"
                             @class([
                                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
                                 'bg-slate-900 text-white ring-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:ring-slate-200' => $isOn,
@@ -294,8 +293,7 @@
                         @foreach($availableQuestions as $q)
                             @php $isOn = in_array($q, $pickedQs, true); @endphp
                             <button type="button"
-                                    wire:key="q-chip-{{ md5($q) }}"
-                                    wire:click="togglePickedQuestion(@js($q))"
+                                    @click="$wire.togglePickedQuestion(@js($q))"
                                     title="{{ $q }}"
                                     @class([
                                         'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors',
