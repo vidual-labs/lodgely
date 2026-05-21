@@ -8,6 +8,27 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Saved-views chips work via HTML forms now too.** The three
+  per-chip actions (load / star-as-default / delete) used to be
+  `wire:click` buttons — same silent-drop failure as the column
+  picker. Rewrote them as a tiny three-button `<form method="POST">`
+  per chip, dispatched on `action=load|default|delete` by the new
+  `InboxSavedFilterController@action`. Delete now has a JS
+  `confirm()` since one accidental tap deletes the view.
+- **Sources chips are clickable filter links.** Each chip is an
+  `<a href="?source=…">` that flips the URL `source` param —
+  Livewire's `#[Url]` binding on `$source` picks it up on the
+  next request and the table filters. Clicking the currently-
+  active source chip clears the filter. Active chip carries a
+  filled-in style so the state is obvious.
+- **Custom-columns chips share the saved-views chip style.** Same
+  `rounded-full border border-slate-200 px-2.5 py-0.5` shape, just
+  with `has-[:checked]:` driving the on/off background instead of
+  the chip type. Picker now visually matches Sources and Saved
+  views side-by-side.
+
+### Changed
+
 - **All four inbox filter-card panels open inline with the same
   rhythm.** Sources, Saved views, Custom columns, and Save current
   view now all share the parent `x-data` Alpine scope and the same

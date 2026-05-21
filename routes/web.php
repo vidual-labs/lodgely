@@ -59,10 +59,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', ProfilePage::class)->name('profile');
 
-    Route::get('/inbox',                InboxPage::class)->name('inbox');
-    Route::get('/inbox/export',         LeadExportController::class)->name('inbox.export');
-    Route::post('/inbox/columns',       [InboxColumnPickerController::class, 'update'])->name('inbox.columns.update');
-    Route::post('/inbox/saved-filters', [InboxSavedFilterController::class, 'store'])->name('inbox.saved-filters.store');
+    Route::get('/inbox',                       InboxPage::class)->name('inbox');
+    Route::get('/inbox/export',                LeadExportController::class)->name('inbox.export');
+    Route::post('/inbox/columns',              [InboxColumnPickerController::class, 'update'])->name('inbox.columns.update');
+    Route::post('/inbox/saved-filters',        [InboxSavedFilterController::class, 'store'])->name('inbox.saved-filters.store');
+    Route::post('/inbox/saved-filters/{filter}', [InboxSavedFilterController::class, 'action'])->name('inbox.saved-filters.action');
     Route::get('/imports/csv',        CsvImportPage::class)->name('imports.csv');
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
     Route::get('/imports/email-imap',    EmailImapImportPage::class)->name('imports.email-imap');

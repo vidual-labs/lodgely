@@ -106,11 +106,20 @@ on reload with the new state visible. The trait methods
 Livewire actions for tests and any future programmatic caller, but the
 UI doesn't drive them.
 
-**Rule of thumb:** if you're adding another batch-edit panel inside the
-inbox filter card, default to the same pattern — native HTML form →
-Laravel controller → redirect back. Keep Livewire for one-off
-reactive actions (chip clicks on saved views, bulk-select checkboxes,
-the search input) — those still work.
+All chip-level actions inside these panels are also native HTML — the
+Saved-views chips are tiny `<form method="POST">` posts to
+`InboxSavedFilterController@action` (one submit button per row for
+`load` / `default` / `delete`), and the Sources chips are plain
+`<a href="?source=…">` links that flip the URL param so Livewire's
+`#[Url]` binding picks them up on the next request. We tried
+`wire:click` on these too, with the same silent-drop result.
+
+**Rule of thumb:** if you're adding anything *clickable* inside the
+inbox filter card — toggles, chips, batch-edit forms — default to
+native HTML form / link → Laravel controller → redirect back. Keep
+Livewire for global toolbar widgets (search input, status / priority
+/ source / sort selects, bulk-select row checkboxes) — those are
+high above the morph boundary and still work fine.
 
 ## Every commit checklist
 
