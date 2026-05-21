@@ -6,6 +6,31 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **All four inbox filter-card panels open inline with the same
+  rhythm.** Sources, Saved views, Custom columns, and Save current
+  view now all share the parent `x-data` Alpine scope and the same
+  `mt-3 pt-3 border-t` styling — no more per-panel dropdowns or
+  fixed bottom-sheets. The right-hand toolbar group dropped its
+  `·` / `|` separators (they wrapped awkwardly on mobile) and uses
+  `gap-x-3 gap-y-2` for a comfortable mobile rhythm.
+- **"Save current view" is now a native HTML form, like Custom
+  columns.** Posts to a new `InboxSavedFilterController` with hidden
+  inputs carrying the current filter URL state. On success, redirects
+  to `/inbox?[filters]&saved-views=1` so the user lands back on their
+  view with the new chip visible in the Saved-views list. The old
+  Livewire save-dialog dropdown was the last hold-out using the dropdown
+  pattern that proved unreliable on the inbox subtree.
+
+### Added
+
+- **`CLAUDE.md` "Hard-won gotchas" section.** Documents the PHP 8.2+
+  trait-constant access rule (always go through the consuming class)
+  and the inbox filter-card form pattern (native HTML form →
+  controller, not Livewire dialog), so the next maintainer doesn't
+  rebuild the column picker a sixth time.
+
 ### Fixed
 
 - **Apply button no longer 500s.** `InboxColumnPickerController` accessed
