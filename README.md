@@ -14,7 +14,7 @@
 # lodgely
 
 **lodgely** is a lightweight, open-source **lead intake hub** for small teams.
-It collects leads from CSV files, email (mock and real IMAP), webhooks and
+It collects leads from CSV files, email (mock and real IMAP), webhook, Google Sheets fetch, and
 manual entry, normalizes them into a single schema, and gives reviewers a
 clean inbox to prioritize, deduplicate and forward.
 
