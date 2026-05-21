@@ -6,6 +6,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Apply button no longer 500s.** `InboxColumnPickerController` accessed
+  `WithColumnPicker::AVAILABLE_COLUMNS` directly on the trait, which PHP
+  8.2+ forbids for non-`final` trait constants — the request threw
+  `Cannot access constant AVAILABLE_COLUMNS of trait …` before
+  validation even ran. Routed the lookup through the consuming
+  class instead (`InboxPage::AVAILABLE_COLUMNS`), which is the
+  guaranteed-supported path.
+
 ### Changed
 
 - **Column picker is now a plain HTML `<form method="POST">` with an
