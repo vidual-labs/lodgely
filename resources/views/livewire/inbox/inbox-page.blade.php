@@ -146,38 +146,43 @@
                 </span>
             @endif
 
-            {{-- right-side: lead count · Show group · actions. On <sm the --}}
-            {{-- group wraps to its own row(s) under the filter inputs with a --}}
-            {{-- comfortable gap-y; on ≥sm it sits to the right of the inputs. --}}
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 w-full sm:w-auto sm:ml-auto sm:justify-end text-xs text-slate-500 dark:text-slate-400">
+            {{-- right-side: lead count · Show group · actions. Each toolbar --}}
+            {{-- button carries its own px-1.5 padding so the items have --}}
+            {{-- visible breathing room even if a stale CSS bundle hasn't --}}
+            {{-- picked up the gap utility yet. Visible ·/| separators give --}}
+            {{-- the group rhythm on top of that. --}}
+            <div class="flex flex-wrap items-center gap-x-1 gap-y-2 w-full sm:w-auto sm:ml-auto sm:justify-end text-xs text-slate-500 dark:text-slate-400">
                 {{-- lead count --}}
-                <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none">
+                <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none px-1.5 py-0.5">
                     {{ number_format($leads->total()) }}&thinsp;{{ trans_choice('lead|leads', $leads->total()) }}
                 </span>
 
-                {{-- Show: group --}}
-                <span class="text-slate-400 dark:text-slate-500 select-none">{{ __('Show:') }}</span>
+                <span class="text-slate-300 dark:text-slate-600 select-none" aria-hidden="true">·</span>
+
+                <span class="text-slate-400 dark:text-slate-500 select-none px-1.5 py-0.5">{{ __('Show:') }}</span>
                 @if($kpis['by_source']->isNotEmpty())
                     <button type="button" @click="sourcesOpen = !sourcesOpen"
                             :class="sourcesOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Sources') }}</button>
+                            class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Sources') }}</button>
                 @endif
                 @if($savedFilters->isNotEmpty())
                     <button type="button" @click="savedOpen = !savedOpen"
                             :class="savedOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
+                            class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
                 @endif
                 <button type="button" @click="columnsOpen = !columnsOpen"
                         :class="columnsOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                        class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Custom columns') }}</button>
+                        class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Custom columns') }}</button>
 
                 <button type="button" @click="saveOpen = !saveOpen"
                         :class="saveOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                        class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save current view') }}</button>
+                        class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save current view') }}</button>
+
+                <span class="text-slate-300 dark:text-slate-600 select-none" aria-hidden="true">·</span>
 
                 <button type="button" wire:click="clearFilters"
                         @class([
-                            'transition-colors',
+                            'px-1.5 py-0.5 rounded transition-colors',
                             'text-brand-600 dark:text-brand-400 font-medium hover:text-brand-500 dark:hover:text-brand-200' => $activeFilterCount > 0,
                             'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200' => $activeFilterCount === 0,
                         ])>{{ __('Clear') }}</button>

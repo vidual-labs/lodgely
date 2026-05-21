@@ -6,6 +6,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Toolbar items no longer touch each other.** "484 leadsShow:
+  SourcesSaved views…" — the `gap-x-3` utility wasn't applying in
+  the deployed CSS bundle (likely a stale build from before that
+  class was first used). Put the spacing on each item itself
+  (`px-1.5 py-0.5`) so the layout doesn't depend solely on a fresh
+  Tailwind compile, and dropped visible `·` separators back between
+  the count / Show group / Clear so the rhythm reads even when text
+  wraps to a second row.
+
 ### Changed
 
 - **Saved-views chips work via HTML forms now too.** The three
