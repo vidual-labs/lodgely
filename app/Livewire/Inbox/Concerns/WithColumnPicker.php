@@ -13,11 +13,15 @@ namespace App\Livewire\Inbox\Concerns;
  *
  * Persisted to users.inbox_columns (JSONB). Null = role-based default.
  *
- * UI contract: the picker uses native `<input type="checkbox">` elements
- * bound with `wire:model.live="pickedColumns" / pickedQuestions"`. Each
- * checkbox toggle drives the corresponding `updated…` lifecycle hook,
- * which caps + persists in one place. No `wire:click` magic, no Alpine
- * round-trips — the source of truth is the checkbox DOM state.
+ * UI flow: the picker is a native HTML <form method="POST"> that posts
+ * to {@see \App\Http\Controllers\InboxColumnPickerController} — the
+ * Livewire-driven variants (wire:click, wire:model.live, lifecycle
+ * hooks) silently dropped clicks for the user in production across
+ * multiple rebuild rounds. This trait still exposes `pickedColumns`
+ * / `pickedQuestions` so the Livewire view can render the current
+ * picks and the table can `@foreach` them, and keeps the imperative
+ * `togglePickedColumn` / `togglePickedQuestion` / `saveColumnPicker`
+ * actions for tests and any future programmatic caller.
  */
 trait WithColumnPicker
 {
@@ -78,37 +82,8 @@ trait WithColumnPicker
     }
 
     /**
-     * Livewire lifecycle hook — fires after `wire:model.live="pickedColumns"`
-     * checkbox-driven update lands on the server. Sanitise, cap, persist.
-     */
-    public function updatedPickedColumns(): void
-    {
-        $this->pickedColumns = array_values(array_unique(array_intersect(
-            self::AVAILABLE_COLUMNS,
-            array_map('strval', $this->pickedColumns),
-        )));
-
-        $this->capAndPersist();
-    }
-
-    /**
-     * Livewire lifecycle hook — fires after `wire:model.live="pickedQuestions"`
-     * checkbox-driven update lands on the server.
-     */
-    public function updatedPickedQuestions(): void
-    {
-        $this->pickedQuestions = array_values(array_unique(array_map(
-            fn ($q) => trim((string) $q),
-            $this->pickedQuestions,
-        )));
-        $this->pickedQuestions = array_values(array_filter($this->pickedQuestions, fn ($q) => $q !== ''));
-
-        $this->capAndPersist();
-    }
-
-    /**
-     * Imperative entry point used by tests and any future programmatic
-     * caller. Mirrors what a checkbox toggle would do.
+     * Imperative entry point retained for tests and any future
+     * programmatic caller. Mirrors a single checkbox-toggle from the form.
      */
     public function togglePickedColumn(string $key): void
     {
@@ -124,12 +99,12 @@ trait WithColumnPicker
             $this->pickedColumns = array_values($this->pickedColumns);
         }
 
-        $this->capAndPersist();
+        $this->persistColumnPicker();
     }
 
     /**
-     * Imperative entry point used by tests and any future programmatic
-     * caller. Mirrors what a question checkbox toggle would do.
+     * Imperative entry point retained for tests and any future
+     * programmatic caller.
      */
     public function togglePickedQuestion(string $question): void
     {
@@ -146,18 +121,17 @@ trait WithColumnPicker
             $this->pickedQuestions = array_values($this->pickedQuestions);
         }
 
-        $this->capAndPersist();
+        $this->persistColumnPicker();
     }
 
     /**
      * Public Livewire action retained so callers (tests, ad-hoc
      * `->call('saveColumnPicker')`) still have an idempotent "force a
-     * write" entry point. The UI no longer needs this — every checkbox
-     * toggle already persists.
+     * write" entry point.
      */
     public function saveColumnPicker(): void
     {
-        $this->capAndPersist();
+        $this->persistColumnPicker();
     }
 
     public function resetColumnPicker(): void
@@ -210,24 +184,9 @@ trait WithColumnPicker
         return $list;
     }
 
-    /**
-     * Single place where the caps are enforced and the picks are written
-     * to the user row. If the caps had to drop anything, fire a warning
-     * toast so the user understands why their click didn't fully stick.
-     */
-    private function capAndPersist(): void
+    private function persistColumnPicker(): void
     {
-        $before = count($this->pickedColumns) + count($this->pickedQuestions);
         $this->enforceColumnCaps();
-        $after = count($this->pickedColumns) + count($this->pickedQuestions);
-
-        if ($after < $before) {
-            $this->dispatch(
-                'toast',
-                message: __('Column limit reached (:max). Some picks were dropped.', ['max' => self::MAX_TOTAL_COLUMNS]),
-                type: 'warning',
-            );
-        }
 
         $user = auth()->user();
         if ($user) {

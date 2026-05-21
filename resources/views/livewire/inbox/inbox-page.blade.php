@@ -67,7 +67,7 @@
     </div>
 
     {{-- ────────────────── filter bar + sources ───────────────── --}}
-    <div x-data="{ sourcesOpen: false, savedOpen: false, columnsOpen: false }" class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
+    <div x-data="{ sourcesOpen: false, savedOpen: false, columnsOpen: @json(request()->boolean('columns')) }" class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
 
         {{-- ── toolbar row ── --}}
         @php
@@ -232,24 +232,22 @@
         @endif
 
         {{-- ── custom columns picker ── --}}
-        {{-- Native HTML checkboxes wired with `wire:model.live` — clicking a --}}
-        {{-- chip-styled <label> toggles its hidden <input>, which is the --}}
-        {{-- canonical Livewire binding pattern. No wire:click, no Alpine --}}
-        {{-- magic. `peer-checked:` Tailwind variants flip the chip styling --}}
-        {{-- instantly client-side so the user sees feedback before the --}}
-        {{-- server round-trip. Persistence happens in `updatedPickedColumns` --}}
-        {{-- / `updatedPickedQuestions` lifecycle hooks. --}}
+        {{-- Pure HTML <form> POSTing to a Laravel controller. Every previous --}}
+        {{-- Livewire-driven attempt (wire:click, @click=$wire, wire:model.live, --}}
+        {{-- lifecycle hooks) ended up silently dropping the click on this --}}
+        {{-- subtree in the user's production browser. A native form submit --}}
+        {{-- can't fail the same way — the browser POSTs, Laravel routes, --}}
+        {{-- InboxColumnPickerController writes the JSONB column, /inbox --}}
+        {{-- reloads with ?columns=1 to keep the panel open. --}}
         <div x-show="columnsOpen" x-cloak
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+             class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             @php
                 $picked = $activeColumns;
                 $pickedQs = $activeQuestions;
                 $total = count($picked) + count($pickedQs);
-                $atTotalCap = $total >= \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS;
-                $atQuestionCap = count($pickedQs) >= \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS;
                 $colLabelsPicker = [
                     'received' => __('Received'),
                     'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
@@ -258,73 +256,79 @@
                     'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
                 ];
             @endphp
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-                <div class="text-xs text-slate-600 dark:text-slate-400">
-                    {{ __('Visible columns') }}
-                    <span class="ml-1 text-slate-400 dark:text-slate-500">
-                        ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
-                    </span>
-                </div>
-                <button type="button" wire:click="resetColumnPicker"
-                        class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset to defaults') }}</button>
-            </div>
+            <form method="POST" action="{{ route('inbox.columns.update') }}" class="space-y-3">
+                @csrf
 
-            <div class="flex flex-wrap gap-1.5">
-                @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
-                    @php $isOn = in_array($key, $picked, true); @endphp
-                    <label class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
-                                  bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
-                                  has-[:checked]:bg-slate-900 has-[:checked]:text-white has-[:checked]:ring-slate-900
-                                  dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900 dark:has-[:checked]:ring-slate-200
-                                  has-[:disabled]:opacity-40 has-[:disabled]:cursor-not-allowed">
-                        <input type="checkbox"
-                               wire:model.live="pickedColumns"
-                               value="{{ $key }}"
-                               @checked($isOn)
-                               @disabled($atTotalCap && ! $isOn)
-                               class="peer sr-only">
-                        <span aria-hidden="true" class="peer-checked:hidden">+</span>
-                        <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
-                        <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
-                    </label>
-                @endforeach
-            </div>
-
-            @if(!empty($availableQuestions))
-                <div>
-                    <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
-                        {{ __('Custom form questions') }}
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="text-xs text-slate-600 dark:text-slate-400">
+                        {{ __('Visible columns') }}
                         <span class="ml-1 text-slate-400 dark:text-slate-500">
-                            ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                            ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
+                        </span>
+                        <span class="ml-1 text-slate-400 dark:text-slate-500 hidden sm:inline">
+                            · {{ __('Up to :tot total, :q custom questions', ['tot' => \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS, 'q' => \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS]) }}
                         </span>
                     </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach($availableQuestions as $q)
-                            @php $isOn = in_array($q, $pickedQs, true); @endphp
-                            <label title="{{ $q }}"
-                                   class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
-                                          bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
-                                          has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:ring-indigo-600
-                                          dark:has-[:checked]:bg-indigo-500 dark:has-[:checked]:ring-indigo-500
-                                          has-[:disabled]:opacity-40 has-[:disabled]:cursor-not-allowed">
-                                <input type="checkbox"
-                                       wire:model.live="pickedQuestions"
-                                       value="{{ $q }}"
-                                       @checked($isOn)
-                                       @disabled(($atTotalCap || $atQuestionCap) && ! $isOn)
-                                       class="peer sr-only">
-                                <span aria-hidden="true" class="peer-checked:hidden">+</span>
-                                <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
-                                <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
-                            </label>
-                        @endforeach
-                    </div>
                 </div>
-            @else
-                <p class="text-[11px] text-slate-400 dark:text-slate-500">
-                    {{ __('No custom-question columns available — leads with form answers will populate this list automatically.') }}
-                </p>
-            @endif
+
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
+                        @php $isOn = in_array($key, $picked, true); @endphp
+                        <label class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
+                                      bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
+                                      has-[:checked]:bg-slate-900 has-[:checked]:text-white has-[:checked]:ring-slate-900
+                                      dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900 dark:has-[:checked]:ring-slate-200">
+                            <input type="checkbox" name="columns[]" value="{{ $key }}" @checked($isOn)
+                                   class="peer sr-only">
+                            <span aria-hidden="true" class="peer-checked:hidden">+</span>
+                            <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
+                            <span>{{ $colLabelsPicker[$key] ?? $key }}</span>
+                        </label>
+                    @endforeach
+                </div>
+
+                @if(!empty($availableQuestions))
+                    <div>
+                        <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
+                            {{ __('Custom form questions') }}
+                            <span class="ml-1 text-slate-400 dark:text-slate-500">
+                                ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach($availableQuestions as $q)
+                                @php $isOn = in_array($q, $pickedQs, true); @endphp
+                                <label title="{{ $q }}"
+                                       class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
+                                              bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
+                                              has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:ring-indigo-600
+                                              dark:has-[:checked]:bg-indigo-500 dark:has-[:checked]:ring-indigo-500">
+                                    <input type="checkbox" name="questions[]" value="{{ $q }}" @checked($isOn)
+                                           class="peer sr-only">
+                                    <span aria-hidden="true" class="peer-checked:hidden">+</span>
+                                    <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
+                                    <span>{{ \Illuminate\Support\Str::limit($q, 32) }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                        {{ __('No custom-question columns available — leads with form answers will populate this list automatically.') }}
+                    </p>
+                @endif
+
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="submit" name="action" value="reset"
+                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset to defaults') }}</button>
+                    <button type="submit" name="action" value="apply"
+                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Apply') }}</button>
+                </div>
+
+                @if(session('inbox.columns.saved'))
+                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400">{{ __('Saved.') }}</p>
+                @endif
+            </form>
         </div>
 
         {{-- ── saved filter chips ── --}}
