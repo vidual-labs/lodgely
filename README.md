@@ -134,11 +134,12 @@ clean place to *triage* leads before anything else happens, you are at home.
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded
   automatically on each inbox visit.
-- 🧱 **Per-user column picker** — a "Columns" panel in the filter bar lets each
-  user toggle which fields the inbox table renders (`received`, `name`, `email`,
-  `phone`, `client`, `source`, `campaign`, `form`, `platform`, `status`,
-  `priority`, `outreach`). Picks are persisted to `users.inbox_columns`. The
-  picker also auto-discovers questions present in the user's leads'
+- 🧱 **Per-user column picker** — a "Custom columns" toggle in the filter bar
+  expands an inline chip row where each user picks which fields the inbox
+  table renders (`received`, `name`, `email`, `phone`, `client`, `source`,
+  `campaign`, `form`, `platform`, `status`, `priority`, `outreach`). Each
+  chip toggle auto-persists to `users.inbox_columns`. The picker also
+  auto-discovers questions present in the user's leads'
   `custom_answers` and offers each as a column — clients whose Meta form asks
   "Event size" can promote it to its own column. Capped at 8 columns total
   (5 custom-question columns max) to keep the table readable. Defaults are

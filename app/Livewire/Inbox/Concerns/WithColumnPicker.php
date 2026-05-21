@@ -89,6 +89,8 @@ trait WithColumnPicker
             array_splice($this->pickedColumns, $idx, 1);
             $this->pickedColumns = array_values($this->pickedColumns);
         }
+
+        $this->persistColumnPicker();
     }
 
     public function togglePickedQuestion(string $question): void
@@ -115,9 +117,21 @@ trait WithColumnPicker
             array_splice($this->pickedQuestions, $idx, 1);
             $this->pickedQuestions = array_values($this->pickedQuestions);
         }
+
+        $this->persistColumnPicker();
     }
 
+    /**
+     * Kept as a public Livewire action so existing tests / callers can still
+     * force a write (e.g. `->call('saveColumnPicker')`). The inline picker
+     * persists on every chip toggle via {@see persistColumnPicker()}.
+     */
     public function saveColumnPicker(): void
+    {
+        $this->persistColumnPicker();
+    }
+
+    private function persistColumnPicker(): void
     {
         $this->enforceColumnCaps();
 
@@ -130,8 +144,6 @@ trait WithColumnPicker
                 ],
             ])->save();
         }
-
-        $this->dispatch('toast', message: __('Columns updated.'), type: 'success');
     }
 
     public function resetColumnPicker(): void

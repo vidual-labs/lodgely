@@ -6,6 +6,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Custom columns is now an inline expansion row, not a dropdown.** The
+  dropdown approach kept fighting Livewire morphs — chip clicks either
+  closed the panel (Alpine open state reset by morph) or didn't visibly
+  do anything (Done required a separate step). Replaced with the same
+  pattern Sources / Saved views already use: a toggle button in the
+  toolbar that expands a row below the filter bar. Open state lives in
+  the parent `x-data` (`columnsOpen`) so it survives morphs, and every
+  chip toggle auto-persists to `users.inbox_columns` — no Done button,
+  no Cancel, no backdrop. Reset stays as an explicit action.
+- **Toolbar separator dots / pipes hide on mobile.** When the right-hand
+  group wraps onto its own row on `<sm`, the `·` and `|` separators
+  stranded at line boundaries looked broken. Marked them
+  `hidden sm:inline` so mobile just relies on gap spacing.
+
 ### Fixed
 
 - **Custom-columns dropdown opens on mobile (round three).** After the move
