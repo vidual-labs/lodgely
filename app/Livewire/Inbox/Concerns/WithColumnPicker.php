@@ -85,12 +85,15 @@ trait WithColumnPicker
                 return;
             }
             $this->pickedColumns[] = $key;
+            $added = true;
         } else {
             array_splice($this->pickedColumns, $idx, 1);
             $this->pickedColumns = array_values($this->pickedColumns);
+            $added = false;
         }
 
         $this->persistColumnPicker();
+        $this->dispatch('toast', message: $added ? __('Column added.') : __('Column removed.'), type: 'success');
     }
 
     public function togglePickedQuestion(string $question): void
@@ -113,12 +116,15 @@ trait WithColumnPicker
                 return;
             }
             $this->pickedQuestions[] = $question;
+            $added = true;
         } else {
             array_splice($this->pickedQuestions, $idx, 1);
             $this->pickedQuestions = array_values($this->pickedQuestions);
+            $added = false;
         }
 
         $this->persistColumnPicker();
+        $this->dispatch('toast', message: $added ? __('Column added.') : __('Column removed.'), type: 'success');
     }
 
     /**

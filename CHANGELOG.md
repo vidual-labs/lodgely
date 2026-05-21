@@ -6,6 +6,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Custom-columns chip clicks invoke the action again.** After the
+  inline-row refactor, `wire:click` on the chips still wasn't producing
+  a visible table change in the user's mobile browser — Livewire 3's
+  `wire:click` directive seems to be silently dropped on this
+  particular subtree in some bundle states. Switched the chips to
+  `@click="$wire.togglePickedColumn(@js($key))"` / `@click="$wire.
+  togglePickedQuestion(@js($q))"`, which goes through Alpine's
+  `$wire` magic instead of Livewire's `wire:click` directive scanner.
+  Dropped the per-chip `wire:key` since there's no loop-identity
+  collision to disambiguate.
+- **Each toggle now pops a confirmation toast** ("Column added." /
+  "Column removed.") so users have explicit feedback the action ran,
+  independent of whether they spot the table column appearing.
+
 ### Changed
 
 - **Custom columns is now an inline expansion row, not a dropdown.** The
