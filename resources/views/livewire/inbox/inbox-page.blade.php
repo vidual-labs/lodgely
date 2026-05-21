@@ -67,7 +67,28 @@
     </div>
 
     {{-- ────────────────── filter bar + sources ───────────────── --}}
-    <div x-data="{ sourcesOpen: false, savedOpen: false, columnsOpen: @json(request()->boolean('columns')) }" class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
+    @php
+        $savedFilterErrors = $errors->hasAny(['name', 'is_default', 'search', 'status', 'priority', 'source', 'client', 'sort']);
+        $savedFilterFlash = session('inbox.saved-filter.stored');
+        $initialSourcesOpen = false;
+        $initialSavedOpen = $savedFilters->isNotEmpty() && request()->boolean('saved-views');
+        $initialColumnsOpen = request()->boolean('columns');
+        $initialSaveOpen = request()->boolean('save') || $savedFilterErrors || (bool) $savedFilterFlash;
+    @endphp
+    {{-- Filter card. The four expandable panels — Sources, Saved views, --}}
+    {{-- Custom columns, Save current view — all open inline below the --}}
+    {{-- toolbar with the same border-t / mt-3 / pt-3 rhythm. Open state --}}
+    {{-- lives on the parent x-data so Livewire morphs don't reset it. --}}
+    {{-- Server-side writes (Apply columns / Save view) go through plain --}}
+    {{-- HTML forms to their own controllers — Livewire dropdowns dropped --}}
+    {{-- clicks in this subtree in production; see CLAUDE.md. --}}
+    <div x-data="{
+            sourcesOpen: @json($initialSourcesOpen),
+            savedOpen: @json($initialSavedOpen),
+            columnsOpen: @json($initialColumnsOpen),
+            saveOpen: @json($initialSaveOpen),
+         }"
+         class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
 
         {{-- ── toolbar row ── --}}
         @php
@@ -130,16 +151,14 @@
                 </span>
             @endif
 
-            {{-- right-side: lead count · Show group · actions. On <sm we drop --}}
-            {{-- shrink-0 / ml-auto / justify-end and force w-full so the group --}}
-            {{-- wraps to its own row(s) under the filters instead of overflowing. --}}
-            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 w-full sm:w-auto sm:ml-auto sm:justify-end text-xs text-slate-500 dark:text-slate-400">
+            {{-- right-side: lead count · Show group · actions. On <sm the --}}
+            {{-- group wraps to its own row(s) under the filter inputs with a --}}
+            {{-- comfortable gap-y; on ≥sm it sits to the right of the inputs. --}}
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 w-full sm:w-auto sm:ml-auto sm:justify-end text-xs text-slate-500 dark:text-slate-400">
                 {{-- lead count --}}
                 <span class="tabular-nums text-slate-400 dark:text-slate-500 select-none">
                     {{ number_format($leads->total()) }}&thinsp;{{ trans_choice('lead|leads', $leads->total()) }}
                 </span>
-
-                <span class="text-slate-200 dark:text-slate-700 select-none px-0.5 hidden sm:inline">|</span>
 
                 {{-- Show: group --}}
                 <span class="text-slate-400 dark:text-slate-500 select-none">{{ __('Show:') }}</span>
@@ -147,64 +166,19 @@
                     <button type="button" @click="sourcesOpen = !sourcesOpen"
                             :class="sourcesOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Sources') }}</button>
-                    <span class="text-slate-200 dark:text-slate-700 select-none hidden sm:inline">·</span>
                 @endif
                 @if($savedFilters->isNotEmpty())
                     <button type="button" @click="savedOpen = !savedOpen"
                             :class="savedOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
                             class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Saved views') }}</button>
-                    <span class="text-slate-200 dark:text-slate-700 select-none hidden sm:inline">·</span>
                 @endif
-                {{-- Custom columns toggle — opens an inline expansion row below --}}
-                {{-- the toolbar (same pattern as Sources / Saved views). Open --}}
-                {{-- state lives in the parent x-data so it survives Livewire --}}
-                {{-- morphs from chip clicks — no dropdown, no fixed position, --}}
-                {{-- no wire:ignore gymnastics. --}}
                 <button type="button" @click="columnsOpen = !columnsOpen"
                         :class="columnsOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
                         class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Custom columns') }}</button>
 
-                <span class="text-slate-200 dark:text-slate-700 select-none px-0.5 hidden sm:inline">|</span>
-
-                {{-- Save current view dropdown --}}
-                <div x-data="{ open: false }"
-                     wire:ignore.self
-                     @keydown.escape.window="open = false"
-                     @inbox-saved-filter-stored.window="open = false"
-                     class="relative">
-                    <button type="button" @click="open = !open; if (open) $wire.openSaveDialog()"
-                            :class="open ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                            class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                        {{ __('Save current view') }}
-                    </button>
-                    <div x-show="open" x-cloak @click.outside="open = false"
-                         x-transition:enter="transition ease-out duration-100"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="absolute right-0 top-full mt-2 z-30 w-[min(320px,90vw)] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg p-3 space-y-2 text-left">
-                        <label class="block text-xs text-slate-600 dark:text-slate-400">{{ __('Name this view') }}</label>
-                        <input type="text" wire:model="newFilterName" placeholder="{{ __('e.g. New leads this week') }}"
-                               maxlength="100" autocomplete="off"
-                               @keydown.enter.prevent="$wire.saveFilter()"
-                               class="block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
-                        @error('newFilterName')
-                            <span class="block text-xs text-red-600">{{ $message }}</span>
-                        @enderror
-                        <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                            <input type="checkbox" wire:model="newFilterIsDefault"
-                                   class="rounded border-slate-300 text-brand-500 focus:ring-brand-500">
-                            {{ __('Set as my default view') }}
-                        </label>
-                        <div class="flex items-center justify-end gap-2 pt-1">
-                            <button type="button" @click="$wire.closeSaveDialog(); open = false"
-                                    class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">{{ __('Cancel') }}</button>
-                            <button type="button" wire:click="saveFilter"
-                                    class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">
-                                {{ __('Save') }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <button type="button" @click="saveOpen = !saveOpen"
+                        :class="saveOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
+                        class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Save current view') }}</button>
 
                 <button type="button" wire:click="clearFilters"
                         @class([
@@ -215,13 +189,17 @@
             </div>
         </div>
 
+        {{-- All four expansion panels below share the same mt-3 pt-3 border-t --}}
+        {{-- rhythm so the filter card reads as one cohesive surface across --}}
+        {{-- mobile and desktop. --}}
+
         {{-- ── sources panel ── --}}
         @if($kpis['by_source']->isNotEmpty())
             <div x-show="sourcesOpen" x-cloak
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
                 @foreach($kpis['by_source'] as $row)
                     <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                         {{ $row->source }}
@@ -232,18 +210,13 @@
         @endif
 
         {{-- ── custom columns picker ── --}}
-        {{-- Pure HTML <form> POSTing to a Laravel controller. Every previous --}}
-        {{-- Livewire-driven attempt (wire:click, @click=$wire, wire:model.live, --}}
-        {{-- lifecycle hooks) ended up silently dropping the click on this --}}
-        {{-- subtree in the user's production browser. A native form submit --}}
-        {{-- can't fail the same way — the browser POSTs, Laravel routes, --}}
-        {{-- InboxColumnPickerController writes the JSONB column, /inbox --}}
-        {{-- reloads with ?columns=1 to keep the panel open. --}}
+        {{-- Pure HTML <form> POSTing to InboxColumnPickerController. See --}}
+        {{-- CLAUDE.md for why this isn't a Livewire wire:model.live panel. --}}
         <div x-show="columnsOpen" x-cloak
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+             class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
             @php
                 $picked = $activeColumns;
                 $pickedQs = $activeQuestions;
@@ -337,7 +310,7 @@
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
                 @foreach($savedFilters as $sf)
                     <span wire:key="sf-{{ $sf->id }}"
                           class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1
@@ -365,6 +338,56 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- ── save current view ── --}}
+        {{-- Plain HTML form to InboxSavedFilterController. Hidden inputs --}}
+        {{-- carry the current filter URL state so the saved view captures --}}
+        {{-- exactly what the user is looking at. See CLAUDE.md for why this --}}
+        {{-- isn't a Livewire dialog. --}}
+        <div x-show="saveOpen" x-cloak
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <form method="POST" action="{{ route('inbox.saved-filters.store') }}" class="space-y-3">
+                @csrf
+                <input type="hidden" name="search"   value="{{ $search }}">
+                <input type="hidden" name="status"   value="{{ $status }}">
+                <input type="hidden" name="priority" value="{{ $priority }}">
+                <input type="hidden" name="source"   value="{{ $source }}">
+                <input type="hidden" name="client"   value="{{ $client }}">
+                <input type="hidden" name="sort"     value="{{ $sort }}">
+
+                <div class="space-y-1.5">
+                    <label for="saved-filter-name" class="block text-xs text-slate-600 dark:text-slate-400">{{ __('Name this view') }}</label>
+                    <input type="text" id="saved-filter-name" name="name"
+                           value="{{ old('name') }}"
+                           placeholder="{{ __('e.g. New leads this week') }}"
+                           maxlength="100" autocomplete="off" required
+                           class="block w-full sm:max-w-sm rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm focus:border-brand-500 focus:ring-brand-500">
+                    @error('name')
+                        <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <label class="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                    <input type="checkbox" name="is_default" value="1" @checked(old('is_default'))
+                           class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500">
+                    {{ __('Set as my default view') }}
+                </label>
+
+                <div class="flex items-center justify-end gap-3 pt-1">
+                    <button type="button" @click="saveOpen = false"
+                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Cancel') }}</button>
+                    <button type="submit"
+                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Save view') }}</button>
+                </div>
+
+                @if($savedFilterFlash)
+                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400">{{ $savedFilterFlash }}</p>
+                @endif
+            </form>
+        </div>
     </div>
 
     {{-- ────────────────── bulk action bar ───────────────── --}}

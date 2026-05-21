@@ -59,6 +59,59 @@ direction without pulling the work forward.
 - Use enums (`LeadStatus`, `LeadPriority`, `UserRole`) — never raw strings
   in the domain layer.
 
+## Hard-won gotchas
+
+A short list of mistakes we made so the next maintainer doesn't repeat
+them.
+
+### Trait constants are accessed through the consuming class
+
+PHP 8.2+ has trait constants, but a non-`final` trait constant **cannot**
+be referenced through the trait name — `WithColumnPicker::AVAILABLE_COLUMNS`
+throws a fatal `Cannot access constant …` at runtime, surfacing as a
+500. Always go through the class that uses the trait:
+
+```php
+use App\Livewire\Inbox\InboxPage;
+
+Rule::in(InboxPage::AVAILABLE_COLUMNS) // ✅
+Rule::in(WithColumnPicker::AVAILABLE_COLUMNS) // ❌ fatal
+```
+
+### Inbox filter-card forms: native HTML, not Livewire dialogs
+
+The four panels on the inbox filter card — **Sources, Saved views,
+Custom columns, Save current view** — all open as inline expansion rows
+under the toolbar, with open state on the parent `x-data` (one Alpine
+component for the whole card). All four use the **same** `mt-3 pt-3
+border-t border-slate-100 dark:border-slate-800` rhythm. Don't reach
+for `<div x-data="{ open: false }">` per-panel dropdowns or fixed
+bottom-sheets — we tried both and morph timing inside this subtree
+killed the click bindings repeatedly.
+
+Both panels that *write* state (Custom columns, Save current view) are
+plain `<form method="POST">` posting to controllers in
+`app/Http/Controllers/Inbox{ColumnPicker,SavedFilter}Controller.php` —
+**not** `wire:click` / `wire:model.live` actions. We rebuilt the
+column picker four times with different Livewire approaches
+(`wire:click` on chips → `@click="$wire.…"` → `wire:model.live` with
+lifecycle hooks → checkbox-driven `has-[:checked]:` styling) and every
+single variant silently dropped clicks for the user in production. The
+form path always works.
+
+The controllers redirect to `/inbox?columns=1` or `/inbox?save=1` with
+the user's current filter URL params preserved, so the panel re-opens
+on reload with the new state visible. The trait methods
+(`togglePickedColumn`, `saveFilter`, etc.) stay around as public
+Livewire actions for tests and any future programmatic caller, but the
+UI doesn't drive them.
+
+**Rule of thumb:** if you're adding another batch-edit panel inside the
+inbox filter card, default to the same pattern — native HTML form →
+Laravel controller → redirect back. Keep Livewire for one-off
+reactive actions (chip clicks on saved views, bulk-select checkboxes,
+the search input) — those still work.
+
 ## Every commit checklist
 
 Before committing any change, always update these three files:

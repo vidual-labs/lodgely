@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\InboxColumnPickerController;
+use App\Http\Controllers\InboxSavedFilterController;
 use App\Http\Controllers\LeadExportController;
 use App\Http\Controllers\OAuth\GoogleSheetsOAuthController;
 use App\Livewire\Imports\GoogleSheetsImportPage;
@@ -58,9 +59,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', ProfilePage::class)->name('profile');
 
-    Route::get('/inbox',           InboxPage::class)->name('inbox');
-    Route::get('/inbox/export',    LeadExportController::class)->name('inbox.export');
-    Route::post('/inbox/columns',  [InboxColumnPickerController::class, 'update'])->name('inbox.columns.update');
+    Route::get('/inbox',                InboxPage::class)->name('inbox');
+    Route::get('/inbox/export',         LeadExportController::class)->name('inbox.export');
+    Route::post('/inbox/columns',       [InboxColumnPickerController::class, 'update'])->name('inbox.columns.update');
+    Route::post('/inbox/saved-filters', [InboxSavedFilterController::class, 'store'])->name('inbox.saved-filters.store');
     Route::get('/imports/csv',        CsvImportPage::class)->name('imports.csv');
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
     Route::get('/imports/email-imap',    EmailImapImportPage::class)->name('imports.email-imap');
