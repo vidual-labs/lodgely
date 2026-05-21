@@ -10,15 +10,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
- * Native HTML form submission for "Save current view".
+ * Native HTML form endpoints for saved-view actions.
  *
  * Mirrors the rationale in {@see InboxColumnPickerController}: the
- * Livewire-driven save-view modal had the same class of "click silently
- * dropped" failure on the inbox subtree. Switching to a plain
- * `<form method="POST">` makes the round-trip indestructible — the
- * browser submits, Laravel routes, this controller writes the row, the
- * user is redirected back to `/inbox` with their filter URL params
- * intact and a `saved` flash so the chip reappears in the picker.
+ * Livewire-driven `wire:click` chip actions (load / toggle default /
+ * delete) had the same class of "click silently dropped" failure on
+ * the inbox filter-card subtree as the column picker did. Switching to
+ * plain `<form method="POST">` submissions makes them indestructible —
+ * the browser submits, Laravel routes, this controller mutates the row,
+ * and `/inbox` reloads with the new state.
+ *
+ * Two entry points:
+ *  - {@see store()}        POST /inbox/saved-filters
+ *  - {@see action()}       POST /inbox/saved-filters/{filter}
+ *      A single `action=load|default|delete` switch keeps the chip
+ *      markup to one `<form>` per row.
  */
 class InboxSavedFilterController extends Controller
 {
@@ -61,14 +67,74 @@ class InboxSavedFilterController extends Controller
             ]);
         });
 
-        // Preserve current filter URL params so the user lands back on the
-        // exact view they just saved.
+        return $this->redirectToInbox($request, ['saved-views' => 1])
+            ->with('inbox.saved-filter.stored', __('View saved.'));
+    }
+
+    /**
+     * Single endpoint for per-chip actions on an existing saved view.
+     * Dispatches on `action` so the chip markup is one tiny form per row.
+     */
+    public function action(Request $request, SavedFilter $filter): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user, 401);
+        abort_unless($filter->user_id === $user->id, 404);
+
+        $action = $request->input('action');
+
+        if ($action === 'load') {
+            $query = [];
+            $filters = $filter->filters ?? [];
+            if (! empty($filters['search']))   { $query['q'] = $filters['search']; }
+            if (! empty($filters['status']))   { $query['status'] = $filters['status']; }
+            if (! empty($filters['priority'])) { $query['priority'] = $filters['priority']; }
+            if (! empty($filters['source']))   { $query['source'] = $filters['source']; }
+            if (! empty($filters['client']))   { $query['client'] = $filters['client']; }
+            if (! empty($filters['sort']) && $filters['sort'] !== 'created_desc') {
+                $query['sort'] = $filters['sort'];
+            }
+
+            return redirect()->to(route('inbox', $query));
+        }
+
+        if ($action === 'default') {
+            DB::transaction(function () use ($user, $filter) {
+                if ($filter->is_default) {
+                    $filter->update(['is_default' => false]);
+                } else {
+                    SavedFilter::where('user_id', $user->id)->update(['is_default' => false]);
+                    $filter->update(['is_default' => true]);
+                }
+            });
+
+            return $this->redirectToInbox($request, ['saved-views' => 1])
+                ->with('inbox.saved-filter.stored', $filter->is_default
+                    ? __('Default view updated.')
+                    : __('Default view cleared.'));
+        }
+
+        if ($action === 'delete') {
+            $filter->delete();
+
+            return $this->redirectToInbox($request, ['saved-views' => 1])
+                ->with('inbox.saved-filter.stored', __('View deleted.'));
+        }
+
+        abort(422);
+    }
+
+    /**
+     * Return the user to /inbox preserving any current filter URL params,
+     * plus any extras (e.g. `saved-views=1` to reopen the chips panel).
+     *
+     * @param  array<string,mixed>  $extra
+     */
+    private function redirectToInbox(Request $request, array $extra = []): RedirectResponse
+    {
         $query = $request->only(['q', 'status', 'priority', 'source', 'client', 'sort']);
         $query = array_filter($query, fn ($v) => $v !== null && $v !== '');
-        $query['saved-views'] = 1;
 
-        return redirect()
-            ->to(route('inbox', $query))
-            ->with('inbox.saved-filter.stored', __('View saved.'));
+        return redirect()->to(route('inbox', array_merge($query, $extra)));
     }
 }

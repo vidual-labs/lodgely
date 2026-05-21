@@ -82,12 +82,7 @@
     {{-- Server-side writes (Apply columns / Save view) go through plain --}}
     {{-- HTML forms to their own controllers — Livewire dropdowns dropped --}}
     {{-- clicks in this subtree in production; see CLAUDE.md. --}}
-    <div x-data="{
-            sourcesOpen: @json($initialSourcesOpen),
-            savedOpen: @json($initialSavedOpen),
-            columnsOpen: @json($initialColumnsOpen),
-            saveOpen: @json($initialSaveOpen),
-         }"
+    <div x-data="{ sourcesOpen: @json($initialSourcesOpen), savedOpen: @json($initialSavedOpen), columnsOpen: @json($initialColumnsOpen), saveOpen: @json($initialSaveOpen) }"
          class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
 
         {{-- ── toolbar row ── --}}
@@ -194,17 +189,33 @@
         {{-- mobile and desktop. --}}
 
         {{-- ── sources panel ── --}}
+        {{-- Each chip is an anchor link that sets ?source=… in the URL — --}}
+        {{-- Livewire's #[Url] binding on $source picks it up on the next --}}
+        {{-- request, so the inbox table filters down to that source. Pure --}}
+        {{-- navigation, no wire:click. The currently-applied source chip --}}
+        {{-- carries a stronger background so the user can see what's active --}}
+        {{-- (and click it again to clear). --}}
         @if($kpis['by_source']->isNotEmpty())
             <div x-show="sourcesOpen" x-cloak
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
                 @foreach($kpis['by_source'] as $row)
-                    <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                        {{ $row->source }}
-                        <span class="font-normal text-slate-400 dark:text-slate-500">{{ $row->total }}</span>
-                    </span>
+                    @php
+                        $isActive = $source === $row->source;
+                        $sourceHref = route('inbox', array_filter(array_merge(request()->only(['q', 'status', 'priority', 'client', 'sort']), [
+                            'source' => $isActive ? null : $row->source,
+                        ]), fn ($v) => $v !== null && $v !== ''));
+                    @endphp
+                    <a href="{{ $sourceHref }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors
+                              {{ $isActive
+                                  ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900'
+                                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                        <span>{{ $row->source }}</span>
+                        <span class="font-normal {{ $isActive ? 'text-slate-200 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500' }}">{{ $row->total }}</span>
+                    </a>
                 @endforeach
             </div>
         @endif
@@ -247,10 +258,10 @@
                 <div class="flex flex-wrap gap-1.5">
                     @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_COLUMNS as $key)
                         @php $isOn = in_array($key, $picked, true); @endphp
-                        <label class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
-                                      bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
-                                      has-[:checked]:bg-slate-900 has-[:checked]:text-white has-[:checked]:ring-slate-900
-                                      dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900 dark:has-[:checked]:ring-slate-200">
+                        <label class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none
+                                      border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700
+                                      has-[:checked]:border-slate-900 has-[:checked]:bg-slate-900 has-[:checked]:text-white
+                                      dark:has-[:checked]:border-slate-200 dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900">
                             <input type="checkbox" name="columns[]" value="{{ $key }}" @checked($isOn)
                                    class="peer sr-only">
                             <span aria-hidden="true" class="peer-checked:hidden">+</span>
@@ -272,10 +283,10 @@
                             @foreach($availableQuestions as $q)
                                 @php $isOn = in_array($q, $pickedQs, true); @endphp
                                 <label title="{{ $q }}"
-                                       class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors cursor-pointer select-none
-                                              bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 ring-slate-300/50 dark:ring-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-800
-                                              has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:ring-indigo-600
-                                              dark:has-[:checked]:bg-indigo-500 dark:has-[:checked]:ring-indigo-500">
+                                       class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none
+                                              border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700
+                                              has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-600 has-[:checked]:text-white
+                                              dark:has-[:checked]:border-indigo-500 dark:has-[:checked]:bg-indigo-500">
                                     <input type="checkbox" name="questions[]" value="{{ $q }}" @checked($isOn)
                                            class="peer sr-only">
                                     <span aria-hidden="true" class="peer-checked:hidden">+</span>
@@ -305,36 +316,41 @@
         </div>
 
         {{-- ── saved filter chips ── --}}
+        {{-- Each chip is a tiny three-button HTML form posting to --}}
+        {{-- InboxSavedFilterController@action — load / star / delete. Same --}}
+        {{-- "native form, not wire:click" rationale as the rest of the card. --}}
         @if($savedFilters->isNotEmpty())
             <div x-show="savedOpen" x-cloak
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
                 @foreach($savedFilters as $sf)
-                    <span wire:key="sf-{{ $sf->id }}"
-                          class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1
+                    <form method="POST" action="{{ route('inbox.saved-filters.action', $sf) }}"
+                          class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1 transition-colors
                                  {{ $sf->is_default
                                      ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50'
                                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800' }}">
-                        <button type="button" wire:click="loadFilter({{ $sf->id }})"
+                        @csrf
+                        <button type="submit" name="action" value="load"
                                 class="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 max-w-[140px] truncate transition-colors"
                                 title="{{ $sf->name }}">
                             {{ $sf->name }}
                         </button>
-                        <button type="button" wire:click="toggleDefaultFilter({{ $sf->id }})"
+                        <button type="submit" name="action" value="default"
                                 aria-label="{{ $sf->is_default ? __('Remove as default view') : __('Set as default view') }}"
                                 title="{{ $sf->is_default ? __('Remove as default view') : __('Set as default view') }}"
                                 class="{{ $sf->is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400' }} leading-none px-0.5">
                             ★
                         </button>
-                        <button type="button" wire:click="deleteFilter({{ $sf->id }})"
+                        <button type="submit" name="action" value="delete"
                                 aria-label="{{ __('Delete') }} {{ $sf->name }}"
                                 title="{{ __('Delete') }}"
+                                onclick="return confirm({{ json_encode(__('Delete saved view :name?', ['name' => $sf->name])) }})"
                                 class="text-slate-300 dark:text-slate-600 hover:text-red-500 leading-none px-0.5">
                             ×
                         </button>
-                    </span>
+                    </form>
                 @endforeach
             </div>
         @endif
