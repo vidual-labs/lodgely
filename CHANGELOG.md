@@ -6,6 +6,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **CLAUDE.md note: don't rely on a single Tailwind utility for
+  critical spacing.** Documents the `gap-x-3` failure we just hit
+  (deployed CSS bundle was stale; brand-new utility classes weren't
+  in it) and the layered-spacing pattern (padding on items + gap +
+  visible separators) so the next maintainer doesn't have to
+  rediscover why their first-time-used utility silently no-ops in
+  production.
+
 ### Fixed
 
 - **Toolbar items no longer touch each other.** "484 leadsShow:
