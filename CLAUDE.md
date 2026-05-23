@@ -121,6 +121,30 @@ Livewire for global toolbar widgets (search input, status / priority
 / source / sort selects, bulk-select row checkboxes) — those are
 high above the morph boundary and still work fine.
 
+### Don't rely on a single Tailwind utility class for critical spacing
+
+The deployed CSS bundle is the output of a Tailwind JIT scan of the
+source files *at build time*. If a class only just landed in the repo
+and the production bundle hasn't been rebuilt since (or the user's
+browser is serving a cached copy), the class won't exist in the CSS
+shipped to the browser — the property silently has no effect.
+
+We hit this with `gap-x-3` on the inbox toolbar: items rendered glued
+together because the gap utility wasn't in the bundle yet.
+
+For load-bearing spacing on a row that *has* to look right, layer the
+spacing so the layout doesn't collapse if one utility is missing:
+
+- Put `px-1.5 py-0.5` (or similar) on each item itself, so each item
+  carries its own padding regardless of the parent gap.
+- Use `gap-x-1` as an extra cushion rather than the only mechanism.
+- For text-heavy toolbars, drop visible `·` or `|` separators
+  between groups — they're load-bearing as long as the text wraps.
+
+In short: padding on items is bulletproof; container gap is a nice-
+to-have. Same idea applies to any utility class that's brand-new to
+the project.
+
 ## Every commit checklist
 
 Before committing any change, always update these three files:
