@@ -18,6 +18,7 @@ use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
 use App\Livewire\Settings\AiSettingsPage;
+use App\Livewire\Settings\DemoDataPage;
 use App\Livewire\Settings\ProfilePage;
 use App\Livewire\Users\UsersPage;
 use App\Livewire\Webhooks\WebhooksPage;
@@ -81,6 +82,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/settings/google-sheets', GoogleSheetsSettingsPage::class)->name('settings.google-sheets');
+
+    Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
 
     // Google Sheets OAuth handshake. Operator-only enforcement lives in the
     // controller; the callback URL must match the redirect URI configured on
