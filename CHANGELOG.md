@@ -8,6 +8,21 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Demo data management page** at `/settings/demo-data` (operator-only,
+  also linked from the topbar as "Demo data"). One-click button to
+  populate the inbox with the canonical demo dataset — ~60 neutral
+  leads, 12 Meta Lead Ads leads across two demo clients, a known
+  duplicate pair, the two scoped demo client logins
+  (`client.northwind@example.com` / `client.acme@example.com`,
+  password `password`) and the demo operator if missing. A second
+  button wipes the lot again. Demo leads are tagged by attaching them
+  to a dedicated `imports` row with `source = 'demo_seed'`, so unload
+  is a single scoped delete that never touches real CSV / webhook /
+  IMAP imports. The currently signed-in user is never deleted, so an
+  operator who logged in as a demo account can still safely click
+  "Unload demo data". Lifted out of `DatabaseSeeder` into a reusable
+  `App\Domain\Demo\DemoDataManager` service so the UI and the seeder
+  call the same code path.
 - **CLAUDE.md note: don't rely on a single Tailwind utility for
   critical spacing.** Documents the `gap-x-3` failure we just hit
   (deployed CSS bundle was stale; brand-new utility classes weren't
