@@ -185,7 +185,7 @@
                         </div>
                     @endif
 
-                    <div>
+                    <div x-data="{ generated: @js($generatedPassword !== null) }">
                         <div class="flex items-center justify-between">
                             <label class="text-xs font-medium text-slate-600 dark:text-slate-400">
                                 {{ __('Password') }}
@@ -193,17 +193,24 @@
                                     <span class="text-slate-400 dark:text-slate-500">{{ __('(leave empty to keep current)') }}</span>
                                 @endif
                             </label>
-                            <button type="button" wire:click="generatePassword"
+                            <button type="button"
+                                    x-on:click="
+                                        const c='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+                                        const b=new Uint8Array(16);crypto.getRandomValues(b);
+                                        const p=Array.from(b,v=>c[v%c.length]).join('');
+                                        $refs.pwd.value=p;
+                                        $wire.set('form.password',p);
+                                        $wire.set('generatedPassword',p);
+                                        generated=true;
+                                    "
                                     class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Generate') }}</button>
                         </div>
-                        <input wire:model="form.password" type="text" autocomplete="off"
+                        <input x-ref="pwd" wire:model="form.password" type="text" autocomplete="off"
                                class="mt-1 block w-full rounded-lg border-slate-300 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
                         @error('form.password') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                        @if($generatedPassword)
-                            <p class="mt-1 text-xs text-amber-700 dark:text-amber-500">
-                                {{ __('Share this password securely — it is shown') }} <strong>{{ __('only once') }}</strong> {{ __('and is not retrievable later.') }}
-                            </p>
-                        @endif
+                        <p x-show="generated" x-cloak class="mt-1 text-xs text-amber-700 dark:text-amber-500">
+                            {{ __('Share this password securely — it is shown') }} <strong>{{ __('only once') }}</strong> {{ __('and is not retrievable later.') }}
+                        </p>
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2">
