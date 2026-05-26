@@ -205,7 +205,14 @@
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400 dark:text-slate-500 select-none">{{ __('Sources') }}</span>
+                    <button type="button" @click="sourcesOpen = false"
+                            class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-1.5 py-0.5"
+                            aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
                 @foreach($kpis['by_source'] as $row)
                     @php
                         $isActive = $source === $row->source;
@@ -222,6 +229,7 @@
                         <span class="font-normal {{ $isActive ? 'text-slate-200 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500' }}">{{ $row->total }}</span>
                     </a>
                 @endforeach
+                </div>
             </div>
         @endif
 
@@ -258,6 +266,9 @@
                             · {{ __('Up to :tot total, :q custom questions', ['tot' => \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS, 'q' => \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS]) }}
                         </span>
                     </div>
+                    <button type="button" @click="columnsOpen = false"
+                            class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-1.5 py-0.5"
+                            aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
                 </div>
 
                 <div class="flex flex-wrap gap-1.5">
@@ -329,7 +340,14 @@
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
+                 class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400 dark:text-slate-500 select-none">{{ __('Saved views') }}</span>
+                    <button type="button" @click="savedOpen = false"
+                            class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-1.5 py-0.5"
+                            aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
                 @foreach($savedFilters as $sf)
                     <form method="POST" action="{{ route('inbox.saved-filters.action', $sf) }}"
                           class="inline-flex items-center rounded-full border pl-2.5 pr-1 py-0.5 text-xs gap-1 transition-colors
@@ -357,6 +375,7 @@
                         </button>
                     </form>
                 @endforeach
+                </div>
             </div>
         @endif
 
@@ -369,7 +388,13 @@
              x-transition:enter="transition ease-out duration-100"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+             class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400 dark:text-slate-500 select-none">{{ __('Save current view') }}</span>
+                    <button type="button" @click="saveOpen = false"
+                            class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-1.5 py-0.5"
+                            aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
+                </div>
             <form method="POST" action="{{ route('inbox.saved-filters.store') }}" class="space-y-3">
                 @csrf
                 <input type="hidden" name="search"   value="{{ $search }}">
