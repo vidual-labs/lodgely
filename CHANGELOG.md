@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Each expanded panel has a "Close" button.** Sources, Saved views,
+  Custom columns, and Save current view panels all show a small header
+  row with the panel name and a right-aligned "Close" button. Users
+  no longer need to find the original toggle label in the toolbar
+  (which is hard to spot once the panel is open, especially on mobile).
 - **Demo data management page** at `/settings/demo-data` (operator-only,
   also linked from the topbar as "Demo data"). One-click button to
   populate the inbox with the canonical demo dataset — ~60 neutral
