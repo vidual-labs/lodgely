@@ -6,6 +6,31 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Bulk delete action.** Operators can now select multiple leads and
+  delete them in one step via a red "Delete" button in the bulk action
+  bar. Each deletion is audited individually. Includes a browser
+  confirmation dialog.
+- **Sortable column headers.** The Received, Name, Status, and Priority
+  columns now show clickable up/down arrow indicators. Clicking cycles
+  through ascending, descending, and default sort. Active sort direction
+  is highlighted in brand colour.
+- **Select-all checkbox indeterminate state.** The header checkbox now
+  shows a dash (indeterminate) when some but not all leads on the page
+  are selected, giving clearer visual feedback.
+
+### Fixed
+
+- **Pagination padding.** The pagination bar below the inbox table now
+  has proper left/right padding (`px-4 py-3`) so it no longer looks
+  cramped against the table edges.
+- **Google Sheets reimport after deleting imports.** `deleteImport()`
+  now force-deletes leads (hard delete) instead of soft-deleting them,
+  so reimporting the same sheet creates genuinely fresh leads without
+  ghost duplicate matches. The audit trail in `lead_events` is preserved
+  independently.
+
 ### Fixed
 
 - **"Generate" password button works on user edit modal.** The

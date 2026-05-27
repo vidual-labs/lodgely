@@ -474,6 +474,13 @@
                     </button>
                 </div>
 
+                <button type="button"
+                        wire:click="bulkDelete"
+                        wire:confirm="{{ trans_choice('Delete :count selected lead? This cannot be undone.|Delete :count selected leads? This cannot be undone.', count($bulkSelected), ['count' => count($bulkSelected)]) }}"
+                        class="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-rose-700 transition-colors">
+                    {{ __('Delete') }}
+                </button>
+
                 <button type="button" wire:click="clearBulkSelection"
                         class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors ml-auto">
                     {{ __('Clear selection') }}
@@ -507,6 +514,7 @@
         ];
         $visibleCount = count($activeColumns) + count($activeQuestions)
             + (auth()->user()?->isOperator() ? 1 : 0); /* bulk checkbox */
+        $sortableColumns = \App\Domain\Leads\Services\LeadFilter::sortableColumns();
     @endphp
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
         <div class="overflow-x-auto">
@@ -515,10 +523,16 @@
                     <tr class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400">
                         @auth
                             @if(auth()->user()->isOperator())
+                                @php
+                                    $allOnPageSelected = count($bulkSelected) > 0 && count($bulkSelected) === $leads->count();
+                                    $someSelected = count($bulkSelected) > 0 && !$allOnPageSelected;
+                                @endphp
                                 <th class="px-3 py-2 w-8">
                                     <input type="checkbox"
                                            wire:click="bulkToggleAll"
-                                           @checked(count($bulkSelected) > 0 && count($bulkSelected) === $leads->count())
+                                           @checked($allOnPageSelected)
+                                           x-ref="selectAllCheckbox"
+                                           x-init="$refs.selectAllCheckbox.indeterminate = {{ $someSelected ? 'true' : 'false' }}"
                                            class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
                                            aria-label="{{ __('Select all on this page') }}">
                                 </th>
@@ -526,7 +540,25 @@
                         @endauth
                         @foreach($activeColumns as $col)
                             <th class="px-3 py-2 {{ $colWidths[$col] ?? '' }} {{ $col === 'outreach' ? 'text-right' : '' }}">
-                                {{ $colLabels[$col] ?? $col }}
+                                @if(isset($sortableColumns[$col]))
+                                    @php
+                                        $colSortAsc = $sortableColumns[$col]['asc'];
+                                        $colSortDesc = $sortableColumns[$col]['desc'];
+                                        $isAsc = $sort === $colSortAsc;
+                                        $isDesc = $sort === $colSortDesc;
+                                        $nextSort = $isAsc ? $colSortDesc : ($isDesc ? 'created_desc' : $colSortAsc);
+                                    @endphp
+                                    <button type="button" wire:click="$set('sort', '{{ $nextSort }}')"
+                                            class="inline-flex items-center gap-1 group hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+                                        <span>{{ $colLabels[$col] ?? $col }}</span>
+                                        <span class="inline-flex flex-col -space-y-1 leading-none">
+                                            <svg class="w-3 h-3 {{ $isAsc ? 'text-brand-600 dark:text-brand-400' : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500' }}" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L10 8H2L6 3Z"/></svg>
+                                            <svg class="w-3 h-3 {{ $isDesc ? 'text-brand-600 dark:text-brand-400' : 'text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500' }}" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4H10L6 9Z"/></svg>
+                                        </span>
+                                    </button>
+                                @else
+                                    {{ $colLabels[$col] ?? $col }}
+                                @endif
                             </th>
                         @endforeach
                         @foreach($activeQuestions as $q)
@@ -657,7 +689,7 @@
             </table>
         </div>
 
-        <div class="border-t border-slate-200 dark:border-slate-700/50 px-3 py-2">
+        <div class="border-t border-slate-200 dark:border-slate-700/50 px-4 py-3">
             {{ $leads->links() }}
         </div>
     </div>

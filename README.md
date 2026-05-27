@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.27.0-6366F1" alt="Version 0.27.0">
+  <img src="https://img.shields.io/badge/version-0.28.0-6366F1" alt="Version 0.28.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -62,7 +62,8 @@ clean place to *triage* leads before anything else happens, you are at home.
 
 - 📥 **Unified lead inbox** — server-rendered table with a compact inline filter
   bar (search, source, status, priority, client, sort), active-filter count badge,
-  per-query lead count, column picker, saved views, and pagination.
+  per-query lead count, sortable column headers (click to cycle asc/desc/default),
+  column picker, saved views, and pagination.
 - 🧹 **Duplicate detection** — leads with a matching normalized email or
   phone are flagged automatically; you can re-check on demand.
 - 📝 **Side-panel review** — open any lead, change status & priority,
@@ -122,8 +123,9 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 🗑️ **Retention awareness** — every lead carries a `retention_until`
   field, with an opt-in `php artisan lodgely:leads:purge` command.
 - 📊 **Inbox KPIs** — new, duplicates, incomplete, total, leads by source.
-- ☑️ **Bulk actions** — operators select multiple leads via checkboxes and apply
-  a status or priority change to all in one step. Audit events recorded per lead.
+- ☑️ **Bulk actions** — operators select multiple leads via checkboxes (with
+  select-all toggle) and apply a status change, priority change, or bulk delete
+  to all in one step. Audit events recorded per lead.
 - ⬇️ **Inbox export** — operators can download the currently filtered inbox as
   CSV or newline-delimited JSON (`/inbox/export?format=csv|ndjson`). Streams in
   chunks so it stays memory-safe at any size; honours the same `q / status /

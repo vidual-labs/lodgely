@@ -106,4 +106,27 @@ trait WithBulkLeadActions
         $this->bulkPriorityValue = '';
         $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' updated.');
     }
+
+    public function bulkDelete(AuditLogger $audit): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        if (empty($this->bulkSelected)) {
+            return;
+        }
+
+        $ids = array_map('intval', $this->bulkSelected);
+        $leads = Lead::query()->visibleTo(auth()->user())->whereIn('id', $ids)->get();
+
+        foreach ($leads as $lead) {
+            $audit->record($lead, 'lead.deleted', ['source' => $lead->source]);
+            $lead->delete();
+        }
+
+        $count = $leads->count();
+        $this->bulkSelected = [];
+        $this->bulkStatusValue = '';
+        $this->bulkPriorityValue = '';
+        $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' deleted.');
+    }
 }
