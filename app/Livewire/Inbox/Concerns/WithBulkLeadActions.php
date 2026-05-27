@@ -38,7 +38,7 @@ trait WithBulkLeadActions
             ->orderBy(...$this->sortBy())
             ->paginate(config('lodgely.pagination.per_page'))
             ->pluck('id')
-            ->map(fn ($id) => (int) $id)
+            ->map(fn ($id) => (string) $id)
             ->all();
 
         $this->bulkSelected = (count($this->bulkSelected) === count($pageIds) && count($pageIds) > 0)
