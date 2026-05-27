@@ -528,13 +528,22 @@
                                     $someSelected = count($bulkSelected) > 0 && !$allOnPageSelected;
                                 @endphp
                                 <th class="px-3 py-2 w-8">
-                                    <input type="checkbox"
-                                           x-on:click.prevent="$wire.bulkToggleAll()"
-                                           @checked($allOnPageSelected)
-                                           x-ref="selectAllCheckbox"
-                                           x-init="$refs.selectAllCheckbox.indeterminate = {{ $someSelected ? 'true' : 'false' }}"
-                                           class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
-                                           aria-label="{{ __('Select all on this page') }}">
+                                    {{-- Button styled as checkbox — avoids native checkbox
+                                         morph issues that silently drop clicks (see CLAUDE.md). --}}
+                                    <button type="button" wire:click="bulkToggleAll"
+                                            class="flex items-center justify-center w-4 h-4 rounded border transition-colors focus:ring-2 focus:ring-brand-500 focus:ring-offset-1
+                                                   {{ $allOnPageSelected
+                                                       ? 'bg-brand-500 border-brand-500 text-white'
+                                                       : ($someSelected
+                                                           ? 'bg-brand-500 border-brand-500 text-white'
+                                                           : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600') }}"
+                                            aria-label="{{ __('Select all on this page') }}">
+                                        @if($allOnPageSelected)
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2"><path d="M2.5 6l2.5 2.5 4.5-5"/></svg>
+                                        @elseif($someSelected)
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2"><path d="M2.5 6h7"/></svg>
+                                        @endif
+                                    </button>
                                 </th>
                             @endif
                         @endauth
@@ -689,7 +698,7 @@
             </table>
         </div>
 
-        <div class="border-t border-slate-200 dark:border-slate-700/50 px-4 py-3">
+        <div class="border-t border-slate-200 dark:border-slate-700/50 px-3 py-2">
             {{ $leads->links() }}
         </div>
     </div>
