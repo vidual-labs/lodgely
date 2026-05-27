@@ -6,6 +6,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **"Generate" password button works on user edit modal.** The
+  `wire:click="generatePassword"` handler silently dropped clicks —
+  the same Livewire morph issue that hit the inbox filter card.
+  Replaced with an Alpine `x-on:click` handler that generates the
+  password client-side (`crypto.getRandomValues`), sets the input
+  value via `$refs`, and pushes to Livewire via `$wire.set()`. The
+  warning text now shows instantly via Alpine `x-show` instead of
+  waiting for a server round-trip.
+- **Footer and README version badges updated to 0.27.0.** Both were
+  stale (`composer.json` said 0.26.1, README badge said 0.22.4).
+  Added a note to `CLAUDE.md` reminding maintainers that the footer
+  reads from `composer.json` and the README badge is a static string
+  — both must be bumped in the same commit.
+
 ### Added
 
 - **Each expanded panel has a "Close" button.** Sources, Saved views,

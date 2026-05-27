@@ -145,6 +145,19 @@ In short: padding on items is bulletproof; container gap is a nice-
 to-have. Same idea applies to any utility class that's brand-new to
 the project.
 
+### wire:click inside modals can silently drop clicks too
+
+The `wire:click` morph-drop problem isn't limited to the inbox filter
+card. The "Generate" password button on the user edit modal
+(`wire:click="generatePassword"`) silently failed — clicking produced
+no visible result because the Livewire morph didn't update the input
+value. Fixed by generating the password **client-side** with
+`crypto.getRandomValues()` in an Alpine `x-on:click` handler, setting
+the input value via `$refs`, and pushing the value to Livewire with
+`$wire.set()`. The same pattern applies to any action button inside a
+Livewire modal that needs to produce an immediate, visible DOM change:
+prefer Alpine for the UI update, `$wire.set()` for the server sync.
+
 ## Every commit checklist
 
 Before committing any change, always update these three files:
@@ -159,6 +172,11 @@ Before committing any change, always update these three files:
    - Patch (`0.x.y → 0.x.y+1`) for bug fixes and small internal changes.
    - Minor (`0.x.0 → 0.x+1.0`) for new features or behaviour changes.
    - Major reserved for breaking changes to the data schema or public API.
+
+   The **footer version badge** (`v0.x.y` in the app footer) reads from
+   `config('lodgely.version')` which pulls directly from `composer.json`
+   at boot. The **README badge** (`shields.io` version badge at the top)
+   is a static string — update it in the same commit so both stay in sync.
 
 When a batch of [Unreleased] entries represents a coherent release (e.g. a
 milestone or tag), promote `[Unreleased]` to `[x.y.z] · YYYY-MM-DD` in the
