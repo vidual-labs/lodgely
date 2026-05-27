@@ -31,7 +31,22 @@ class LeadFilter
         return match ($sort) {
             'created_asc' => ['created_at', 'asc'],
             'priority_desc' => ['priority', 'desc'],
+            'priority_asc' => ['priority', 'asc'],
+            'name_asc' => ['full_name', 'asc'],
+            'name_desc' => ['full_name', 'desc'],
+            'status_asc' => ['status', 'asc'],
+            'status_desc' => ['status', 'desc'],
             default => ['created_at', 'desc'],
         };
+    }
+
+    public static function sortableColumns(): array
+    {
+        return [
+            'received' => ['asc' => 'created_asc', 'desc' => 'created_desc'],
+            'name'     => ['asc' => 'name_asc', 'desc' => 'name_desc'],
+            'status'   => ['asc' => 'status_asc', 'desc' => 'status_desc'],
+            'priority' => ['asc' => 'priority_asc', 'desc' => 'priority_desc'],
+        ];
     }
 }

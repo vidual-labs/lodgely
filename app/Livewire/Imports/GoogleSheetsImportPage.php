@@ -256,7 +256,9 @@ class GoogleSheetsImportPage extends Component
         abort_unless(auth()->user()?->isOperator(), 403);
 
         $import = Import::where('source', 'google_sheets')->findOrFail($id);
-        $deleted = $import->leads()->delete();
+        // Force-delete (not soft-delete) so reimporting the same sheet
+        // creates genuinely fresh leads without ghost duplicates.
+        $deleted = $import->leads()->forceDelete();
         $import->delete();
 
         $this->dispatch('toast', message: __('Import deleted — :count leads removed.', ['count' => $deleted]), type: 'success');
