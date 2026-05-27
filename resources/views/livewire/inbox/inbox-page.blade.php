@@ -529,7 +529,7 @@
                                 @endphp
                                 <th class="px-3 py-2 w-8">
                                     <input type="checkbox"
-                                           wire:click="bulkToggleAll"
+                                           x-on:click.prevent="$wire.bulkToggleAll()"
                                            @checked($allOnPageSelected)
                                            x-ref="selectAllCheckbox"
                                            x-init="$refs.selectAllCheckbox.indeterminate = {{ $someSelected ? 'true' : 'false' }}"
@@ -585,7 +585,7 @@
                                 @if(auth()->user()->isOperator())
                                     <td class="px-3 py-2" wire:click.stop>
                                         <input type="checkbox"
-                                               wire:model="bulkSelected"
+                                               wire:model.live="bulkSelected"
                                                value="{{ $lead->id }}"
                                                class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
                                                aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
