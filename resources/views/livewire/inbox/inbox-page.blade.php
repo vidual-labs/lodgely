@@ -529,7 +529,7 @@
                                 @endphp
                                 <th class="px-3 py-2 w-8">
                                     <button type="button" wire:click="bulkToggleAll"
-                                            class="flex items-center justify-center w-[18px] h-[18px] rounded border transition-colors cursor-pointer
+                                            class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
                                                    {{ $allOnPageSelected || $someSelected
                                                        ? 'bg-brand-500 border-brand-500 text-white'
                                                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
@@ -589,11 +589,17 @@
                             @auth
                                 @if(auth()->user()->isOperator())
                                     <td class="px-3 py-2" wire:click.stop>
-                                        <input type="checkbox"
-                                               wire:model.live="bulkSelected"
-                                               value="{{ $lead->id }}"
-                                               class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500"
-                                               aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
+                                        @php $isRowSelected = in_array((string) $lead->id, $bulkSelected, true); @endphp
+                                        <button type="button" wire:click="toggleBulkItem('{{ $lead->id }}')"
+                                                class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
+                                                       {{ $isRowSelected
+                                                           ? 'bg-brand-500 border-brand-500 text-white'
+                                                           : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
+                                                aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
+                                            @if($isRowSelected)
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7l3 3 5-6"/></svg>
+                                            @endif
+                                        </button>
                                     </td>
                                 @endif
                             @endauth
@@ -694,7 +700,7 @@
             </table>
         </div>
 
-        <div class="border-t border-slate-200 dark:border-slate-700/50 px-2 py-1.5">
+        <div class="border-t border-slate-200 dark:border-slate-700/50 px-2 py-1">
             {{ $leads->links() }}
         </div>
     </div>
