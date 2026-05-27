@@ -25,7 +25,7 @@
         </div>
 
         {{-- desktop: summary + page numbers --}}
-        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between gap-4 px-1">
             <div>
                 <p class="text-sm text-slate-500 dark:text-slate-400 leading-5">
                     {!! __('Showing') !!}
