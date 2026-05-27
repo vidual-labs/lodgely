@@ -26,7 +26,7 @@
 
         {{-- desktop: summary + page numbers --}}
         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div class="mr-4">
+            <div style="margin-right:1rem">
                 <p class="text-sm text-slate-500 dark:text-slate-400 leading-5">
                     {!! __('Showing') !!}
                     @if ($paginator->firstItem())

@@ -51,6 +51,15 @@ trait WithBulkLeadActions
         $this->bulkSelected = [];
     }
 
+    public function toggleBulkItem(string $id): void
+    {
+        if (in_array($id, $this->bulkSelected, true)) {
+            $this->bulkSelected = array_values(array_diff($this->bulkSelected, [$id]));
+        } else {
+            $this->bulkSelected[] = $id;
+        }
+    }
+
     public function bulkSetStatus(AuditLogger $audit): void
     {
         abort_unless(auth()->user()?->isOperator(), 403);
