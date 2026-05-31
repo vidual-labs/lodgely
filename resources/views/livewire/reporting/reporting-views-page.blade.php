@@ -22,6 +22,7 @@
                         <th class="px-3 py-2.5">{{ __('Name') }}</th>
                         <th class="px-3 py-2.5">{{ __('Columns') }}</th>
                         <th class="px-3 py-2.5">{{ __('Assigned to') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Status') }}</th>
                         <th class="px-3 py-2.5 text-right"></th>
                     </tr>
                 </thead>
@@ -51,8 +52,23 @@
                                     </div>
                                 @endif
                             </td>
+                            <td class="px-3 py-2.5">
+                                @if($v->is_live)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{{ __('Live') }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>{{ __('Hidden') }}
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-3 py-2.5 text-right">
                                 <div class="flex justify-end gap-2">
+                                    <button type="button" wire:click="toggleLive({{ $v->id }})"
+                                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
+                                        {{ $v->is_live ? __('Hide') : __('Set live') }}
+                                    </button>
                                     @if(config('lodgely.ai.enabled'))
                                         <button type="button" wire:click="generateAiSummary({{ $v->id }})"
                                                 class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 transition-colors">
@@ -72,7 +88,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-3 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                            <td colspan="5" class="px-3 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
                                 {{ __('No report views yet.') }}
                                 <button type="button" wire:click="openCreate" class="underline ml-1 hover:text-slate-700 dark:hover:text-slate-300">
                                     {{ __('Create the first one.') }}
@@ -194,6 +210,20 @@
                                 @endforeach
                             </div>
                         @endif
+                    </div>
+
+                    {{-- Visibility --}}
+                    <div>
+                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                            <input type="checkbox" wire:model="form.is_live"
+                                   class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                            <div class="flex-1 min-w-0">
+                                <span class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ __('Live for clients') }}</span>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {{ __('When off, the view stays hidden from assigned clients until you set it live.') }}
+                                </p>
+                            </div>
+                        </label>
                     </div>
 
                     <div class="flex justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">

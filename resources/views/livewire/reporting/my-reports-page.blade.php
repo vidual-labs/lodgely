@@ -48,6 +48,9 @@
                                 ? 'border-brand-500 text-brand-700 dark:text-brand-400'
                                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600' }}">
                     {{ $v->name }}
+                    @if(auth()->user()?->isOperator() && ! $v->is_live)
+                        <span class="ml-1.5 inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400 align-middle">{{ __('Hidden') }}</span>
+                    @endif
                 </button>
             @endforeach
         </div>
@@ -75,6 +78,15 @@
                             value="{{ $col->format($totals[$col->value] ?? null) }}"
                             tone="slate"
                         />
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Trend charts --}}
+            @if($columns && $rows->isNotEmpty())
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    @foreach($columns as $col)
+                        <x-reporting.metric-chart :column="$col" :rows="$rows" />
                     @endforeach
                 </div>
             @endif

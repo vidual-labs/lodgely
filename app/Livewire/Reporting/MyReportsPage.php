@@ -69,7 +69,8 @@ class MyReportsPage extends Component
                 ->orderBy('name')
                 ->get()
             : $user->reportingViews()
-                ->where('tenant_id', Tenant::DEFAULT_ID)
+                ->where('client_reporting_views.tenant_id', Tenant::DEFAULT_ID)
+                ->where('client_reporting_views.is_live', true)
                 ->orderBy('name')
                 ->get();
 

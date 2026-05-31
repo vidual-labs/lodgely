@@ -8,6 +8,21 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **More ad KPIs in reporting views.** Custom reporting views can now
+  include **CPC** (cost per click), **CPM** (cost per thousand
+  impressions), and **Conversion rate** (platform leads ÷ clicks). All
+  three are derived from existing ad-spend data — no new ingestion — and
+  flow through the client report table, KPI strip, report emails, and AI
+  summaries automatically.
+- **Live / Hidden toggle for reporting views.** Operators can take a view
+  offline without unassigning its clients. Views default to Live (so
+  assigning a client still makes the view visible); a "Hide" / "Set live"
+  action and status badge on `/reporting/views` flip the state. Hidden
+  views disappear from clients' "My reports" and pause their scheduled
+  report emails.
+- **Time-series charts on client reports.** `/my-reports` now renders a
+  compact monthly bar chart per selected metric above the table,
+  dependency-free (inline SVG, server-rendered).
 - **Bulk delete action.** Operators can now select multiple leads and
   delete them in one step via a red "Delete" button in the bulk action
   bar. Each deletion is audited individually. Includes a browser
