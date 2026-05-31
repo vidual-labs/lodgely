@@ -4,6 +4,7 @@ namespace App\Importers\Meta;
 
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\DTOs\AdMetricsSnapshot;
+use App\Models\AdPlatformSetting;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -46,10 +47,14 @@ class MetaAdsSource implements AdMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        $accountId = trim((string) config('lodgely.reporting.meta.ad_account_id'));
-        $token = trim((string) config('lodgely.reporting.meta.access_token'));
-        $apiVer = trim((string) config('lodgely.reporting.meta.api_version', 'v21.0'));
-        $currency = (string) config('lodgely.reporting.meta.currency', 'USD');
+        // Credentials come from the per-tenant settings row (configured in
+        // /settings/ad-platforms), falling back to env config when unset.
+        $settings = AdPlatformSetting::resolveSafe($tenantId);
+
+        $accountId = trim($settings->effectiveMetaAccountId());
+        $token = trim($settings->effectiveMetaAccessToken());
+        $apiVer = trim($settings->effectiveMetaApiVersion());
+        $currency = $settings->effectiveMetaCurrency();
         $timeout = (int) config('lodgely.reporting.http_timeout_sec', 30);
 
         if ($accountId === '' || $token === '') {

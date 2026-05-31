@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\Services\MetricsIngestor;
+use App\Models\AdPlatformSetting;
 use App\Models\Tenant;
 use App\Providers\AppServiceProvider;
 use Illuminate\Console\Command;
@@ -27,7 +28,7 @@ class ImportAdMetrics extends Command
             ? new \DateTimeImmutable($this->option('date'))
             : new \DateTimeImmutable('yesterday');
 
-        $sources = $this->resolveSources($platform);
+        $sources = $this->resolveSources($tenantId, $platform);
 
         if (empty($sources)) {
             $this->warn('No ad metrics sources registered or matched the platform filter.');
@@ -57,15 +58,12 @@ class ImportAdMetrics extends Command
     }
 
     /** @return AdMetricsSource[] */
-    private function resolveSources(?string $platform): array
+    private function resolveSources(int $tenantId, ?string $platform): array
     {
-        // `LODGELY_AD_METRICS_SOURCES` is the operator-facing knob for which
-        // adapters actually run — both mocks and the real Meta/Google APIs are
-        // registered, but only those listed here are activated.
-        $enabledKeys = array_values(array_filter(array_map(
-            'trim',
-            (array) config('lodgely.reporting.sources', []),
-        )));
+        // Which adapters actually run: the env list (mocks by default) plus any
+        // live Meta/Google adapters the operator switched on in
+        // Settings → Ad platforms. See AdPlatformSetting::activeSourceKeys().
+        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
 
         $sources = [];
 

@@ -8,6 +8,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Ad platform connection UI (`/settings/ad-platforms`).** Operators can now
+  connect Meta Ads and Google Ads entirely from the admin UI — no `.env`
+  editing. Credentials are stored encrypted at rest, secret fields are
+  write-only ("leave blank to keep"), and each platform has a "Test
+  connection" button that pulls yesterday's metrics and reports the result.
+  Google Ads adds a one-click **"Connect Google Ads" OAuth flow** that
+  captures the refresh token automatically (mirrors the Google Sheets
+  handshake), plus a copy-paste redirect URI and step-by-step setup guides.
+  Per-platform **Enable** toggles switch the live adapters on/off for the
+  daily pull. Existing `LODGELY_*` env vars still work as a fallback.
+
 - **More ad KPIs in reporting views.** Custom reporting views can now
   include **CPC** (cost per click), **CPM** (cost per thousand
   impressions), and **Conversion rate** (platform leads ÷ clicks). All

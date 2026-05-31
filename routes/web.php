@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\InboxColumnPickerController;
 use App\Http\Controllers\InboxSavedFilterController;
 use App\Http\Controllers\LeadExportController;
+use App\Http\Controllers\OAuth\GoogleAdsOAuthController;
 use App\Http\Controllers\OAuth\GoogleSheetsOAuthController;
 use App\Livewire\Imports\GoogleSheetsImportPage;
 use App\Livewire\Settings\GoogleSheetsSettingsPage;
@@ -17,6 +18,7 @@ use App\Livewire\Reporting\MyReportsPage;
 use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
+use App\Livewire\Settings\AdPlatformsPage;
 use App\Livewire\Settings\AiSettingsPage;
 use App\Livewire\Settings\DemoDataPage;
 use App\Livewire\Settings\ProfilePage;
@@ -82,6 +84,12 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/settings/google-sheets', GoogleSheetsSettingsPage::class)->name('settings.google-sheets');
+
+    // Ad platform (Meta / Google Ads) credentials + Google Ads OAuth handshake.
+    // Operator-only enforcement lives in the page/controller.
+    Route::get('/settings/ad-platforms', AdPlatformsPage::class)->name('settings.ad-platforms');
+    Route::get('/settings/ad-platforms/google/connect',  [GoogleAdsOAuthController::class, 'connect'])->name('settings.ad-platforms.google.connect');
+    Route::get('/settings/ad-platforms/google/callback', [GoogleAdsOAuthController::class, 'callback'])->name('settings.ad-platforms.google.callback');
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
 
