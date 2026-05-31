@@ -113,7 +113,7 @@ class GoogleAdsSourceTest extends TestCase
         config()->set('lodgely.reporting.google', []);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('LODGELY_GOOGLE_ADS_CUSTOMER_ID');
+        $this->expectExceptionMessage('customer id and developer token must both be set');
 
         iterator_to_array((new GoogleAdsSource)->fetch(1, new \DateTimeImmutable('2026-05-17')));
     }

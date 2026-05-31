@@ -5,7 +5,7 @@
 
     // Group memberships so we can highlight a dropdown when any of its children is active
     $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'settings.google-sheets'];
-    $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails'];
+    $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
 
     $importsActive   = request()->routeIs(...$importRoutes);
@@ -109,6 +109,11 @@
                                 <a href="{{ route('reporting.emails') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('reporting.emails') ? $menuItemActive : $menuItemIdle }}">
                                     {{ __('Report emails') }}
+                                </a>
+                                <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                                <a href="{{ route('settings.ad-platforms') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.ad-platforms') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Ad platforms') }}
                                 </a>
                             </div>
                         </div>
@@ -293,6 +298,8 @@
                        class="{{ $menuItem }} {{ request()->routeIs('reporting.views') ? $menuItemActive : $menuItemIdle }}">{{ __('Report views') }}</a>
                     <a href="{{ route('reporting.emails') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('reporting.emails') ? $menuItemActive : $menuItemIdle }}">{{ __('Report emails') }}</a>
+                    <a href="{{ route('settings.ad-platforms') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.ad-platforms') ? $menuItemActive : $menuItemIdle }}">{{ __('Ad platforms') }}</a>
 
                     <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('Workspace') }}</div>
                     <a href="{{ route('users') }}"

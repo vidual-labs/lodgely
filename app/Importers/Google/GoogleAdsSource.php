@@ -4,6 +4,7 @@ namespace App\Importers\Google;
 
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\DTOs\AdMetricsSnapshot;
+use App\Models\AdPlatformSetting;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -32,21 +33,23 @@ class GoogleAdsSource implements AdMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        $config = (array) config('lodgely.reporting.google');
+        // Credentials come from the per-tenant settings row (configured in
+        // /settings/ad-platforms), falling back to env config when unset.
+        $settings = AdPlatformSetting::resolveSafe($tenantId);
 
-        $customerId = (string) preg_replace('/\D/', '', (string) ($config['customer_id'] ?? ''));
-        $loginCustomerId = (string) preg_replace('/\D/', '', (string) ($config['login_customer_id'] ?? ''));
-        $developerToken = trim((string) ($config['developer_token'] ?? ''));
-        $apiVersion = trim((string) ($config['api_version'] ?? 'v18'));
+        $customerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleCustomerId());
+        $loginCustomerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleLoginCustomerId());
+        $developerToken = trim($settings->effectiveGoogleDeveloperToken());
+        $apiVersion = trim($settings->effectiveGoogleApiVersion());
         $timeout = (int) config('lodgely.reporting.http_timeout_sec', 30);
 
         if ($customerId === '' || $developerToken === '') {
             throw new RuntimeException(
-                'Google Ads source: LODGELY_GOOGLE_ADS_CUSTOMER_ID and LODGELY_GOOGLE_ADS_DEVELOPER_TOKEN must both be set.'
+                'Google Ads source: customer id and developer token must both be set (configure them in Settings → Ad platforms).'
             );
         }
 
-        $accessToken = $this->accessToken($config, $timeout);
+        $accessToken = $this->accessToken($settings, $timeout);
         $dateStr = $date->format('Y-m-d');
 
         $query = 'SELECT campaign.id, campaign.name, customer.currency_code, '
@@ -105,15 +108,15 @@ class GoogleAdsSource implements AdMetricsSource
      * under the 1 h Google validity window so each scheduled run reuses the
      * same token instead of refreshing on every campaign page.
      */
-    private function accessToken(array $config, int $timeout): string
+    private function accessToken(AdPlatformSetting $settings, int $timeout): string
     {
-        $clientId = trim((string) ($config['client_id'] ?? ''));
-        $clientSecret = trim((string) ($config['client_secret'] ?? ''));
-        $refreshToken = trim((string) ($config['refresh_token'] ?? ''));
+        $clientId = trim($settings->effectiveGoogleClientId());
+        $clientSecret = trim($settings->effectiveGoogleClientSecret());
+        $refreshToken = trim($settings->effectiveGoogleRefreshToken());
 
         if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
             throw new RuntimeException(
-                'Google Ads source: OAuth client_id, client_secret and refresh_token must all be set.'
+                'Google Ads source: OAuth client id, client secret and refresh token must all be set. Connect Google Ads in Settings → Ad platforms.'
             );
         }
 
