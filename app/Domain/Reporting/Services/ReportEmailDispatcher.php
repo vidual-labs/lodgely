@@ -63,6 +63,13 @@ class ReportEmailDispatcher
             return null;
         }
 
+        // A hidden (non-live) reporting view must not keep emailing clients —
+        // taking the view offline pauses its scheduled emails too.
+        $view = $email->reportingView;
+        if ($view !== null && ! $view->is_live) {
+            return null;
+        }
+
         $recipients = $email->recipients()->where('is_active', true)->get()->all();
 
         if ($recipients === []) {

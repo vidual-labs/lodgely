@@ -14,6 +14,22 @@ use Illuminate\Support\Facades\DB;
 class ClientViewDataBuilder
 {
     /**
+     * Ad-metric columns that are *derived* from raw sums rather than stored
+     * directly. These need their underlying raw columns exposed on each row
+     * so totals() can re-derive them from the period sums (averaging the
+     * per-month ratios would be wrong).
+     *
+     * @var ReportColumn[]
+     */
+    private const DERIVED_AD_METRICS = [
+        ReportColumn::Ctr,
+        ReportColumn::Cpl,
+        ReportColumn::Cpc,
+        ReportColumn::Cpm,
+        ReportColumn::ConvRate,
+    ];
+
+    /**
      * Build monthly rows for a single view.
      *
      * Returns a Collection of stdObjects with a "month" key ("YYYY-MM") and
@@ -55,7 +71,7 @@ class ClientViewDataBuilder
         foreach ($columns as $col) {
             $key = $col->value;
 
-            if (in_array($col, [ReportColumn::Ctr, ReportColumn::Cpl], true)) {
+            if (in_array($col, self::DERIVED_AD_METRICS, true)) {
                 // Re-derive from raw sums rather than averaging per-month values
                 $clicks      = $rows->sum('clicks');
                 $impressions = $rows->sum('impressions');
@@ -63,9 +79,12 @@ class ClientViewDataBuilder
                 $pLeads      = $rows->sum('platform_leads');
 
                 $totals[$key] = match ($col) {
-                    ReportColumn::Ctr => $impressions > 0 ? $clicks / $impressions * 100 : null,
-                    ReportColumn::Cpl => $pLeads > 0 ? $spend / $pLeads / 100 : null,
-                    default           => null,
+                    ReportColumn::Ctr      => $impressions > 0 ? $clicks / $impressions * 100 : null,
+                    ReportColumn::Cpl      => $pLeads > 0 ? $spend / $pLeads / 100 : null,
+                    ReportColumn::Cpc      => $clicks > 0 ? $spend / $clicks / 100 : null,
+                    ReportColumn::Cpm      => $impressions > 0 ? $spend * 10 / $impressions : null,
+                    ReportColumn::ConvRate => $clicks > 0 ? $pLeads / $clicks * 100 : null,
+                    default                => null,
                 };
             } else {
                 $totals[$key] = $rows->sum($key);
@@ -141,13 +160,23 @@ class ClientViewDataBuilder
                     ReportColumn::Cpl           => ($ad && (int) $ad->platform_leads > 0)
                         ? (int) $ad->spend_cents / (int) $ad->platform_leads / 100
                         : null,
+                    ReportColumn::Cpc           => ($ad && (int) $ad->clicks > 0)
+                        ? (int) $ad->spend_cents / (int) $ad->clicks / 100
+                        : null,
+                    ReportColumn::Cpm           => ($ad && (int) $ad->impressions > 0)
+                        ? (int) $ad->spend_cents * 10 / (int) $ad->impressions
+                        : null,
+                    ReportColumn::ConvRate      => ($ad && (int) $ad->clicks > 0)
+                        ? (int) $ad->platform_leads / (int) $ad->clicks * 100
+                        : null,
                     ReportColumn::LeadCount     => $lead ? (int) $lead->lead_count : 0,
                     ReportColumn::NewLeads      => $lead ? (int) $lead->new_leads : 0,
                     ReportColumn::ReviewedLeads => $lead ? (int) $lead->reviewed_leads : 0,
                 };
 
-                // Also expose raw values needed by totals() for CTR/CPL re-derivation
-                if ($col === ReportColumn::Ctr || $col === ReportColumn::Cpl) {
+                // Also expose raw values needed by totals() to re-derive the
+                // ratio metrics (CTR/CPL/CPC/CPM/Conv. rate) from period sums.
+                if (in_array($col, self::DERIVED_AD_METRICS, true)) {
                     $row['clicks']         = $ad ? (int) $ad->clicks : 0;
                     $row['impressions']    = $ad ? (int) $ad->impressions : 0;
                     $row['spend_cents']    = $ad ? (int) $ad->spend_cents : 0;

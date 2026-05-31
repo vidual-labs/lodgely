@@ -11,6 +11,9 @@ enum ReportColumn: string
     case PlatformLeads = 'platform_leads';
     case Ctr           = 'ctr';
     case Cpl           = 'cpl';
+    case Cpc           = 'cpc';
+    case Cpm           = 'cpm';
+    case ConvRate      = 'conv_rate';
     case LeadCount     = 'lead_count';
     case NewLeads      = 'new_leads';
     case ReviewedLeads = 'reviewed_leads';
@@ -25,6 +28,9 @@ enum ReportColumn: string
             self::PlatformLeads => __('Platform Leads'),
             self::Ctr           => __('CTR'),
             self::Cpl           => __('Cost per Lead'),
+            self::Cpc           => __('CPC'),
+            self::Cpm           => __('CPM'),
+            self::ConvRate      => __('Conv. Rate'),
             self::LeadCount     => __('Leads'),
             self::NewLeads      => __('New Leads'),
             self::ReviewedLeads => __('Reviewed Leads'),
@@ -41,6 +47,9 @@ enum ReportColumn: string
             self::PlatformLeads => __('Conversions reported by the ad platform.'),
             self::Ctr           => __('Click-through rate: clicks ÷ impressions × 100.'),
             self::Cpl           => __('Cost per lead: ad spend ÷ platform leads.'),
+            self::Cpc           => __('Cost per click: ad spend ÷ clicks.'),
+            self::Cpm           => __('Cost per thousand impressions: ad spend ÷ impressions × 1000.'),
+            self::ConvRate      => __('Conversion rate: platform leads ÷ clicks × 100.'),
             self::LeadCount     => __('Total leads ingested into Lodgely.'),
             self::NewLeads      => __('Leads with status "New".'),
             self::ReviewedLeads => __('Leads with status "Reviewed".'),
@@ -58,6 +67,9 @@ enum ReportColumn: string
             self::PlatformLeads,
             self::Ctr,
             self::Cpl,
+            self::Cpc,
+            self::Cpm,
+            self::ConvRate,
         ], true);
     }
 
@@ -78,10 +90,10 @@ enum ReportColumn: string
         }
 
         return match ($this) {
-            self::Spend => '$'.number_format($value / 100, 2),
-            self::Ctr   => number_format((float) $value, 2).'%',
-            self::Cpl   => '$'.number_format((float) $value, 2),
-            default     => number_format((int) $value),
+            self::Spend                              => '$'.number_format($value / 100, 2),
+            self::Ctr, self::ConvRate                => number_format((float) $value, 2).'%',
+            self::Cpl, self::Cpc, self::Cpm          => '$'.number_format((float) $value, 2),
+            default                                  => number_format((int) $value),
         };
     }
 

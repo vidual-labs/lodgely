@@ -30,6 +30,7 @@ class ReportingViewsPage extends Component
         'name'     => '',
         'columns'  => [],
         'user_ids' => [],
+        'is_live'  => true,
     ];
 
     public function mount(): void
@@ -54,6 +55,7 @@ class ReportingViewsPage extends Component
             'name'     => $view->name,
             'columns'  => $view->columns ?? [],
             'user_ids' => $view->assignedUsers()->pluck('users.id')->map(fn ($v) => (string) $v)->all(),
+            'is_live'  => (bool) $view->is_live,
         ];
         $this->showForm = true;
     }
@@ -74,12 +76,14 @@ class ReportingViewsPage extends Component
             'form.columns.*' => ['string', Rule::in(array_column(ReportColumn::cases(), 'value'))],
             'form.user_ids'  => ['array'],
             'form.user_ids.*'=> ['exists:users,id'],
+            'form.is_live'   => ['boolean'],
         ]);
 
         $attrs = [
             'tenant_id'  => Tenant::DEFAULT_ID,
             'name'       => $data['form']['name'],
             'columns'    => $data['form']['columns'],
+            'is_live'    => (bool) ($data['form']['is_live'] ?? true),
             'created_by' => auth()->id(),
         ];
 
@@ -121,6 +125,18 @@ class ReportingViewsPage extends Component
     {
         $this->confirmingDeleteId = false;
         $this->deletingId = null;
+    }
+
+    public function toggleLive(int $id): void
+    {
+        $this->guardOperator();
+
+        $view = ClientReportingView::where('tenant_id', Tenant::DEFAULT_ID)->findOrFail($id);
+        $view->update(['is_live' => ! $view->is_live]);
+
+        $this->dispatch('toast', message: $view->is_live
+            ? __('View is now live for assigned clients.')
+            : __('View hidden from clients.'), type: 'success');
     }
 
     public function generateAiSummary(int $viewId, AiSummarizer $summarizer): void
@@ -171,6 +187,7 @@ class ReportingViewsPage extends Component
             'name'     => '',
             'columns'  => [],
             'user_ids' => [],
+            'is_live'  => true,
         ];
         $this->resetErrorBag();
     }
