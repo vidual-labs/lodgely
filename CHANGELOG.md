@@ -8,6 +8,8 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Favicon.** Added a square SVG favicon (`public/favicon.svg`) derived from the lodgely dot-staircase icon. Linked in both the app and guest layouts.
+
 - **Ad platform connection UI (`/settings/ad-platforms`).** Operators can now
   connect Meta Ads and Google Ads entirely from the admin UI — no `.env`
   editing. Credentials are stored encrypted at rest, secret fields are
