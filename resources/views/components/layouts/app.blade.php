@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('lodgely.brand.name') }}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <script>
         /* Apply dark class immediately to prevent flash of unstyled content.
            For authenticated users the server-known theme wins; guests fall back to localStorage / OS. */
