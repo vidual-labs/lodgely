@@ -50,6 +50,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Pagination styling.** Fixed three issues with the desktop pagination
+  control: the active page number and the prev/next arrows rendered as
+  near-white/invisible in light mode — the active page now uses the
+  app's core `bg-slate-900` fill (guaranteed in the CSS bundle, matching
+  the primary button) instead of the custom `bg-brand-600`, and arrows
+  use a darker `text-slate-600` so they read clearly. Trimmed the
+  oversized inner padding on the page buttons (`py-1.5` → `py-1`,
+  `text-sm` → `text-xs`). Removed the inline `padding:4px` override on
+  the inbox bar and standardised every pagination wrapper to `px-4 py-3`
+  so the box has consistent breathing room on the outside.
 - **Pagination padding.** The pagination bar below the inbox table now
   has proper left/right padding (`px-4 py-3`) so it no longer looks
   cramped against the table edges.
