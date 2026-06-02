@@ -46,15 +46,30 @@
 
             <details class="px-5 py-3 text-sm group">
                 <summary class="cursor-pointer font-medium text-slate-700 dark:text-slate-300 select-none">{{ __('How to get these values') }}</summary>
+
+                <div class="mt-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+                    {{ __('Do the steps in this order. The "Generate token" button stays greyed out until an App is assigned to your System User — and you must be an Admin of the Business to add an App.') }}
+                </div>
+
                 <ol class="mt-3 space-y-2 text-slate-500 dark:text-slate-400 list-decimal pl-5">
-                    <li>{{ __('In Meta Business Manager, open Business Settings → Accounts → Ad accounts and copy your Ad account ID (the number after "act_").') }}</li>
-                    <li>{{ __('Create a System User (Business Settings → Users → System Users), assign it to the ad account with "View Performance", and generate a long-lived access token with the ads_read permission.') }}</li>
-                    <li>{{ __('Paste both below, set the currency to match the ad account, then Save and Test.') }}</li>
+                    <li>{{ __('Create a Meta app first — apps are made in the Developers portal, not Business Manager. Go to developers.facebook.com → My Apps → Create App, pick type "Business", and attach it to your Business portfolio. Then Add product → Marketing API → Set up.') }}</li>
+                    <li>{{ __('Link the app to your Business: Business Settings → Accounts → Apps. If it is not listed, click Add → Connect an App ID and paste the App ID.') }}</li>
+                    <li>{{ __('Create or open a System User: Business Settings → Users → System Users. Click Add assets and, under the Apps tab, assign your app with Manage app / Full control. Save.') }}</li>
+                    <li>{{ __('Still in Add assets, open the Ad accounts tab and assign your ad account with at least View performance.') }}</li>
+                    <li>{{ __('Now "Generate new token" is enabled. Pick your app, tick the ads_read scope (and read_insights if shown), generate, and copy the token immediately — it is only shown once and does not expire.') }}</li>
+                    <li>{{ __('Copy your Ad account ID from Business Settings → Accounts → Ad accounts (the number, with or without the act_ prefix). Paste both below, set the currency to match the account, then Save and Test.') }}</li>
                 </ol>
-                <a href="https://business.facebook.com/settings" target="_blank" rel="noopener noreferrer" class="{{ $extLink }} mt-2">
-                    {{ __('Open Meta Business Settings') }}
-                    <svg class="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 9.5 9.5 2.5M5 2.5h4.5v4.5"/></svg>
-                </a>
+
+                <div class="mt-3 flex flex-wrap gap-3">
+                    <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer" class="{{ $extLink }}">
+                        {{ __('Create a Meta app') }}
+                        <svg class="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 9.5 9.5 2.5M5 2.5h4.5v4.5"/></svg>
+                    </a>
+                    <a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noopener noreferrer" class="{{ $extLink }}">
+                        {{ __('Open System Users') }}
+                        <svg class="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 9.5 9.5 2.5M5 2.5h4.5v4.5"/></svg>
+                    </a>
+                </div>
             </details>
 
             <div class="px-5 py-4 space-y-4">

@@ -6,6 +6,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Clearer Meta Ads setup guide.** The "How to get these values" panel on
+  Settings → Ad platforms now spells out the correct order: create the Meta
+  app in the Developers portal first, link it to the Business, assign the
+  app + ad account to a System User, then generate the token. Calls out the
+  two common blockers — the "Generate token" button stays greyed out until
+  an App is assigned, and you must be a Business Admin to add an App.
+
 ### Added
 
 - **Ad platform connection UI (`/settings/ad-platforms`).** Operators can now
