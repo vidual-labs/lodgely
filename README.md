@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.30.2-6366F1" alt="Version 0.30.2">
+  <img src="https://img.shields.io/badge/version-0.31.0-6366F1" alt="Version 0.31.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -132,6 +132,14 @@ clean place to *triage* leads before anything else happens, you are at home.
   priority / source / client / sort` filters as the inbox URL. Excludes
   `raw_payload` and internal dedupe keys. Each export writes a `lead.exported`
   log line for auditability.
+- 💾 **Backup & recovery** (`/settings/backups`, operator-only) — create a
+  full-database backup as a single downloadable `.zip` (a `pg_dump` archive
+  plus a manifest), download it to a local machine, prune old ones, or
+  restore the database from a previously downloaded archive straight from
+  the UI (typed "RESTORE" confirmation, since it overwrites every table and
+  signs the operator out). The same flows ship as artisan commands —
+  `lodgely:backup:create [--keep=N]` and `lodgely:backup:restore <path>` —
+  for cron jobs and scripted server migrations.
 - 🔖 **Saved filters & default views** — any filter combination (search, status,
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded
@@ -296,7 +304,8 @@ A working sample lives at `database/samples/leads-sample.csv`.
 ```
 app/
 ├── Console/Commands/        artisan commands (create-user, mock pull, purge,
-│                            ad-metrics pull, report-emails dispatch)
+│                            ad-metrics pull, report-emails dispatch,
+│                            backup create/restore)
 ├── Domain/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
@@ -341,6 +350,7 @@ app/
 │   │   └── MyReportsPage    per-client monthly reporting tab
 │   ├── Settings/AdPlatformsPage             operator Meta/Google Ads connection UI
 │   ├── Settings/AiSettingsPage              operator AI provider config
+│   ├── Settings/BackupsPage                 operator backup create/download/restore
 │   ├── Settings/DemoDataPage                operator demo-data load/unload
 │   ├── Settings/GoogleSheetsSettingsPage    Google Sheets OAuth + credential mgmt
 │   ├── Settings/ProfilePage                 per-user profile + password change
@@ -355,7 +365,8 @@ app/
 │                            ClientReportEmailSchedule, ClientReportEmailSend,
 │                            GoogleSheetsSetting, GoogleSheetSource
 ├── Providers/AppServiceProvider
-└── Support/Audit/           AuditLogger, AiAuditLogger
+├── Support/Audit/           AuditLogger, AiAuditLogger
+└── Support/Backup/          BackupManager (pg_dump/pg_restore archive create/restore)
 ```
 
 Adding a new lead source means:
