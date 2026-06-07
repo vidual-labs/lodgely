@@ -8,6 +8,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Backup & recovery (`/settings/backups`).** Operators can create a full
+  database backup (a `.zip` containing a `pg_dump` archive plus a manifest),
+  download it to a local machine, delete old ones, or restore the database
+  from a previously downloaded archive — all from the UI, with a typed
+  ("RESTORE") confirmation since restoring overwrites every table and signs
+  the operator out. The same operations are available as artisan commands
+  (`lodgely:backup:create [--keep=N]`, `lodgely:backup:restore <path>`) for
+  cron jobs or scripted server migrations. New `App\Support\Backup\BackupManager`
+  service centralizes the `pg_dump`/`pg_restore` handling; archives live under
+  `storage/app/private/backups/`.
+
 - **Favicon.** Added a square SVG favicon (`public/favicon.svg`) derived from the lodgely dot-staircase icon. Linked in both the app and guest layouts.
 
 - **Ad platform connection UI (`/settings/ad-platforms`).** Operators can now

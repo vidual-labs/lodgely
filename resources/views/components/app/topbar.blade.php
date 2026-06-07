@@ -130,6 +130,10 @@
                            class="{{ $itemBase }} {{ request()->routeIs('settings.demo-data') ? $itemActive : $itemIdle }}">
                             {{ __('Demo data') }}
                         </a>
+                        <a href="{{ route('settings.backups') }}"
+                           class="{{ $itemBase }} {{ request()->routeIs('settings.backups') ? $itemActive : $itemIdle }}">
+                            {{ __('Backups') }}
+                        </a>
 
                         @if($aiEnabled)
                             {{-- AI dropdown --}}
@@ -308,6 +312,8 @@
                        class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">{{ __('Webhooks') }}</a>
                     <a href="{{ route('settings.demo-data') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.demo-data') ? $menuItemActive : $menuItemIdle }}">{{ __('Demo data') }}</a>
+                    <a href="{{ route('settings.backups') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.backups') ? $menuItemActive : $menuItemIdle }}">{{ __('Backups') }}</a>
 
                     @if($aiEnabled)
                         <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('AI') }}</div>

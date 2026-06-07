@@ -18,8 +18,10 @@ use App\Livewire\Reporting\MyReportsPage;
 use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
+use App\Http\Controllers\BackupDownloadController;
 use App\Livewire\Settings\AdPlatformsPage;
 use App\Livewire\Settings\AiSettingsPage;
+use App\Livewire\Settings\BackupsPage;
 use App\Livewire\Settings\DemoDataPage;
 use App\Livewire\Settings\ProfilePage;
 use App\Livewire\Users\UsersPage;
@@ -92,6 +94,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/ad-platforms/google/callback', [GoogleAdsOAuthController::class, 'callback'])->name('settings.ad-platforms.google.callback');
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
+
+    Route::get('/settings/backups', BackupsPage::class)->name('settings.backups');
+    Route::get('/settings/backups/{filename}/download', BackupDownloadController::class)->name('settings.backups.download');
 
     // Google Sheets OAuth handshake. Operator-only enforcement lives in the
     // controller; the callback URL must match the redirect URI configured on
