@@ -26,29 +26,30 @@
   <!--
     Dotted icon: staircase pattern representing a lead funnel.
     5 columns (x = 14, 22, 30, 38, 46); dots stack up from y=46.
-    Left column (x=14) is tallest (5 dots), right column (x=46) is shortest (1 dot).
+    Ascends left→right — the right column (x=46), next to the wordmark,
+    is tallest (5 dots) — matching the brand artwork in .github/logo.png.
     Dots fade toward the apex so the eye reads it as a single connected shape.
   -->
-  <!-- col 1 (x=14) — 5 dots -->
+  <!-- col 1 (x=14) — 1 dot -->
   <circle cx="14" cy="46" r="2.2" fill="url(#ic)"/>
-  <circle cx="14" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
-  <circle cx="14" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
-  <circle cx="14" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
-  <circle cx="14" cy="14" r="2.2" fill="url(#ic)" opacity=".44"/>
-  <!-- col 2 (x=22) — 4 dots -->
+  <!-- col 2 (x=22) — 2 dots -->
   <circle cx="22" cy="46" r="2.2" fill="url(#ic)"/>
   <circle cx="22" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
-  <circle cx="22" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
-  <circle cx="22" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
   <!-- col 3 (x=30) — 3 dots -->
   <circle cx="30" cy="46" r="2.2" fill="url(#ic)"/>
   <circle cx="30" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
   <circle cx="30" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
-  <!-- col 4 (x=38) — 2 dots -->
+  <!-- col 4 (x=38) — 4 dots -->
   <circle cx="38" cy="46" r="2.2" fill="url(#ic)"/>
   <circle cx="38" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
-  <!-- col 5 (x=46) — 1 dot -->
+  <circle cx="38" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
+  <circle cx="38" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
+  <!-- col 5 (x=46) — 5 dots -->
   <circle cx="46" cy="46" r="2.2" fill="url(#ic)"/>
+  <circle cx="46" cy="38" r="2.2" fill="url(#ic)" opacity=".90"/>
+  <circle cx="46" cy="30" r="2.2" fill="url(#ic)" opacity=".78"/>
+  <circle cx="46" cy="22" r="2.2" fill="url(#ic)" opacity=".62"/>
+  <circle cx="46" cy="14" r="2.2" fill="url(#ic)" opacity=".44"/>
 
   <!-- Wordmark -->
   <text x="60" y="40"

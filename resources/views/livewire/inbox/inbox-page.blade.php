@@ -172,7 +172,7 @@
                 @endif
                 <button type="button" @click="columnsOpen = !columnsOpen"
                         :class="columnsOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
-                        class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Custom columns') }}</button>
+                        class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
 
                 <button type="button" @click="saveOpen = !saveOpen"
                         :class="saveOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
@@ -253,14 +253,21 @@
                     'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
                 ];
             @endphp
-            <form method="POST" action="{{ route('inbox.columns.update') }}" class="space-y-3">
+            {{-- Alpine keeps the (n / max) counters live as chips are toggled and
+                 warns when over the cap — the server would otherwise silently
+                 keep only the first MAX_TOTAL_COLUMNS picks. Display-only state;
+                 the write still goes through the native form POST. --}}
+            <form method="POST" action="{{ route('inbox.columns.update') }}" class="space-y-3"
+                  x-data="{ picked: {{ $total }}, qs: {{ count($pickedQs) }}, max: {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }}, maxQs: {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }} }"
+                  @change="picked = $el.querySelectorAll('input:checked').length; qs = $el.querySelectorAll(`input[name='questions[]']:checked`).length">
                 @csrf
 
                 <div class="flex items-center justify-between gap-2 flex-wrap">
                     <div class="text-xs text-slate-600 dark:text-slate-400">
                         {{ __('Visible columns') }}
-                        <span class="ml-1 text-slate-400 dark:text-slate-500">
-                            ({{ $total }} / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
+                        <span class="ml-1 text-slate-400 dark:text-slate-500"
+                              :class="picked > max && 'text-amber-600 dark:text-amber-400 font-medium'">
+                            (<span x-text="picked">{{ $total }}</span> / {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }})
                         </span>
                         <span class="ml-1 text-slate-400 dark:text-slate-500 hidden sm:inline">
                             · {{ __('Up to :tot total, :q custom questions', ['tot' => \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS, 'q' => \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS]) }}
@@ -291,8 +298,9 @@
                     <div>
                         <div class="text-xs text-slate-600 dark:text-slate-400 mb-1.5">
                             {{ __('Custom form questions') }}
-                            <span class="ml-1 text-slate-400 dark:text-slate-500">
-                                ({{ count($pickedQs) }} / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
+                            <span class="ml-1 text-slate-400 dark:text-slate-500"
+                                  :class="qs > maxQs && 'text-amber-600 dark:text-amber-400 font-medium'">
+                                (<span x-text="qs">{{ count($pickedQs) }}</span> / {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }})
                             </span>
                         </div>
                         <div class="flex flex-wrap gap-1.5">
@@ -318,9 +326,15 @@
                     </p>
                 @endif
 
-                <div class="flex items-center justify-end gap-2 pt-1">
+                <p x-show="picked > max || qs > maxQs" x-cloak
+                   class="text-[11px] text-amber-600 dark:text-amber-400">
+                    {{ __('Too many columns selected — only the first picks within the limit will be kept.') }}
+                </p>
+
+                {{-- Reset sits flush left, away from Apply, so a misclick can't wipe the picks. --}}
+                <div class="flex items-center justify-between gap-2 pt-1">
                     <button type="submit" name="action" value="reset"
-                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Reset to defaults') }}</button>
+                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors px-1.5 py-0.5">{{ __('Reset to defaults') }}</button>
                     <button type="submit" name="action" value="apply"
                             class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Apply') }}</button>
                 </div>

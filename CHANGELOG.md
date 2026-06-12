@@ -8,6 +8,51 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Scheduler container in the Docker stack.** `docker compose up` now starts
+  a `scheduler` service running `php artisan schedule:work`. Previously no
+  container (and no documented cron) ever invoked the Laravel scheduler, so
+  none of the recurring jobs — hourly Google Sheets fetch, IMAP pull, daily
+  ad-metrics import, report-email dispatch, GDPR purge — actually ran on a
+  standard install. Sheets configured with a 24 h refresh interval now really
+  do refresh every 24 h. The no-Docker quick start documents the
+  `schedule:work` / cron equivalent.
+
+- **Google Sheets troubleshooting help.** `/settings/google-sheets` now has a
+  "Connection keeps breaking?" panel listing the common causes of a dying
+  connection (OAuth app left in Testing → Google expires refresh tokens after
+  7 days; `APP_KEY` rotation invalidating the encrypted stored credentials;
+  rotated client secret; revoked account access).
+
+### Changed
+
+- **Topbar decluttered: new Settings dropdown (operator).** Users, Webhooks,
+  Backups and Demo data moved from individual top-level items into a single
+  "Settings" dropdown, matching the Imports / Reporting / AI pattern. The
+  mobile nav group formerly labelled "Workspace" is now "Settings" with the
+  same order.
+
+- **Favicon and `img/logo.svg` now match the brand artwork.** The dot-staircase
+  in both SVGs descended left→right (tallest column on the left), mirroring
+  the README/topbar PNG which ascends toward the wordmark. Both icons now
+  ascend left→right like the authoritative PNG.
+
+- **Inbox column picker polish.** The toolbar toggle is now labelled
+  "Columns" (the panel manages all visible columns, not only custom-question
+  ones); the "(n / max)" counters update live as chips are toggled and turn
+  amber with a warning when the selection exceeds the cap (the server
+  previously truncated silently); "Reset to defaults" moved flush-left so it
+  can no longer be misclicked next to "Apply".
+
+- **Roomier pagination.** Page-number and arrow buttons in both pagination
+  views (Livewire + standard) gained consistent, slightly larger padding for
+  better touch targets, and the Livewire variant now guarantees a gap between
+  the "Showing X to Y" summary and the pager (inline margin, stale-CSS-proof).
+
+- **Google Sheets setup guide corrected.** Step 2 used to recommend leaving
+  the OAuth consent screen in Testing — the exact configuration that makes
+  Google expire the refresh token every 7 days. It now instructs publishing
+  the app to Production and explains why.
+
 - **Backup & recovery (`/settings/backups`).** Operators can create a full
   database backup (a `.zip` containing a `pg_dump` archive plus a manifest),
   download it to a local machine, delete old ones, or restore the database

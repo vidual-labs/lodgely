@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.31.0-6366F1" alt="Version 0.31.0">
+  <img src="https://img.shields.io/badge/version-0.32.0-6366F1" alt="Version 0.32.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -102,6 +102,9 @@ clean place to *triage* leads before anything else happens, you are at home.
   import and its leads. The scheduler pulls all due sources hourly via
   `lodgely:google-sheets:fetch`. Google OAuth credentials (client ID + secret,
   stored encrypted in the DB) are managed at `/settings/google-sheets`.
+  **Set the Google OAuth consent screen to "In production"** — apps left in
+  Testing status get their refresh tokens expired by Google after 7 days,
+  which silently breaks the connection every week.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose
@@ -162,7 +165,7 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 📊 **Custom client reporting views** — operators define named reporting views by selecting any combination of metrics (Leads, Clicks, Impressions, CTR, Ad Spend, Cost per Lead, Platform Leads, **CPC**, **CPM**, **Conversion rate**, etc.) and assign each view to specific client users. Each view has a **Live / Hidden** toggle: views default to Live (assigning a client makes them visible), and an operator can take a view offline without unassigning anyone — hidden views disappear from clients' "My reports" and pause their scheduled report emails. Clients see a "My reports" tab page at `/my-reports` with per-metric monthly **time-series charts** (dependency-free inline SVG) above a monthly table, showing only their assigned columns. Different clients can see entirely different views — client A might see only Leads and Clicks, client B sees full ad performance metrics. Lead data is always scoped to each client's own leads.
 - 🤖 **AI summaries & lead qualification** *(optional, off by default)* — admins plug in either an OpenAI-compatible API (OpenAI, Together, Groq, LM Studio, …) or a local Ollama endpoint at `/settings/ai`, set a free-text "house style" instruction, and choose which AI tasks to enable. Two kinds in v1: **report-view summaries** (narrative + evaluation + follow-ups on a custom reporting view, aggregate data only) and **lead qualification** (priority recommendation with pseudonymized lead context). Every AI output is a draft that an operator reviews at `/ai/drafts` — approve, reject, regenerate, then share with the client. API keys are stored encrypted; lead-level kinds require an explicit consent toggle; a daily per-tenant cap prevents cost runaway.
 - 📨 **Custom client report emails** — operators compose modular report emails at `/reporting/emails` and either send them now, schedule them as a one-off, or recur them weekly / monthly. Each template picks any combination of: a free-text intro (markdown), the KPI summary strip, the monthly metrics table, and the latest operator-approved AI summary for a reporting view. Recipients are existing Client users (visibility is honoured because the metrics are built against the recipient). Every dispatch writes a `client_report_email_sends` audit row that surfaces as a "Recent sends" history. The `lodgely:report-emails:dispatch` artisan command runs hourly via the scheduler and advances each schedule's `next_run_at`.
-- 🧪 **Demo data toggle** — operators get a `/settings/demo-data` page (linked from the topbar as "Demo data") with two buttons: load the canonical demo dataset (~60 neutral leads + 12 Meta Lead Ads leads across two demo clients, a known duplicate pair, and the two scoped demo client logins `client.northwind@example.com` / `client.acme@example.com` with password `password`) or wipe it again. Demo leads are tagged by attaching them to a dedicated `imports` row with `source = 'demo_seed'`, so unloading is a single scoped delete — real CSV / webhook / IMAP imports are never touched. Same code path the `DatabaseSeeder` uses, lifted into a reusable `App\Domain\Demo\DemoDataManager` service.
+- 🧪 **Demo data toggle** — operators get a `/settings/demo-data` page (under the topbar **Settings** menu) with two buttons: load the canonical demo dataset (~60 neutral leads + 12 Meta Lead Ads leads across two demo clients, a known duplicate pair, and the two scoped demo client logins `client.northwind@example.com` / `client.acme@example.com` with password `password`) or wipe it again. Demo leads are tagged by attaching them to a dedicated `imports` row with `source = 'demo_seed'`, so unloading is a single scoped delete — real CSV / webhook / IMAP imports are never touched. Same code path the `DatabaseSeeder` uses, lifted into a reusable `App\Domain\Demo\DemoDataManager` service.
 
 ---
 
@@ -211,6 +214,9 @@ Open `.env` and set at minimum:
 ```bash
 # 2. Build and start
 docker compose up -d --build
+# Brings up postgres, the php-fpm app, a queue worker, the scheduler
+# (which runs the recurring imports — Google Sheets, IMAP, ad metrics,
+# report emails, GDPR purge) and caddy.
 
 # 3. Fix storage permissions (required on first start)
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
@@ -277,6 +283,15 @@ Run the queue worker in a second terminal:
 
 ```bash
 php artisan queue:work
+```
+
+And the scheduler in a third — without it none of the recurring jobs
+(Google Sheets fetch, IMAP pull, ad-metrics import, report emails,
+GDPR purge) ever run:
+
+```bash
+php artisan schedule:work
+# or add to crontab: * * * * * cd /path/to/lodgely && php artisan schedule:run
 ```
 
 ---
