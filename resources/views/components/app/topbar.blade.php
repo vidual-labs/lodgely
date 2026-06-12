@@ -7,10 +7,12 @@
     $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
+    $settingsRoutes  = ['users', 'webhooks', 'settings.demo-data', 'settings.backups'];
 
     $importsActive   = request()->routeIs(...$importRoutes);
     $reportingActive = request()->routeIs(...$reportingRoutes);
     $aiActive        = request()->routeIs(...$aiRoutes);
+    $settingsActive  = request()->routeIs(...$settingsRoutes);
 
     $itemBase   = 'px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800';
     $itemActive = 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 font-medium';
@@ -118,23 +120,6 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('users') }}"
-                           class="{{ $itemBase }} {{ request()->routeIs('users') ? $itemActive : $itemIdle }}">
-                            {{ __('Users') }}
-                        </a>
-                        <a href="{{ route('webhooks') }}"
-                           class="{{ $itemBase }} {{ request()->routeIs('webhooks') ? $itemActive : $itemIdle }}">
-                            {{ __('Webhooks') }}
-                        </a>
-                        <a href="{{ route('settings.demo-data') }}"
-                           class="{{ $itemBase }} {{ request()->routeIs('settings.demo-data') ? $itemActive : $itemIdle }}">
-                            {{ __('Demo data') }}
-                        </a>
-                        <a href="{{ route('settings.backups') }}"
-                           class="{{ $itemBase }} {{ request()->routeIs('settings.backups') ? $itemActive : $itemIdle }}">
-                            {{ __('Backups') }}
-                        </a>
-
                         @if($aiEnabled)
                             {{-- AI dropdown --}}
                             <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
@@ -161,6 +146,41 @@
                                 </div>
                             </div>
                         @endif
+
+                        {{-- Settings dropdown — workspace administration that used to --}}
+                        {{-- crowd the top level (Users, Webhooks, Demo data, Backups). --}}
+                        <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
+                            <button type="button"
+                                    @click="open = !open"
+                                    @click.outside="open = false"
+                                    :aria-expanded="open"
+                                    aria-haspopup="true"
+                                    class="{{ $itemBase }} {{ $settingsActive ? $itemActive : $itemIdle }} inline-flex items-center gap-1">
+                                {{ __('Settings') }}
+                                <svg class="h-3 w-3 transition-transform" :class="open && 'rotate-180'" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+                            </button>
+                            <div x-show="open" x-cloak x-transition.opacity.duration.100ms
+                                 class="absolute left-0 mt-1 w-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg dark:shadow-black/40 p-1"
+                                 role="menu">
+                                <a href="{{ route('users') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('users') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Users') }}
+                                </a>
+                                <a href="{{ route('webhooks') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Webhooks') }}
+                                </a>
+                                <hr class="my-1 border-slate-100 dark:border-slate-800">
+                                <a href="{{ route('settings.backups') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.backups') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Backups') }}
+                                </a>
+                                <a href="{{ route('settings.demo-data') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.demo-data') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Demo data') }}
+                                </a>
+                            </div>
+                        </div>
                     @else
                         <a href="{{ route('my-reports') }}"
                            class="{{ $itemBase }} {{ request()->routeIs('my-reports') ? $itemActive : $itemIdle }}">
@@ -305,15 +325,15 @@
                     <a href="{{ route('settings.ad-platforms') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.ad-platforms') ? $menuItemActive : $menuItemIdle }}">{{ __('Ad platforms') }}</a>
 
-                    <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('Workspace') }}</div>
+                    <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('Settings') }}</div>
                     <a href="{{ route('users') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('users') ? $menuItemActive : $menuItemIdle }}">{{ __('Users') }}</a>
                     <a href="{{ route('webhooks') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">{{ __('Webhooks') }}</a>
-                    <a href="{{ route('settings.demo-data') }}"
-                       class="{{ $menuItem }} {{ request()->routeIs('settings.demo-data') ? $menuItemActive : $menuItemIdle }}">{{ __('Demo data') }}</a>
                     <a href="{{ route('settings.backups') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.backups') ? $menuItemActive : $menuItemIdle }}">{{ __('Backups') }}</a>
+                    <a href="{{ route('settings.demo-data') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.demo-data') ? $menuItemActive : $menuItemIdle }}">{{ __('Demo data') }}</a>
 
                     @if($aiEnabled)
                         <div class="pt-2 pb-1 px-3 text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">{{ __('AI') }}</div>

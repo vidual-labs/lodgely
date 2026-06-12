@@ -3,6 +3,7 @@
 #   - postgres 16     (data persisted in named volume)
 #   - php-fpm app     (composer + node build run on first boot)
 #   - queue worker    (database driver)
+#   - scheduler       (runs due artisan schedule entries every minute)
 #   - caddy           (TLS-ready reverse proxy / static file server)
 
 name: lodgely
@@ -49,6 +50,25 @@ services:
       postgres:
         condition: service_healthy
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  # Laravel scheduler — without this container none of the recurring jobs
+  # (Google Sheets fetch, IMAP pull, ad-metrics import, report emails,
+  # GDPR purge) ever run. `schedule:work` invokes `schedule:run` every
+  # minute in the foreground, which is exactly what cron would do.
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: ["php", "artisan", "schedule:work"]
     volumes:
       - .:/app
     working_dir: /app

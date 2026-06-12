@@ -66,7 +66,8 @@
                 <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400">2</span>
                 <div class="space-y-1 text-sm">
                     <p class="font-medium text-slate-800 dark:text-slate-200">{{ __('Configure the OAuth consent screen') }}</p>
-                    <p class="text-slate-500 dark:text-slate-400">{{ __('If you haven\'t already, set up a consent screen. User type: External is fine for your own account. Add the scope ') }}<code class="font-mono text-xs">.../auth/spreadsheets.readonly</code>{{ __('. You don\'t need to publish it — leave it in Testing and add your Google account as a test user.') }}</p>
+                    <p class="text-slate-500 dark:text-slate-400">{{ __('If you haven\'t already, set up a consent screen. User type: External is fine for your own account. Add the scope ') }}<code class="font-mono text-xs">.../auth/spreadsheets.readonly</code>{{ __('.') }}</p>
+                    <p class="text-slate-500 dark:text-slate-400"><strong class="text-slate-700 dark:text-slate-300">{{ __('Important:') }}</strong> {{ __('set the publishing status to "In production" (click "Publish app"). While an app stays in Testing, Google expires its refresh tokens after 7 days — the connection silently breaks every week and you have to re-authorize. Publishing does not require Google verification for your own use; the consent screen just shows an "unverified app" warning you can click through once.') }}</p>
                     <a href="https://console.cloud.google.com/apis/credentials/consent"
                        target="_blank" rel="noopener noreferrer"
                        class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
@@ -177,4 +178,15 @@
             @endif
         </div>
     </form>
+
+    {{-- Troubleshooting: the common reasons a working connection stops working --}}
+    <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 px-5 py-4 shadow-sm space-y-2">
+        <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ __('Connection keeps breaking?') }}</h2>
+        <ul class="list-disc pl-5 space-y-1 text-sm text-slate-500 dark:text-slate-400">
+            <li>{{ __('OAuth app left in "Testing" status — Google expires refresh tokens after 7 days. Publish the app to Production (step 2 above) and re-authorize once.') }}</li>
+            <li>{{ __('APP_KEY changed (e.g. key:generate ran again, or .env was recreated) — stored credentials are encrypted with it and can no longer be decrypted. Re-enter the client secret and re-authorize.') }}</li>
+            <li>{{ __('Client secret rotated or the OAuth client deleted in Google Cloud Console — every refresh token issued for it stops working. Paste the new secret and re-authorize.') }}</li>
+            <li>{{ __('Google account password reset or app access revoked under myaccount.google.com → Security → Third-party access.') }}</li>
+        </ul>
+    </div>
 </div>
