@@ -18,6 +18,9 @@ final readonly class IncomingLead
         public ?string $message = null,
         /** @var array<string, mixed>|null */
         public ?array $rawPayload = null,
+        // Stable per-row identity from recurring sources, so re-reading the same
+        // source never re-creates a lead. Null for one-shot imports (CSV, manual).
+        public ?string $externalId = null,
         // Meta Lead Ads structural fields (stable across all forms)
         public ?string $metaLeadId = null,
         public ?string $adId = null,
@@ -52,6 +55,7 @@ final readonly class IncomingLead
             'phone'          => $this->phone,
             'message'        => $this->message,
             'raw_payload'    => $this->rawPayload,
+            'external_id'    => $this->externalId,
             'meta_lead_id'   => $this->metaLeadId,
             'ad_id'          => $this->adId,
             'ad_name'        => $this->adName,

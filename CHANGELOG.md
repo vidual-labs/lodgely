@@ -8,6 +8,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Idempotent Google Sheets imports.** Each fetched row now carries a stable
+  content fingerprint (`leads.external_id`). When the scheduled fetch re-reads a
+  sheet, rows it has already ingested are recognized and skipped instead of being
+  re-created. The import summary and the "Recent imports" table on
+  `/imports/google-sheets` now show a **Skipped** count alongside Imported /
+  Duplicate / Invalid.
+
+- **`lodgely:google-sheets:dedupe` cleanup command.** Backfills the row
+  fingerprint on Google Sheets leads imported before idempotency existed, then
+  soft-deletes the duplicate copies left behind by past full re-fetches, keeping
+  the earliest of each. Supports `--dry-run` to preview.
+
 - **Scheduler container in the Docker stack.** `docker compose up` now starts
   a `scheduler` service running `php artisan schedule:work`. Previously no
   container (and no documented cron) ever invoked the Laravel scheduler, so
@@ -105,6 +117,13 @@ semantic-ish versioning once a 1.0 is tagged.
   are selected, giving clearer visual feedback.
 
 ### Fixed
+
+- **Google Sheets fetches no longer pile up duplicate leads.** The importer
+  re-reads the whole sheet on every scheduled run; previously each run re-created
+  every existing row as a fresh `duplicate`-status lead, so the inbox filled with
+  dozens of copies. Re-fetches are now idempotent (see Added) — already-seen rows
+  are skipped. Run `lodgely:google-sheets:dedupe` once to clear the existing
+  backlog.
 
 - **Pagination styling.** Fixed three issues with the desktop pagination
   control: the active page number and the prev/next arrows rendered as

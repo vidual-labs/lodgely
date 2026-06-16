@@ -22,6 +22,7 @@ class ImportRunner
         $imported = 0;
         $duplicate = 0;
         $invalid = 0;
+        $skipped = 0;
 
         foreach ($source->pull($import) as $incoming) {
             $total++;
@@ -37,6 +38,15 @@ class ImportRunner
             }
 
             $lead = $this->ingestor->ingest($incoming->toIngestPayload(), $import, $import->tenant_id, $actorId);
+
+            // The ingestor returns an existing lead (not freshly created) when a
+            // recurring source re-sends a row it has already seen (external_id
+            // match). Count that as skipped, not imported.
+            if (! $lead->wasRecentlyCreated) {
+                $skipped++;
+                continue;
+            }
+
             $imported++;
             if ($lead->duplicate_flag) {
                 $duplicate++;
@@ -48,6 +58,7 @@ class ImportRunner
             'rows_imported'  => $imported,
             'rows_duplicate' => $duplicate,
             'rows_invalid'   => $invalid,
+            'rows_skipped'   => $skipped,
             'finished_at'    => now(),
         ]);
 

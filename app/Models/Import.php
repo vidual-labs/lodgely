@@ -13,7 +13,7 @@ class Import extends Model
 
     protected $fillable = [
         'tenant_id', 'user_id', 'source', 'label', 'reference',
-        'rows_total', 'rows_imported', 'rows_duplicate', 'rows_invalid',
+        'rows_total', 'rows_imported', 'rows_duplicate', 'rows_invalid', 'rows_skipped',
         'meta', 'started_at', 'finished_at',
     ];
 

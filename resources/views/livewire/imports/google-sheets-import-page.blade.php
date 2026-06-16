@@ -92,6 +92,7 @@
                                 <th class="px-4 py-2 text-left">{{ __('When') }}</th>
                                 <th class="px-4 py-2 text-left">{{ __('Label') }}</th>
                                 <th class="px-4 py-2 text-right">{{ __('Imported') }}</th>
+                                <th class="px-4 py-2 text-right">{{ __('Skipped') }}</th>
                                 <th class="px-4 py-2 text-right">{{ __('Dup.') }}</th>
                                 <th class="px-4 py-2 text-right">{{ __('Invalid') }}</th>
                                 <th class="px-4 py-2"></th>
@@ -103,6 +104,7 @@
                                     <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ $imp->created_at?->format('Y-m-d H:i') }}</td>
                                     <td class="px-4 py-2 text-slate-700 dark:text-slate-300">{{ $imp->label }}</td>
                                     <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_imported }}</td>
+                                    <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_skipped }}</td>
                                     <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_duplicate }}</td>
                                     <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_invalid }}</td>
                                     <td class="px-4 py-2 text-right">
