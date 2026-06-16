@@ -65,6 +65,57 @@ class BackupManagerRestoreCommandTest extends TestCase
     }
 
     /**
+     * pg_restore runs in continue-on-error mode: it restores everything it
+     * can and exits non-zero with "errors ignored on restore: N". That is a
+     * successful restore with skipped statements, not a failure — restore()
+     * should return the count instead of throwing.
+     */
+    public function test_restore_tolerates_ignored_errors_and_returns_the_count(): void
+    {
+        Process::fake([
+            '*' => Process::result(
+                output: '',
+                errorOutput: 'pg_restore: warning: errors ignored on restore: 3',
+                exitCode: 1,
+            ),
+        ]);
+
+        $archive = $this->makeArchive();
+
+        $count = app(BackupManager::class)->restore($archive);
+
+        $this->assertSame(3, $count);
+
+        @unlink($archive);
+        @rmdir(dirname($archive));
+    }
+
+    /**
+     * A genuine pg_restore failure (no "errors ignored" marker) must still
+     * surface as an exception so the operator sees a real error.
+     */
+    public function test_restore_throws_on_a_fatal_failure(): void
+    {
+        Process::fake([
+            '*' => Process::result(
+                output: '',
+                errorOutput: 'pg_restore: error: connection to server at "db" failed',
+                exitCode: 1,
+            ),
+        ]);
+
+        $archive = $this->makeArchive();
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            app(BackupManager::class)->restore($archive);
+        } finally {
+            @unlink($archive);
+            @rmdir(dirname($archive));
+        }
+    }
+
+    /**
      * The shared runPg() helper is also used by create(); make sure
      * pg_dump still receives the database via -d and writes with -f.
      */

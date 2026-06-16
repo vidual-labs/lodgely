@@ -114,9 +114,12 @@ class BackupController extends Controller
                 'original_name' => $upload->getClientOriginalName(),
             ]);
 
-            $manager->restore($absolute);
+            $ignoredErrors = $manager->restore($absolute);
 
-            Log::warning('lodgely.backup.restore_finished', ['user_id' => $request->user()->id]);
+            Log::warning('lodgely.backup.restore_finished', [
+                'user_id' => $request->user()->id,
+                'ignored_errors' => $ignoredErrors,
+            ]);
 
             // The dump just dropped and recreated every table, including
             // sessions — the current session is no longer valid. Send the
@@ -125,6 +128,17 @@ class BackupController extends Controller
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            // Flash *after* invalidate/regenerate so these land in the fresh
+            // session the login page reads. The integration warning matters
+            // because secrets/tokens are encrypted with this server's
+            // APP_KEY: a backup restored onto a different server (or after
+            // APP_KEY rotation) can't decrypt them, so they read as empty
+            // and have to be re-entered.
+            $request->session()->flash('status', $ignoredErrors > 0
+                ? __('Restore complete (:count statement(s) skipped — usually harmless objects that did not exist yet). Please sign in again.', ['count' => $ignoredErrors])
+                : __('Restore complete. Please sign in again.'));
+            $request->session()->flash('warning', __('Heads up: integration credentials (Google Sheets, Google Ads, Meta, AI keys) are stored encrypted with this server APP_KEY. If the backup came from a different server, you will need to re-enter and re-verify them under Settings before those integrations work again.'));
 
             return redirect()->route('login');
         } catch (Throwable $e) {

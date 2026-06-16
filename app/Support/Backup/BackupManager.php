@@ -2,6 +2,7 @@
 
 namespace App\Support\Backup;
 
+use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
@@ -38,7 +39,11 @@ class BackupManager
         }
 
         try {
-            $this->runPg('pg_dump', ['-Fc', '-f', $dumpPath]);
+            $result = $this->runPg('pg_dump', ['-Fc', '-f', $dumpPath]);
+
+            if ($result->failed()) {
+                throw new RuntimeException('pg_dump failed: '.trim($result->errorOutput() ?: $result->output()));
+            }
 
             $manifest = [
                 'app' => 'lodgely',
@@ -103,8 +108,14 @@ class BackupManager
      * Restore the database from a backup archive. This is destructive —
      * pg_restore runs with --clean --if-exists, dropping and recreating
      * every object the dump describes before the running app reconnects.
+     *
+     * @return int Number of statements pg_restore skipped ("errors ignored
+     *             on restore"). 0 means a clean restore; a positive value
+     *             means the data is in but some objects were dropped/created
+     *             with non-fatal errors (typically DROPs of things that did
+     *             not exist yet under --clean). Genuine failures throw.
      */
-    public function restore(string $archivePath): void
+    public function restore(string $archivePath): int
     {
         if (! File::exists($archivePath)) {
             throw new RuntimeException('Backup file not found.');
@@ -136,7 +147,26 @@ class BackupManager
 
             $dumpPath = $extractDir.DIRECTORY_SEPARATOR.self::DUMP_ENTRY;
 
-            $this->runPg('pg_restore', ['--clean', '--if-exists', '--no-owner', '--role='.config('database.connections.pgsql.username'), $dumpPath]);
+            $result = $this->runPg('pg_restore', ['--clean', '--if-exists', '--no-owner', '--role='.config('database.connections.pgsql.username'), $dumpPath]);
+
+            if ($result->failed()) {
+                $stderr = trim($result->errorOutput() ?: $result->output());
+
+                // pg_restore runs in continue-on-error mode by default: it
+                // restores everything it can and then exits non-zero with
+                // "errors ignored on restore: N" for the statements it had to
+                // skip — almost always DROPs of objects that did not exist yet
+                // under --clean. That is not a failed restore; the data is in.
+                // Surface the count rather than blowing up. Anything else
+                // (connection refused, unreadable archive, auth) is fatal.
+                if (preg_match('/errors ignored on restore:\s*(\d+)/i', $stderr, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                throw new RuntimeException('pg_restore failed: '.$stderr);
+            }
+
+            return 0;
         } finally {
             File::deleteDirectory($extractDir);
         }
@@ -153,7 +183,10 @@ class BackupManager
     }
 
     /**
-     * Run a Postgres client binary against the configured connection.
+     * Run a Postgres client binary against the configured connection and
+     * hand the raw result back to the caller, which decides what a failure
+     * means (pg_dump: any error is fatal; pg_restore: "errors ignored on
+     * restore" is tolerated — see restore()).
      *
      * The target database is passed with `-d` rather than as a trailing
      * positional argument. pg_dump treats a final positional as the
@@ -162,7 +195,7 @@ class BackupManager
      * pg_restore choke with "too many command-line arguments". `-d`
      * works for both, so the dump file can stay positional for restore.
      */
-    private function runPg(string $binary, array $extraArgs): void
+    private function runPg(string $binary, array $extraArgs): ProcessResult
     {
         $config = config('database.connections.pgsql');
 
@@ -175,13 +208,9 @@ class BackupManager
             ...$extraArgs,
         ];
 
-        $result = Process::env(['PGPASSWORD' => (string) $config['password']])
+        return Process::env(['PGPASSWORD' => (string) $config['password']])
             ->timeout(600)
             ->run($args);
-
-        if ($result->failed()) {
-            throw new RuntimeException("{$binary} failed: ".trim($result->errorOutput() ?: $result->output()));
-        }
     }
 
     /** Defend the filesystem path against traversal — we only ever deal with our own filenames. */

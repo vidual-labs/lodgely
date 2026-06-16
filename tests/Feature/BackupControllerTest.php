@@ -136,7 +136,7 @@ class BackupControllerTest extends TestCase
     public function test_valid_restore_runs_the_manager_and_signs_the_operator_out(): void
     {
         $manager = Mockery::mock(BackupManager::class);
-        $manager->shouldReceive('restore')->once();
+        $manager->shouldReceive('restore')->once()->andReturn(0);
         $this->instance(BackupManager::class, $manager);
 
         $this->actingAs($this->operator())
@@ -144,9 +144,27 @@ class BackupControllerTest extends TestCase
                 'restore_confirmation' => '  restore  ', // trimmed + uppercased to RESTORE
                 'restore_file' => $this->zipUpload(),
             ])
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status')
+            // Operators must be told encrypted integration creds may need re-entry.
+            ->assertSessionHas('warning');
 
         $this->assertGuest();
+    }
+
+    public function test_restore_surfaces_the_skipped_statement_count(): void
+    {
+        $manager = Mockery::mock(BackupManager::class);
+        $manager->shouldReceive('restore')->once()->andReturn(4);
+        $this->instance(BackupManager::class, $manager);
+
+        $this->actingAs($this->operator())
+            ->post(route('settings.backups.restore'), [
+                'restore_confirmation' => 'RESTORE',
+                'restore_file' => $this->zipUpload(),
+            ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status', fn ($v) => str_contains((string) $v, '4'));
     }
 
     protected function tearDown(): void

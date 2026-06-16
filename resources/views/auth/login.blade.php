@@ -13,6 +13,12 @@
             </div>
         @endif
 
+        @if (session('warning'))
+            <div class="mb-4 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+                {{ session('warning') }}
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('login.attempt') }}"
               class="rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-6 space-y-4 shadow-xl shadow-slate-200/50 dark:shadow-black/40">
             @csrf
