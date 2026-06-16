@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.35.0-6366F1" alt="Version 0.35.0">
+  <img src="https://img.shields.io/badge/version-0.36.0-6366F1" alt="Version 0.36.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -175,6 +175,7 @@ clean place to *triage* leads before anything else happens, you are at home.
 - 📊 **Custom client reporting views** — operators define named reporting views by selecting any combination of metrics (Leads, Clicks, Impressions, CTR, Ad Spend, Cost per Lead, Platform Leads, **CPC**, **CPM**, **Conversion rate**, etc.) and assign each view to specific client users. Each view has a **Live / Hidden** toggle: views default to Live (assigning a client makes them visible), and an operator can take a view offline without unassigning anyone — hidden views disappear from clients' "My reports" and pause their scheduled report emails. Clients see a "My reports" tab page at `/my-reports` with per-metric monthly **time-series charts** (dependency-free inline SVG) above a monthly table, showing only their assigned columns. Different clients can see entirely different views — client A might see only Leads and Clicks, client B sees full ad performance metrics. Lead data is always scoped to each client's own leads.
 - 🤖 **AI summaries & lead qualification** *(optional, off by default)* — admins plug in either an OpenAI-compatible API (OpenAI, Together, Groq, LM Studio, …) or a local Ollama endpoint at `/settings/ai`, set a free-text "house style" instruction, and choose which AI tasks to enable. Two kinds in v1: **report-view summaries** (narrative + evaluation + follow-ups on a custom reporting view, aggregate data only) and **lead qualification** (priority recommendation with pseudonymized lead context). Every AI output is a draft that an operator reviews at `/ai/drafts` — approve, reject, regenerate, then share with the client. API keys are stored encrypted; lead-level kinds require an explicit consent toggle; a daily per-tenant cap prevents cost runaway.
 - 📨 **Custom client report emails** — operators compose modular report emails at `/reporting/emails` and either send them now, schedule them as a one-off, or recur them weekly / monthly. Each template picks any combination of: a free-text intro (markdown), the KPI summary strip, the monthly metrics table, and the latest operator-approved AI summary for a reporting view. Recipients are existing Client users (visibility is honoured because the metrics are built against the recipient). Every dispatch writes a `client_report_email_sends` audit row that surfaces as a "Recent sends" history. The `lodgely:report-emails:dispatch` artisan command runs hourly via the scheduler and advances each schedule's `next_run_at`.
+- ✉️ **Outbound mail (SMTP) settings** — operators configure the mail server from **Settings → Email** (`/settings/mail`): transport (SMTP or log-only), host, port, encryption (STARTTLS / SSL / none), username, password, and the From identity — no `.env` editing required. The password is stored encrypted, and the saved settings override the `MAIL_*` env config at runtime for **both** web requests (password resets) and the queue worker (reporting emails). A **"Send test email"** button sends a real message synchronously so SMTP errors surface immediately. The default `MAIL_MAILER=log` driver writes mail to the log instead of sending it — the usual reason reporting emails appear not to arrive — so switching this to SMTP here is what gets mail flowing. Env vars remain supported as a fallback when the toggle is off.
 - 🧪 **Demo data toggle** — operators get a `/settings/demo-data` page (under the topbar **Settings** menu) with two buttons: load the canonical demo dataset (~60 neutral leads + 12 Meta Lead Ads leads across two demo clients, a known duplicate pair, and the two scoped demo client logins `client.northwind@example.com` / `client.acme@example.com` with password `password`) or wipe it again. Demo leads are tagged by attaching them to a dedicated `imports` row with `source = 'demo_seed'`, so unloading is a single scoped delete — real CSV / webhook / IMAP imports are never touched. Same code path the `DatabaseSeeder` uses, lifted into a reusable `App\Domain\Demo\DemoDataManager` service.
 
 ---
@@ -385,10 +386,11 @@ app/
 │   ├── Settings/BackupsPage                 operator backup create/download/restore
 │   ├── Settings/DemoDataPage                operator demo-data load/unload
 │   ├── Settings/GoogleSheetsSettingsPage    Google Sheets OAuth + credential mgmt
+│   ├── Settings/MailSettingsPage            operator outbound mail (SMTP) config + test
 │   ├── Settings/ProfilePage                 per-user profile + password change
 │   ├── Users/UsersPage      operator user management
 │   └── Webhooks/WebhooksPage webhook endpoint management
-├── Mail/                    ClientReportEmailMessage
+├── Mail/                    ClientReportEmailMessage, TestMailMessage
 ├── Models/                  User, Tenant, Lead, LeadNote, LeadEvent,
 │                            Import, UserLeadScope, SavedFilter,
 │                            WebhookEndpoint, AdSpendReport,
@@ -526,6 +528,10 @@ and are listed in the roadmap.
 | `LODGELY_GOOGLE_ADS_API_VERSION` | Google Ads REST API version. | `v18` |
 | `LODGELY_GOOGLE_SHEETS_CLIENT_ID` / `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` / `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN` | Legacy env-based fallback for Google Sheets OAuth credentials. Prefer the in-app settings page at `/settings/google-sheets` — credentials entered there are stored encrypted in the DB and take precedence over these env vars. | — |
 | `LODGELY_GOOGLE_SHEETS_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound calls to Google Sheets / OAuth endpoints. | `30` |
+| `MAIL_MAILER` | Outbound mail transport: `log` (writes to the log, does not send), `smtp`, etc. Optional — prefer **Settings → Email**; settings saved there are stored encrypted and override these at runtime. Used as a fallback when the UI toggle is off. | `log` |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP server + credentials (when `MAIL_MAILER=smtp`). Prefer Settings → Email. | — |
+| `MAIL_SCHEME` | `smtp` (STARTTLS, port 587) or `smtps` (implicit TLS, port 465). | — |
+| `MAIL_FROM_ADDRESS` / `MAIL_FROM_NAME` | Default From identity on outgoing mail. | `no-reply@lodgely.local` / `${APP_NAME}` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |
 
