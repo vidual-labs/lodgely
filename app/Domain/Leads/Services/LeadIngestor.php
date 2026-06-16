@@ -29,6 +29,7 @@ class LeadIngestor
     /**
      * @param  array{
      *   source: string,
+     *   external_id?: ?string,
      *   client_name?: ?string,
      *   campaign_name?: ?string,
      *   full_name?: ?string,
@@ -60,6 +61,17 @@ class LeadIngestor
     {
         $tenantId ??= $import?->tenant_id ?? Tenant::DEFAULT_ID;
 
+        // Idempotency for recurring sources: if this exact row has already been
+        // ingested (same tenant + source + external_id) return the existing lead
+        // unchanged. The caller detects this via $lead->wasRecentlyCreated.
+        $externalId = isset($payload['external_id']) ? (string) $payload['external_id'] : '';
+        if ($externalId !== '') {
+            $existingId = $this->duplicates->findByExternalId($tenantId, $payload['source'], $externalId);
+            if ($existingId !== null) {
+                return Lead::findOrFail($existingId);
+            }
+        }
+
         $emailNormalized = $this->normalizer->normalizeEmail($payload['email'] ?? null);
         $phoneNormalized = $this->normalizer->normalizePhone($payload['phone'] ?? null);
 
@@ -85,6 +97,7 @@ class LeadIngestor
                 'tenant_id'         => $tenantId,
                 'import_id'         => $import?->id,
                 'source'            => $payload['source'],
+                'external_id'       => $payload['external_id'] ?? null,
                 'client_name'       => $this->normalizer->normalizeText($payload['client_name'] ?? null),
                 'campaign_name'     => $this->normalizer->normalizeText($payload['campaign_name'] ?? null),
                 'full_name'         => $this->normalizer->normalizeText($payload['full_name'] ?? null),

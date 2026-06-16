@@ -18,6 +18,27 @@ use Illuminate\Support\Facades\DB;
  */
 class DuplicateDetector
 {
+    /**
+     * Idempotency lookup for recurring sources: returns the id of an existing
+     * non-deleted lead carrying the same stable external_id within this tenant
+     * and source, or null. Used so re-reading a source (e.g. a Google Sheet)
+     * recognizes rows it has already ingested instead of creating duplicates.
+     */
+    public function findByExternalId(int $tenantId, string $source, string $externalId): ?int
+    {
+        if ($externalId === '') {
+            return null;
+        }
+
+        return Lead::query()
+            ->where('tenant_id', $tenantId)
+            ->where('source', $source)
+            ->where('external_id', $externalId)
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->value('id');
+    }
+
     /** Returns the id of an existing matching lead, or null. */
     public function findMatch(
         int $tenantId,

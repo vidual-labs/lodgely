@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.32.0-6366F1" alt="Version 0.32.0">
+  <img src="https://img.shields.io/badge/version-0.33.0-6366F1" alt="Version 0.33.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -100,7 +100,11 @@ clean place to *triage* leads before anything else happens, you are at home.
   client/campaign, and active toggle. "Fetch now" triggers an immediate import
   and shows a result toast; a Delete button on each import row removes the
   import and its leads. The scheduler pulls all due sources hourly via
-  `lodgely:google-sheets:fetch`. Google OAuth credentials (client ID + secret,
+  `lodgely:google-sheets:fetch`. **Re-fetches are idempotent** — each row gets a
+  stable content fingerprint, so re-reading the same sheet skips rows already
+  imported instead of creating duplicates (the import summary shows a *Skipped*
+  count). Run `lodgely:google-sheets:dedupe` once to collapse any duplicate
+  backlog left by older versions. Google OAuth credentials (client ID + secret,
   stored encrypted in the DB) are managed at `/settings/google-sheets`.
   **Set the Google OAuth consent screen to "In production"** — apps left in
   Testing status get their refresh tokens expired by Google after 7 days,
@@ -320,7 +324,7 @@ A working sample lives at `database/samples/leads-sample.csv`.
 app/
 ├── Console/Commands/        artisan commands (create-user, mock pull, purge,
 │                            ad-metrics pull, report-emails dispatch,
-│                            backup create/restore)
+│                            sheets fetch/dedupe, backup create/restore)
 ├── Domain/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole

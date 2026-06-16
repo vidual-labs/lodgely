@@ -53,7 +53,7 @@ class FetchGoogleSheets extends Command
                 $result = $runner->run($import, $source);
                 $sheetSource->update(['last_fetched_at' => now()]);
 
-                $this->info("  Done — {$result->rows_imported} imported, {$result->rows_duplicate} duplicates, {$result->rows_invalid} invalid.");
+                $this->info("  Done — {$result->rows_imported} imported, {$result->rows_skipped} skipped, {$result->rows_duplicate} duplicates, {$result->rows_invalid} invalid.");
                 $ran++;
             } catch (\Throwable $e) {
                 $this->error("  Failed: {$e->getMessage()}");

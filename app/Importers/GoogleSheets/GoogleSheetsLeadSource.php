@@ -128,6 +128,7 @@ class GoogleSheetsLeadSource implements LeadSource
                 phone:         $fields['phone']         ?? null,
                 message:       $fields['message']       ?? null,
                 rawPayload:    $row,
+                externalId:    self::fingerprint($source->spreadsheet_id, $row),
                 metaLeadId:    $fields['lead_id']       ?? null,
                 formId:        $fields['form_id']       ?? null,
                 platform:      $fields['platform']      ?? null,
@@ -139,6 +140,23 @@ class GoogleSheetsLeadSource implements LeadSource
                 customAnswers: $customAnswers ?: null,
             );
         }
+    }
+
+    /**
+     * Stable content fingerprint for a single sheet row, scoped to its
+     * spreadsheet. Re-reading the same sheet yields the same fingerprint, so the
+     * LeadIngestor recognizes the row and skips it instead of creating a
+     * duplicate. An edited row produces a new fingerprint and is treated as a
+     * new lead — fine for append-only form responses, which is the norm.
+     *
+     * The same formula is reused by the dedupe command to backfill external_id
+     * on leads imported before this existed, so keep them in lockstep.
+     *
+     * @param  array<int, mixed>  $row
+     */
+    public static function fingerprint(string $spreadsheetId, array $row): string
+    {
+        return sha1($spreadsheetId.'|'.json_encode(array_values($row), JSON_UNESCAPED_UNICODE));
     }
 
     /**
