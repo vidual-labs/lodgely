@@ -46,7 +46,18 @@ class GoogleSheetsImportController extends Controller
     {
         abort_unless($request->user()?->isOperator(), 403);
 
-        $deletedLeads = Lead::withTrashed()->where('source', 'google_sheets')->forceDelete();
+        // A lead's own `source` column may hold a value mapped from a sheet
+        // column (e.g. "facebook"), so the reliable link to "came from Google
+        // Sheets" is its import_id. Match on import provenance OR the
+        // google_sheets source (covers copies whose import_id was nulled).
+        $importIds = Import::where('source', 'google_sheets')->pluck('id');
+
+        $deletedLeads = Lead::withTrashed()
+            ->where(function ($q) use ($importIds) {
+                $q->whereIn('import_id', $importIds)->orWhere('source', 'google_sheets');
+            })
+            ->forceDelete();
+
         $deletedImports = Import::where('source', 'google_sheets')->delete();
 
         return redirect()

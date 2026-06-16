@@ -91,6 +91,36 @@ class GoogleSheetsImportControllerTest extends TestCase
         $this->assertSame(0, Lead::withTrashed()->where('source', 'google_sheets')->count());
     }
 
+    public function test_destroy_all_removes_leads_whose_source_was_mapped_from_a_column(): void
+    {
+        // Reproduces the real bug: the sheet had a "Source" column mapped, so the
+        // leads' `source` is e.g. "facebook" — not "google_sheets" — yet they
+        // belong to a google_sheets import via import_id.
+        $import = Import::create([
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'source'    => 'google_sheets',
+            'label'     => 'mapped-source',
+            'meta'      => [],
+        ]);
+        foreach (range(1, 3) as $i) {
+            Lead::create([
+                'tenant_id' => Tenant::DEFAULT_ID,
+                'import_id' => $import->id,
+                'source'    => 'facebook',
+                'full_name' => "FB {$i}",
+                'email'     => "fb{$i}@example.com",
+            ]);
+        }
+
+        $this->actingAs($this->operator())
+            ->post(route('imports.google-sheets.imports.destroy-all'))
+            ->assertRedirect(route('imports.google-sheets'));
+
+        $this->assertSame(0, Import::where('source', 'google_sheets')->count());
+        $this->assertSame(0, Lead::withTrashed()->where('import_id', $import->id)->count());
+        $this->assertSame(0, Lead::withTrashed()->where('source', 'facebook')->count());
+    }
+
     public function test_destroy_leaves_non_google_sheets_imports_untouched(): void
     {
         $csv = $this->makeImportWithLeads(2, 'csv');

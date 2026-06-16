@@ -36,22 +36,28 @@ class DedupeGoogleSheets extends Command
         // external_id and identical rows from the same sheet group together.
         $spreadsheetBySource = GoogleSheetSource::query()->pluck('spreadsheet_id', 'id');
         $spreadsheetByImport = [];
+        $gsImportIds = [];
         Import::query()
             ->where('source', 'google_sheets')
             ->get(['id', 'meta'])
-            ->each(function (Import $import) use (&$spreadsheetByImport, $spreadsheetBySource) {
+            ->each(function (Import $import) use (&$spreadsheetByImport, &$gsImportIds, $spreadsheetBySource) {
+                $gsImportIds[] = $import->id;
                 $sourceId = (int) ($import->meta['sheet_source_id'] ?? 0);
                 if ($sourceId > 0 && isset($spreadsheetBySource[$sourceId])) {
                     $spreadsheetByImport[$import->id] = $spreadsheetBySource[$sourceId];
                 }
             });
 
-        // Bucket every live google_sheets lead by its row content (never skipped).
+        // Bucket every live Google-Sheets-originated lead by its row content
+        // (never skipped). A lead's own `source` may be a value mapped from a
+        // sheet column, so identify provenance by import_id rather than source.
         $buckets = [];               // group key => [lead id, ...]
         $backfillCandidates = [];    // lead id => importer fingerprint (external_id was null)
 
         Lead::query()
-            ->where('source', 'google_sheets')
+            ->where(function ($q) use ($gsImportIds) {
+                $q->whereIn('import_id', $gsImportIds)->orWhere('source', 'google_sheets');
+            })
             ->whereNull('deleted_at')
             ->orderBy('id')
             ->chunkById(500, function ($leads) use (&$buckets, &$backfillCandidates, $spreadsheetByImport) {
