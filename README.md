@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.33.0-6366F1" alt="Version 0.33.0">
+  <img src="https://img.shields.io/badge/version-0.33.1-6366F1" alt="Version 0.33.1">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -214,6 +214,13 @@ Open `.env` and set at minimum:
 | `LODGELY_HTTP_PORT` | Host port for HTTP (default `8080`); change if that port is taken |
 | `SESSION_SECURE_COOKIE` | `true` if serving over HTTPS, `false` for plain HTTP |
 | `SESSION_DRIVER` | `file` is simplest; `database` works but requires the DB to be up first |
+
+> **Set `DB_PASSWORD` before the very first `docker compose up`.** PostgreSQL
+> initialises its data volume on first boot using the credentials present at
+> that moment. If you change `DB_PASSWORD` in `.env` after the volume already
+> exists, the old password stays baked in and the app will get
+> `password authentication failed`. Fix: `docker compose down -v && docker compose up -d --build`
+> (the `-v` flag removes the stale volume — only safe when you have no data to keep).
 
 ```bash
 # 2. Build and start
