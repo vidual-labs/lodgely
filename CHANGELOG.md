@@ -6,6 +6,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **README Quick start:** added a warning that `DB_PASSWORD` must be set in
+  `.env` before the first `docker compose up`. PostgreSQL only reads the
+  password on initial volume creation; changing it afterwards leaves the old
+  hash baked in and causes `password authentication failed`. The fix
+  (`docker compose down -v`) is now documented inline.
+
 ### Added
 
 - **Idempotent Google Sheets imports.** Each fetched row now carries a stable
