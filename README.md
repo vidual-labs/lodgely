@@ -216,6 +216,13 @@ Open `.env` and set at minimum:
 | `SESSION_SECURE_COOKIE` | `true` if serving over HTTPS, `false` for plain HTTP |
 | `SESSION_DRIVER` | `file` is simplest; `database` works but requires the DB to be up first |
 
+> **Set `DB_PASSWORD` before the very first `docker compose up`.** PostgreSQL
+> initialises its data volume on first boot using the credentials present at
+> that moment. If you change `DB_PASSWORD` in `.env` after the volume already
+> exists, the old password stays baked in and the app will get
+> `password authentication failed`. Fix: `docker compose down -v && docker compose up -d --build`
+> (the `-v` flag removes the stale volume — only safe when you have no data to keep).
+
 ```bash
 # 2. Build and start
 docker compose up -d --build
