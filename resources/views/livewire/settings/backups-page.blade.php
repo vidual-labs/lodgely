@@ -27,13 +27,15 @@
                     {{ __('Each backup is a single .zip archive containing a full database dump. Download it somewhere safe — it is not copied off this server automatically.') }}
                 </p>
             </div>
-            <button type="button" wire:click="createBackup"
-                    wire:loading.attr="disabled"
-                    wire:target="createBackup"
-                    class="rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-medium text-white dark:text-slate-900 hover:opacity-90 transition-opacity disabled:opacity-60 shrink-0">
-                <span wire:loading.remove wire:target="createBackup">{{ __('Create backup now') }}</span>
-                <span wire:loading wire:target="createBackup">{{ __('Dumping database…') }}</span>
-            </button>
+            <form method="POST" action="{{ route('settings.backups.create') }}" class="shrink-0"
+                  x-data="{ submitting: false }" x-on:submit="submitting = true">
+                @csrf
+                <button type="submit" x-bind:disabled="submitting"
+                        class="rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-medium text-white dark:text-slate-900 hover:opacity-90 transition-opacity disabled:opacity-60">
+                    <span x-show="!submitting">{{ __('Create backup now') }}</span>
+                    <span x-show="submitting" x-cloak>{{ __('Dumping database…') }}</span>
+                </button>
+            </form>
         </div>
 
         <div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
@@ -58,11 +60,15 @@
                                        class="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         {{ __('Download') }}
                                     </a>
-                                    <button type="button" wire:click="deleteBackup('{{ $b['filename'] }}')"
-                                            wire:confirm="{{ __('Delete :name? This cannot be undone.', ['name' => $b['filename']]) }}"
-                                            class="rounded-lg border border-rose-300 dark:border-rose-700 px-2.5 py-1 text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
-                                        {{ __('Delete') }}
-                                    </button>
+                                    <form method="POST" action="{{ route('settings.backups.delete') }}"
+                                          x-on:submit="if (! confirm(@js(__('Delete :name? This cannot be undone.', ['name' => $b['filename']])))) $event.preventDefault()">
+                                        @csrf
+                                        <input type="hidden" name="filename" value="{{ $b['filename'] }}">
+                                        <button type="submit"
+                                                class="rounded-lg border border-rose-300 dark:border-rose-700 px-2.5 py-1 text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+                                            {{ __('Delete') }}
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -87,32 +93,33 @@
             </p>
         </div>
 
-        <form wire:submit.prevent="restoreBackup" class="space-y-3">
+        {{-- Native multipart form, NOT Livewire. The Livewire file-upload --}}
+        {{-- (wire:model) + wire:submit path hung on "Uploading…" and --}}
+        {{-- silently dropped the submit in production — see BackupController --}}
+        {{-- and the morph-drop notes in CLAUDE.md. --}}
+        <form method="POST" action="{{ route('settings.backups.restore') }}" enctype="multipart/form-data" class="space-y-3"
+              x-data="{ submitting: false }"
+              x-on:submit="if (! confirm(@js(__('This will permanently overwrite the current database and sign you out. Are you absolutely sure?')))) { $event.preventDefault(); return; } submitting = true">
+            @csrf
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Backup archive (.zip)') }}</label>
-                <input wire:model="restoreFile" type="file" accept=".zip,application/zip"
+                <input name="restore_file" type="file" accept=".zip,application/zip" required
                        class="mt-1 block w-full text-sm text-slate-700 dark:text-slate-300">
-                @error('restoreFile') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                <div wire:loading wire:target="restoreFile" class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Uploading…') }}</div>
             </div>
 
             <div>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-400">
                     {{ __('Type :word to confirm you understand this replaces all current data', ['word' => 'RESTORE']) }}
                 </label>
-                <input wire:model="restoreConfirmation" type="text" placeholder="RESTORE"
+                <input name="restore_confirmation" type="text" placeholder="RESTORE" required
                        class="mt-1 block w-48 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-sm font-mono focus:border-rose-500 focus:ring-rose-500">
-                @error('restoreConfirmation') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex justify-end">
-                <button type="submit"
-                        wire:loading.attr="disabled"
-                        wire:target="restoreBackup,restoreFile"
-                        wire:confirm="{{ __('This will permanently overwrite the current database and sign you out. Are you absolutely sure?') }}"
+                <button type="submit" x-bind:disabled="submitting"
                         class="rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors disabled:opacity-60">
-                    <span wire:loading.remove wire:target="restoreBackup">{{ __('Restore and overwrite database') }}</span>
-                    <span wire:loading wire:target="restoreBackup">{{ __('Restoring… do not close this tab') }}</span>
+                    <span x-show="!submitting">{{ __('Restore and overwrite database') }}</span>
+                    <span x-show="submitting" x-cloak>{{ __('Restoring… do not close this tab') }}</span>
                 </button>
             </div>
         </form>
