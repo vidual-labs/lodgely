@@ -25,6 +25,7 @@ use App\Livewire\Settings\AdPlatformsPage;
 use App\Livewire\Settings\AiSettingsPage;
 use App\Livewire\Settings\BackupsPage;
 use App\Livewire\Settings\DemoDataPage;
+use App\Livewire\Settings\MailSettingsPage;
 use App\Livewire\Settings\ProfilePage;
 use App\Livewire\Users\UsersPage;
 use App\Livewire\Webhooks\WebhooksPage;
@@ -98,6 +99,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/ad-platforms/google/callback', [GoogleAdsOAuthController::class, 'callback'])->name('settings.ad-platforms.google.callback');
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
+
+    // Outbound mail (SMTP) configuration. Operator-only enforcement lives in
+    // the page; the saved row overrides the .env MAIL_* config at runtime.
+    Route::get('/settings/mail', MailSettingsPage::class)->name('settings.mail');
 
     // The backup page renders via Livewire, but every mutation (create,
     // delete, restore) posts to a native controller and redirects back —

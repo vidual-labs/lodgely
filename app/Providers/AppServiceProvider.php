@@ -17,8 +17,10 @@ use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
 use App\Importers\Meta\MetaAdsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
+use App\Models\MailSetting;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -89,5 +91,16 @@ class AppServiceProvider extends ServiceProvider
         // attached to specific Livewire routes.
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('ai.enabled', EnsureAiEnabled::class);
+
+        // Apply the operator's UI mail (SMTP) settings over the .env mail config
+        // so reporting emails, password resets, etc. honour Settings → Email.
+        // Once here for the web request, and again before every queued job so a
+        // long-lived queue worker picks up changes without a restart — the
+        // reporting-email job runs on the queue, so this is what makes it send.
+        // resolveSafe() no-ops if the table or row is absent (fresh install).
+        MailSetting::applyForDefaultTenant();
+        Queue::before(static function (): void {
+            MailSetting::applyForDefaultTenant();
+        });
     }
 }

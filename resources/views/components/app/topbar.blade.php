@@ -7,7 +7,7 @@
     $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
-    $settingsRoutes  = ['users', 'webhooks', 'settings.demo-data', 'settings.backups'];
+    $settingsRoutes  = ['users', 'webhooks', 'settings.mail', 'settings.demo-data', 'settings.backups'];
 
     $importsActive   = request()->routeIs(...$importRoutes);
     $reportingActive = request()->routeIs(...$reportingRoutes);
@@ -170,6 +170,10 @@
                                    class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">
                                     {{ __('Webhooks') }}
                                 </a>
+                                <a href="{{ route('settings.mail') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.mail') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('Email (SMTP)') }}
+                                </a>
                                 <hr class="my-1 border-slate-100 dark:border-slate-800">
                                 <a href="{{ route('settings.backups') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('settings.backups') ? $menuItemActive : $menuItemIdle }}">
@@ -330,6 +334,8 @@
                        class="{{ $menuItem }} {{ request()->routeIs('users') ? $menuItemActive : $menuItemIdle }}">{{ __('Users') }}</a>
                     <a href="{{ route('webhooks') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">{{ __('Webhooks') }}</a>
+                    <a href="{{ route('settings.mail') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.mail') ? $menuItemActive : $menuItemIdle }}">{{ __('Email (SMTP)') }}</a>
                     <a href="{{ route('settings.backups') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.backups') ? $menuItemActive : $menuItemIdle }}">{{ __('Backups') }}</a>
                     <a href="{{ route('settings.demo-data') }}"

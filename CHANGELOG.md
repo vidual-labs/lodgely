@@ -8,6 +8,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Outbound email (SMTP) is now configurable in the UI under Settings →
+  Email.** Operators can point lodgely at their mail server — host, port,
+  encryption (STARTTLS / SSL / none), username, password, and the From
+  address/name — without editing `.env`. The password is stored encrypted at
+  rest and the saved settings override the `MAIL_*` env config at runtime, for
+  both web requests (password resets) and the queue worker (reporting emails).
+  A "Send test email" button sends a real message synchronously so SMTP errors
+  (bad password, blocked port) surface immediately. This addresses the common
+  "reporting emails don't arrive" case, which is usually the default
+  `MAIL_MAILER=log` driver writing mail to the log instead of sending it. The
+  `.env` `MAIL_*` vars remain supported as a fallback when the UI toggle is off.
+
 - **Post-restore notice that integration credentials may need re-entry.**
   Google Sheets / Google Ads / Meta / AI secrets are stored encrypted with
   the install's `APP_KEY`, so a backup restored onto a *different* server
@@ -29,6 +41,11 @@ semantic-ish versioning once a 1.0 is tagged.
   (bad connection, unreadable archive) still error out as before.
 
 ### Fixed
+
+- **Generated backup archives are now gitignored.** Backup `.zip`s written at
+  runtime to `storage/app/private/backups/` were not covered by `.gitignore`
+  (unlike the `imports/` directory next to it), so they showed up as untracked
+  files. Added the ignore rule and a `.gitkeep`, mirroring the imports pattern.
 
 - **Backup restore crashed in `pg_restore` with "too many command-line
   arguments".** The shared Postgres helper appended the database name as a
