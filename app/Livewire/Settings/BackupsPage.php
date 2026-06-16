@@ -29,6 +29,12 @@ class BackupsPage extends Component
     public function mount(): void
     {
         $this->guardOperator();
+
+        // The create/delete/restore mutations now post to BackupController
+        // and redirect back here with a one-shot flash. Surface it through
+        // the existing notice/error banners.
+        $this->notice = session('backups.notice');
+        $this->error = session('backups.error');
     }
 
     public function createBackup(BackupManager $manager): void

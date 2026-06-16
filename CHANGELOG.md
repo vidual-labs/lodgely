@@ -8,6 +8,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Backup restore was completely non-functional.** On the
+  `/settings/backups` page, selecting a `.zip` archive hung on "Uploading…"
+  forever, and clicking **Restore and overwrite database** (after typing
+  `RESTORE`) did nothing. Both halves were driven by Livewire — an async
+  `wire:model` file upload plus a `wire:submit` action — which silently
+  drop in production, the same morph-layer failure already documented for
+  the inbox filter card. Create / delete / restore now post to a native
+  `BackupController` (plain multipart `<form>` → controller → redirect),
+  so uploads and the destructive restore actually run. Restore still
+  signs the operator out and bounces them to the login screen on success.
+
 - **README Quick start:** added a warning that `DB_PASSWORD` must be set in
   `.env` before the first `docker compose up`. PostgreSQL only reads the
   password on initial volume creation; changing it afterwards leaves the old

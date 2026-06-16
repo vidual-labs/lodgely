@@ -19,6 +19,7 @@ use App\Livewire\Reporting\MyReportsPage;
 use App\Livewire\Reporting\ReportEmailsPage;
 use App\Livewire\Reporting\ReportingPage;
 use App\Livewire\Reporting\ReportingViewsPage;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BackupDownloadController;
 use App\Livewire\Settings\AdPlatformsPage;
 use App\Livewire\Settings\AiSettingsPage;
@@ -98,7 +99,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
 
-    Route::get('/settings/backups', BackupsPage::class)->name('settings.backups');
+    // The backup page renders via Livewire, but every mutation (create,
+    // delete, restore) posts to a native controller and redirects back —
+    // the Livewire file-upload + wire:submit path silently dropped in
+    // production (see BackupController / CLAUDE.md).
+    Route::get('/settings/backups',          BackupsPage::class)->name('settings.backups');
+    Route::post('/settings/backups/create',  [BackupController::class, 'create'])->name('settings.backups.create');
+    Route::post('/settings/backups/delete',  [BackupController::class, 'destroy'])->name('settings.backups.delete');
+    Route::post('/settings/backups/restore', [BackupController::class, 'restore'])->name('settings.backups.restore');
     Route::get('/settings/backups/{filename}/download', BackupDownloadController::class)->name('settings.backups.download');
 
     // Google Sheets OAuth handshake. Operator-only enforcement lives in the

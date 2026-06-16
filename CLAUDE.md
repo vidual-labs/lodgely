@@ -158,6 +158,24 @@ the input value via `$refs`, and pushing the value to Livewire with
 Livewire modal that needs to produce an immediate, visible DOM change:
 prefer Alpine for the UI update, `$wire.set()` for the server sync.
 
+### Livewire file uploads (`wire:model` on `<input type=file>`) hang too
+
+The backups page (`/settings/backups`) restore flow used
+`wire:model="restoreFile"` for the upload and `wire:submit` for the
+destructive restore. In production the upload stuck on "Uploading…"
+forever (the async `WithFileUploads` temp-upload round-trip never
+settled) and the submit click was silently dropped — same morph-layer
+failure as everything else above, just wearing a file-upload hat.
+
+Fix follows the established rail: a plain multipart
+`<form method="POST" enctype="multipart/form-data">` posting to
+`App\Http\Controllers\BackupController` (create / delete / restore),
+which redirects back with a one-shot flash. The Livewire component
+still renders the page and its action methods stay around for tests,
+but the UI no longer drives them. **Don't reintroduce `wire:model` for
+file inputs here** — native multipart upload is the only thing that
+reliably works.
+
 ## Every commit checklist
 
 Before committing any change, always update these three files:
