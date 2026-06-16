@@ -159,4 +159,57 @@ class GoogleSheetsIdempotencyTest extends TestCase
         );
         $this->assertSame(2, Lead::onlyTrashed()->where('source', 'google_sheets')->count());
     }
+
+    public function test_dedupe_collapses_leads_whose_source_was_mapped_from_a_column(): void
+    {
+        // The sheet maps a "Source" column, so leads' source is "facebook", not
+        // "google_sheets". Provenance via import_id must still let dedupe find them.
+        $sheet  = $this->makeSheetSource();
+        $import = $this->makeImport($sheet->id);
+        $raw    = ['Alice', 'alice@example.com', 'facebook'];
+
+        foreach (range(1, 3) as $ignored) {
+            Lead::create([
+                'tenant_id'   => Tenant::DEFAULT_ID,
+                'import_id'   => $import->id,
+                'source'      => 'facebook',
+                'full_name'   => 'Alice',
+                'email'       => 'alice@example.com',
+                'raw_payload' => $raw,
+            ]);
+        }
+
+        $this->artisan('lodgely:google-sheets:dedupe')->assertSuccessful();
+
+        $this->assertSame(1, Lead::where('import_id', $import->id)->count());
+        $this->assertSame(2, Lead::onlyTrashed()->where('import_id', $import->id)->count());
+    }
+
+    public function test_dedupe_collapses_even_when_sheet_source_was_deleted(): void
+    {
+        // The source row is gone, so spreadsheet_id can no longer be resolved.
+        // Grouping must fall back to row content instead of silently skipping.
+        $sheet  = $this->makeSheetSource();
+        $import = $this->makeImport($sheet->id);
+        $raw    = ['Alice', 'alice@example.com', '555-1234'];
+
+        foreach (range(1, 4) as $ignored) {
+            Lead::create([
+                'tenant_id'   => Tenant::DEFAULT_ID,
+                'import_id'   => $import->id,
+                'source'      => 'google_sheets',
+                'full_name'   => 'Alice',
+                'email'       => 'alice@example.com',
+                'raw_payload' => $raw,
+            ]);
+        }
+
+        // Delete the sheet source — the import->source resolution chain now breaks.
+        $sheet->delete();
+
+        $this->artisan('lodgely:google-sheets:dedupe')->assertSuccessful();
+
+        $this->assertSame(1, Lead::where('source', 'google_sheets')->count());
+        $this->assertSame(3, Lead::onlyTrashed()->where('source', 'google_sheets')->count());
+    }
 }

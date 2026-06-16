@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.33.1-6366F1" alt="Version 0.33.1">
+  <img src="https://img.shields.io/badge/version-0.34.0-6366F1" alt="Version 0.34.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -99,7 +99,8 @@ clean place to *triage* leads before anything else happens, you are at home.
   Each sheet source has its own refresh interval (hourly to weekly), default
   client/campaign, and active toggle. "Fetch now" triggers an immediate import
   and shows a result toast; a Delete button on each import row removes the
-  import and its leads. The scheduler pulls all due sources hourly via
+  import and its leads, and **"Delete all imports"** clears the whole backlog in
+  one click. The scheduler pulls all due sources hourly via
   `lodgely:google-sheets:fetch`. **Re-fetches are idempotent** — each row gets a
   stable content fingerprint, so re-reading the same sheet skips rows already
   imported instead of creating duplicates (the import summary shows a *Skipped*
