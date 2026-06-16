@@ -27,9 +27,13 @@ class RestoreBackup extends Command
 
         $this->info('Restoring backup… this can take a while for large databases.');
 
-        $manager->restore($path);
+        $ignoredErrors = $manager->restore($path);
 
-        $this->info('Restore complete.');
+        if ($ignoredErrors > 0) {
+            $this->warn("Restore complete, but pg_restore skipped {$ignoredErrors} statement(s) (errors ignored on restore — usually objects that did not exist yet under --clean).");
+        } else {
+            $this->info('Restore complete.');
+        }
 
         return self::SUCCESS;
     }

@@ -6,6 +6,28 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Post-restore notice that integration credentials may need re-entry.**
+  Google Sheets / Google Ads / Meta / AI secrets are stored encrypted with
+  the install's `APP_KEY`, so a backup restored onto a *different* server
+  (or after `APP_KEY` rotation) can't decrypt them — they read as empty and
+  the integrations look disconnected. After a UI restore the login screen now
+  shows an amber heads-up to re-enter and re-verify those credentials under
+  Settings, the restore card warns about it up front, and the README and
+  command-line restore note it too.
+
+### Changed
+
+- **A restore is no longer reported as failed when `pg_restore` only skips
+  ignorable statements.** `pg_restore` runs in continue-on-error mode: it
+  restores everything it can and exits non-zero with "errors ignored on
+  restore: N" (almost always `DROP`s of objects that did not exist yet under
+  `--clean`). That previously surfaced as a scary "Restore failed: …" even
+  though the data was fully restored. Restore now treats that case as success
+  and reports the skipped-statement count instead; genuine fatal failures
+  (bad connection, unreadable archive) still error out as before.
+
 ### Fixed
 
 - **Backup restore crashed in `pg_restore` with "too many command-line

@@ -91,6 +91,9 @@
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {{ __('Uploading a backup here replaces every table in the database with the contents of the archive — leads, users, settings, everything. Current data that is not in the archive is gone for good. You will be signed out when it finishes. Take a fresh backup first.') }}
             </p>
+            <p class="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                {{ __('Note: integration credentials (Google Sheets, Google Ads, Meta, AI keys) are stored encrypted with this server APP_KEY. If you restore a backup taken on a different server — or after APP_KEY changed — those credentials can no longer be decrypted and must be re-entered and re-verified under Settings.') }}
+            </p>
         </div>
 
         {{-- Native multipart form, NOT Livewire. The Livewire file-upload --}}

@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.34.2-6366F1" alt="Version 0.34.2">
+  <img src="https://img.shields.io/badge/version-0.35.0-6366F1" alt="Version 0.35.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -147,7 +147,12 @@ clean place to *triage* leads before anything else happens, you are at home.
   the UI (typed "RESTORE" confirmation, since it overwrites every table and
   signs the operator out). The same flows ship as artisan commands —
   `lodgely:backup:create [--keep=N]` and `lodgely:backup:restore <path>` —
-  for cron jobs and scripted server migrations.
+  for cron jobs and scripted server migrations. **Note:** integration
+  secrets (Google Sheets, Google Ads, Meta, AI keys) are encrypted with the
+  install's `APP_KEY`, so a backup restored onto a *different* server — or
+  after `APP_KEY` rotation — can't decrypt them; you'll be prompted to
+  re-enter and re-verify those credentials under Settings after such a
+  restore.
 - 🔖 **Saved filters & default views** — any filter combination (search, status,
   priority, source, client, sort) can be saved as a named view. Saved views appear
   as chips in the filter bar; one can be starred as the user's default, loaded
