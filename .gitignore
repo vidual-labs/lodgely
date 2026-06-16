@@ -34,6 +34,10 @@
 !/storage/app/private/imports/.gitkeep
 /storage/app/imports/*
 !/storage/app/imports/.gitkeep
+
+# Generated backup archives (created at runtime by BackupManager)
+/storage/app/private/backups/*
+!/storage/app/private/backups/.gitkeep
 .env
 .env.backup
 .env.production

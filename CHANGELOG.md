@@ -42,6 +42,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Generated backup archives are now gitignored.** Backup `.zip`s written at
+  runtime to `storage/app/private/backups/` were not covered by `.gitignore`
+  (unlike the `imports/` directory next to it), so they showed up as untracked
+  files. Added the ignore rule and a `.gitkeep`, mirroring the imports pattern.
+
 - **Backup restore crashed in `pg_restore` with "too many command-line
   arguments".** The shared Postgres helper appended the database name as a
   trailing positional argument, which is correct for `pg_dump` but wrong for
