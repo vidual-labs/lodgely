@@ -2,6 +2,11 @@
 
     {{-- ── LIST MODE ──────────────────────────────────────────────────────── --}}
     @if($mode === 'list')
+        @if(session('status'))
+            <div class="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">
+                {{ session('status') }}
+            </div>
+        @endif
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">{{ __('Google Sheets') }}</h1>
@@ -84,7 +89,17 @@
         {{-- Recent imports --}}
         @if($recentImports->isNotEmpty())
             <div>
-                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-2">{{ __('Recent imports') }}</h2>
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ __('Recent imports') }}</h2>
+                    <form method="POST" action="{{ route('imports.google-sheets.imports.destroy-all') }}"
+                          onsubmit="return confirm('{{ __('Delete ALL Google Sheets imports and every lead they created? This cannot be undone.') }}')">
+                        @csrf
+                        <button type="submit"
+                                class="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 transition-colors">
+                            {{ __('Delete all imports') }}
+                        </button>
+                    </form>
+                </div>
                 <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700/50 text-sm">
                         <thead class="bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400">
@@ -108,12 +123,14 @@
                                     <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_duplicate }}</td>
                                     <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_invalid }}</td>
                                     <td class="px-4 py-2 text-right">
-                                        <button type="button"
-                                                wire:click="deleteImport({{ $imp->id }})"
-                                                wire:confirm="{{ __('Delete this import and all :count leads it created? This cannot be undone.', ['count' => $imp->rows_imported]) }}"
-                                                class="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 transition-colors">
-                                            {{ __('Delete') }}
-                                        </button>
+                                        <form method="POST" action="{{ route('imports.google-sheets.imports.destroy', $imp->id) }}"
+                                              onsubmit="return confirm('{{ __('Delete this import and all the leads it created? This cannot be undone.') }}')">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 transition-colors">
+                                                {{ __('Delete') }}
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach

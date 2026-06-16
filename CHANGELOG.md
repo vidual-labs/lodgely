@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **"Delete all imports" on the Google Sheets page.** A single control in the
+  "Recent imports" header force-deletes every Google Sheets import and the leads
+  they created — a one-click way to clear a duplicate backlog. The next idempotent
+  fetch rebuilds one clean copy per sheet row.
+
 - **Idempotent Google Sheets imports.** Each fetched row now carries a stable
   content fingerprint (`leads.external_id`). When the scheduled fetch re-reads a
   sheet, rows it has already ingested are recognized and skipped instead of being
@@ -117,6 +122,19 @@ semantic-ish versioning once a 1.0 is tagged.
   are selected, giving clearer visual feedback.
 
 ### Fixed
+
+- **"Delete" on a Recent Google Sheets import now works.** The button used a
+  `wire:click` action whose click was silently dropped (the documented Livewire
+  morph-drop in this app) — the confirm dialog appeared but nothing was deleted.
+  It is now a native `<form>` POST to a controller, matching the pattern used for
+  the inbox filter-card actions.
+
+- **`lodgely:google-sheets:dedupe` no longer skips leads it can't trace to a
+  sheet.** It previously ignored any lead whose spreadsheet couldn't be resolved
+  (e.g. the sheet source was deleted/recreated), leaving the backlog in place.
+  Deduplication now groups on the lead's stored row content, so every lead is
+  considered; the importer-compatible fingerprint is still backfilled on
+  survivors wherever the spreadsheet resolves.
 
 - **Google Sheets fetches no longer pile up duplicate leads.** The importer
   re-reads the whole sheet on every scheduled run; previously each run re-created

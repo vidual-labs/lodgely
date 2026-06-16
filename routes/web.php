@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Imports\GoogleSheetsImportController;
 use App\Http\Controllers\InboxColumnPickerController;
 use App\Http\Controllers\InboxSavedFilterController;
 use App\Http\Controllers\LeadExportController;
@@ -73,6 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
     Route::get('/imports/email-imap',    EmailImapImportPage::class)->name('imports.email-imap');
     Route::get('/imports/google-sheets', GoogleSheetsImportPage::class)->name('imports.google-sheets');
+    Route::post('/imports/google-sheets/imports', [GoogleSheetsImportController::class, 'destroyAll'])->name('imports.google-sheets.imports.destroy-all');
+    Route::post('/imports/google-sheets/imports/{import}', [GoogleSheetsImportController::class, 'destroy'])->name('imports.google-sheets.imports.destroy');
     Route::get('/users',           UsersPage::class)->name('users');
     Route::get('/webhooks',        WebhooksPage::class)->name('webhooks');
     Route::get('/reporting',       ReportingPage::class)->name('reporting');

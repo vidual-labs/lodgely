@@ -159,4 +159,32 @@ class GoogleSheetsIdempotencyTest extends TestCase
         );
         $this->assertSame(2, Lead::onlyTrashed()->where('source', 'google_sheets')->count());
     }
+
+    public function test_dedupe_collapses_even_when_sheet_source_was_deleted(): void
+    {
+        // The source row is gone, so spreadsheet_id can no longer be resolved.
+        // Grouping must fall back to row content instead of silently skipping.
+        $sheet  = $this->makeSheetSource();
+        $import = $this->makeImport($sheet->id);
+        $raw    = ['Alice', 'alice@example.com', '555-1234'];
+
+        foreach (range(1, 4) as $ignored) {
+            Lead::create([
+                'tenant_id'   => Tenant::DEFAULT_ID,
+                'import_id'   => $import->id,
+                'source'      => 'google_sheets',
+                'full_name'   => 'Alice',
+                'email'       => 'alice@example.com',
+                'raw_payload' => $raw,
+            ]);
+        }
+
+        // Delete the sheet source — the import->source resolution chain now breaks.
+        $sheet->delete();
+
+        $this->artisan('lodgely:google-sheets:dedupe')->assertSuccessful();
+
+        $this->assertSame(1, Lead::where('source', 'google_sheets')->count());
+        $this->assertSame(3, Lead::onlyTrashed()->where('source', 'google_sheets')->count());
+    }
 }
