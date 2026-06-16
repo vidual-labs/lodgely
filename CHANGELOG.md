@@ -8,6 +8,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Backup restore crashed in `pg_restore` with "too many command-line
+  arguments".** The shared Postgres helper appended the database name as a
+  trailing positional argument, which is correct for `pg_dump` but wrong for
+  `pg_restore` — its only positional is the input archive, so the trailing
+  database name was rejected. The target database is now passed with `-d`
+  for both tools, leaving the dump file as `pg_restore`'s single positional.
+  Restoring an uploaded archive now completes instead of erroring out.
+
 - **Backup restore was completely non-functional.** On the
   `/settings/backups` page, selecting a `.zip` archive hung on "Uploading…"
   forever, and clicking **Restore and overwrite database** (after typing

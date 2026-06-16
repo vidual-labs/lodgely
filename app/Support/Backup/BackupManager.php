@@ -152,7 +152,16 @@ class BackupManager
         File::ensureDirectoryExists($this->directory());
     }
 
-    /** Run a Postgres client binary against the configured connection. */
+    /**
+     * Run a Postgres client binary against the configured connection.
+     *
+     * The target database is passed with `-d` rather than as a trailing
+     * positional argument. pg_dump treats a final positional as the
+     * database name, but pg_restore treats its single positional as the
+     * *input archive* — appending the database name there makes
+     * pg_restore choke with "too many command-line arguments". `-d`
+     * works for both, so the dump file can stay positional for restore.
+     */
     private function runPg(string $binary, array $extraArgs): void
     {
         $config = config('database.connections.pgsql');
@@ -162,8 +171,8 @@ class BackupManager
             '-h', (string) $config['host'],
             '-p', (string) $config['port'],
             '-U', (string) $config['username'],
+            '-d', (string) $config['database'],
             ...$extraArgs,
-            (string) $config['database'],
         ];
 
         $result = Process::env(['PGPASSWORD' => (string) $config['password']])
