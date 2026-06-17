@@ -3,8 +3,13 @@
     $aiEnabled  = (bool) config('lodgely.ai.enabled');
     $imapEnabled = (bool) config('lodgely.importers.email.imap.host');
 
+    // Meta Lead Ads (API) import only makes sense once Meta is connected; the
+    // nav entry stays hidden until then (resolveSafe never writes / never throws).
+    $metaConnected = $isOperator
+        && \App\Models\AdPlatformSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->isMetaConnected();
+
     // Group memberships so we can highlight a dropdown when any of its children is active
-    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'settings.google-sheets'];
+    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'imports.meta-leads', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
     $settingsRoutes  = ['users', 'webhooks', 'settings.mail', 'settings.demo-data', 'settings.backups'];
@@ -78,6 +83,12 @@
                                    class="{{ $menuItem }} {{ request()->routeIs('imports.google-sheets') ? $menuItemActive : $menuItemIdle }}">
                                     {{ __('Google Sheets') }}
                                 </a>
+                                @if($metaConnected)
+                                    <a href="{{ route('imports.meta-leads') }}" role="menuitem"
+                                       class="{{ $menuItem }} {{ request()->routeIs('imports.meta-leads') ? $menuItemActive : $menuItemIdle }}">
+                                        {{ __('Meta Lead Ads (API)') }}
+                                    </a>
+                                @endif
                                 <hr class="my-1 border-slate-100 dark:border-slate-800">
                                 <a href="{{ route('settings.google-sheets') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">
@@ -316,6 +327,10 @@
                     @endif
                     <a href="{{ route('imports.google-sheets') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('imports.google-sheets') ? $menuItemActive : $menuItemIdle }}">{{ __('Google Sheets') }}</a>
+                    @if($metaConnected)
+                        <a href="{{ route('imports.meta-leads') }}"
+                           class="{{ $menuItem }} {{ request()->routeIs('imports.meta-leads') ? $menuItemActive : $menuItemIdle }}">{{ __('Meta Lead Ads (API)') }}</a>
+                    @endif
                     <a href="{{ route('settings.google-sheets') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">{{ __('Google Sheets settings') }}</a>
 

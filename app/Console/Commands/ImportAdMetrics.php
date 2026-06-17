@@ -2,11 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Domain\Reporting\Contracts\AdMetricsSource;
-use App\Domain\Reporting\Services\MetricsIngestor;
-use App\Models\AdPlatformSetting;
+use App\Domain\Reporting\Services\AdMetricsImporter;
 use App\Models\Tenant;
-use App\Providers\AppServiceProvider;
 use Illuminate\Console\Command;
 
 class ImportAdMetrics extends Command
@@ -18,7 +15,7 @@ class ImportAdMetrics extends Command
 
     protected $description = 'Fetch ad spend metrics from configured ad platform sources.';
 
-    public function handle(MetricsIngestor $ingestor): int
+    public function handle(AdMetricsImporter $importer): int
     {
         $tenantId = Tenant::DEFAULT_ID;
         $platform = $this->option('platform');
@@ -28,55 +25,27 @@ class ImportAdMetrics extends Command
             ? new \DateTimeImmutable($this->option('date'))
             : new \DateTimeImmutable('yesterday');
 
-        $sources = $this->resolveSources($tenantId, $platform);
+        $result = $importer->run($tenantId, $anchorDate, $days, $platform);
 
-        if (empty($sources)) {
+        if ($result['sources'] === 0) {
             $this->warn('No ad metrics sources registered or matched the platform filter.');
 
             return self::SUCCESS;
         }
 
-        $totalInserted = 0;
-        $totalUpdated = 0;
-
-        for ($d = $days - 1; $d >= 0; $d--) {
-            $date = $anchorDate->modify("-{$d} days");
-
-            foreach ($sources as $source) {
-                $this->line("→ [{$source->label()}] {$date->format('Y-m-d')}…");
-                $snapshots = $source->fetch($tenantId, $date);
-                $result = $ingestor->ingest($snapshots, $tenantId);
-                $this->info("  inserted={$result['inserted']} updated={$result['updated']}");
-                $totalInserted += $result['inserted'];
-                $totalUpdated += $result['updated'];
-            }
+        foreach ($result['errors'] as $error) {
+            $this->warn('  '.$error);
         }
 
-        $this->info("Done. Total inserted={$totalInserted} updated={$totalUpdated}");
+        $this->info("Done. Total inserted={$result['inserted']} updated={$result['updated']}".
+            ($result['errors'] ? ' errors='.count($result['errors']) : ''));
+
+        // Fail only when nothing imported and every source errored, so a single
+        // flaky platform doesn't mark an otherwise-successful scheduled run red.
+        if ($result['errors'] && $result['inserted'] === 0 && $result['updated'] === 0) {
+            return self::FAILURE;
+        }
 
         return self::SUCCESS;
-    }
-
-    /** @return AdMetricsSource[] */
-    private function resolveSources(int $tenantId, ?string $platform): array
-    {
-        // Which adapters actually run: the env list (mocks by default) plus any
-        // live Meta/Google adapters the operator switched on in
-        // Settings → Ad platforms. See AdPlatformSetting::activeSourceKeys().
-        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
-
-        $sources = [];
-
-        foreach (AppServiceProvider::AD_METRICS_SOURCES as $key => $class) {
-            if ($enabledKeys && ! in_array($key, $enabledKeys, true)) {
-                continue;
-            }
-            $source = app($class);
-            if (! $platform || $source->platform() === $platform) {
-                $sources[] = $source;
-            }
-        }
-
-        return $sources;
     }
 }

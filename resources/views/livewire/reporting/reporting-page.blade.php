@@ -13,6 +13,18 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
+            {{-- Fetch the latest metrics on demand instead of waiting for the daily
+                 05:00 scheduled run. Native POST → controller → redirect, per the
+                 Livewire-morph rails — the call is synchronous (a few seconds). --}}
+            <form method="POST" action="{{ route('reporting.ad-metrics.fetch') }}"
+                  onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = '{{ __('Fetching…') }}';">
+                @csrf
+                <button type="submit"
+                        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-60 shadow-sm">
+                    {{ __('Fetch data now') }}
+                </button>
+            </form>
+
             {{-- Clear ad-metrics data (demo / mock spend lives in ad_spend_reports
                  with no per-import tag, so this is the only way to wipe it). Native
                  POST form → controller → redirect, per the Livewire-morph rails. --}}
@@ -53,8 +65,16 @@
         <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 px-6 py-12 text-center shadow-sm">
             <p class="text-slate-500 dark:text-slate-400 text-sm">{{ __('No ad metrics yet for this period.') }}</p>
             <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                {{ __('Run :cmd to load mock data.', ['cmd' => 'php artisan lodgely:import:ad-metrics --days=30']) }}
+                {{ __('Metrics are pulled automatically once a day. Click "Fetch data now" above to load the latest figures right away.') }}
             </p>
+            <form method="POST" action="{{ route('reporting.ad-metrics.fetch') }}" class="mt-4"
+                  onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = '{{ __('Fetching…') }}';">
+                @csrf
+                <button type="submit"
+                        class="rounded-lg bg-slate-900 dark:bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 shadow-sm">
+                    {{ __('Fetch data now') }}
+                </button>
+            </form>
         </div>
     @else
         {{-- KPI cards --}}

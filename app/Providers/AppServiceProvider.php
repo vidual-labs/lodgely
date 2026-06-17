@@ -16,6 +16,7 @@ use App\Importers\GoogleSheets\GoogleSheetsLeadSource;
 use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
 use App\Importers\Manual\ManualLeadSource;
 use App\Importers\Meta\MetaAdsSource;
+use App\Importers\Meta\MetaLeadsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
 use App\Models\MailSetting;
 use Illuminate\Pagination\Paginator;
@@ -38,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         'email_imap' => ImapLeadSource::class,
         'manual' => ManualLeadSource::class,
         'google_sheets' => GoogleSheetsLeadSource::class,
+        'meta_leads' => MetaLeadsSource::class,
     ];
 
     /**

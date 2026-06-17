@@ -8,6 +8,28 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Meta Lead Ads import over the API (no Google Sheets in between).** Once Meta
+  is connected under Settings → Ad platforms, a new **Imports → Meta Lead Ads
+  (API)** page lets operators pull leads straight from the Meta Lead Ads Graph
+  API. Configure one or more connections by Facebook Page ID (every active lead
+  form on the page) or pin a single Form ID; a "Load forms" button validates the
+  token and lists the page's forms. Standard Meta fields map onto the core lead
+  columns (name, email, phone) and every other answer is preserved as a
+  custom answer; the Meta lead id is the stable `external_id`, so re-fetching the
+  same window is idempotent. Each connection refreshes on its own interval
+  (hourly scheduler sweep, `lodgely:meta-leads:fetch`), or fetch on demand from
+  the page. Reuses the existing Meta access token — it must carry the
+  `leads_retrieval` permission plus access to the page that owns the forms. The
+  nav entry only appears once Meta is connected.
+- **"Fetch data now" button on the Reporting page.** Ad metrics are pulled
+  automatically once a day (05:00, yesterday's figures), so a freshly connected
+  platform shows an empty report until the next scheduled run. Operators can now
+  trigger an immediate pull of the last 7 days from the Reporting page (native
+  form → controller → redirect, per the Livewire-morph rails) — both in the
+  header toolbar and the empty state — instead of waiting for the cron. Source
+  resolution and the day-by-day fetch loop are shared with the scheduled command
+  via a new `AdMetricsImporter` service, and a flaky platform no longer aborts
+  the whole run (per-source/day errors are collected and surfaced).
 - **Modern trend charts on the Reporting dashboard.** The operator `/reporting`
   page now renders a row of TradingView-style daily charts (total spend, clicks,
   impressions, platform leads, lodgely leads) above the campaign table: a smooth
