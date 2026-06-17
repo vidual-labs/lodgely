@@ -49,17 +49,46 @@ class AdPlatformsTest extends TestCase
         $this->assertSame('777', $fresh->effectiveMetaAccountId());
     }
 
-    public function test_active_source_keys_combine_env_and_ui_toggles(): void
+    public function test_active_source_keys_keep_mocks_until_a_platform_is_connected(): void
     {
-        config()->set('lodgely.reporting.sources', ['meta_mock']);
+        // Demo install: no live platform connected → the mock base list stands.
+        config()->set('lodgely.reporting.sources', ['meta_mock', 'google_mock']);
+
+        $this->assertEqualsCanonicalizing(
+            ['meta_mock', 'google_mock'],
+            AdPlatformSetting::activeSourceKeys(Tenant::DEFAULT_ID),
+        );
+    }
+
+    public function test_connecting_a_live_platform_drops_the_demo_mocks(): void
+    {
+        // Operator has gone live on Meta: the deterministic demo campaigns must
+        // not pollute real reporting, so meta_mock/google_mock are dropped and
+        // only the live `meta` adapter remains.
+        config()->set('lodgely.reporting.sources', ['meta_mock', 'google_mock']);
 
         $row = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
         $row->meta_enabled = true;
         $row->google_enabled = false;
         $row->save();
 
+        $this->assertSame(
+            ['meta'],
+            AdPlatformSetting::activeSourceKeys(Tenant::DEFAULT_ID),
+        );
+    }
+
+    public function test_connecting_both_platforms_runs_both_live_adapters_only(): void
+    {
+        config()->set('lodgely.reporting.sources', ['meta_mock', 'google_mock']);
+
+        $row = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->meta_enabled = true;
+        $row->google_enabled = true;
+        $row->save();
+
         $this->assertEqualsCanonicalizing(
-            ['meta_mock', 'meta'],
+            ['meta', 'google'],
             AdPlatformSetting::activeSourceKeys(Tenant::DEFAULT_ID),
         );
     }

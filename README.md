@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.38.0-6366F1" alt="Version 0.38.0">
+  <img src="https://img.shields.io/badge/version-0.38.1-6366F1" alt="Version 0.38.1">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -533,7 +533,7 @@ and are listed in the roadmap.
 | `LODGELY_AI_ENABLED` | Master kill-switch for the AI module. When `false`, all AI routes 404, buttons are hidden, and jobs no-op. Per-tenant config at `/settings/ai` only matters when this is true. | `false` |
 | `LODGELY_AI_MAX_CALLS_PER_DAY` | Maximum completed AI generations per tenant per day. `0` disables the cap. | `100` |
 | `LODGELY_AI_TIMEOUT` | HTTP timeout (seconds) for a single LLM provider call. | `60` |
-| `LODGELY_AD_METRICS_SOURCES` | Comma-separated list of ad source adapters to activate. Available: `meta_mock`, `google_mock`, `meta`, `google`. The live `meta` / `google` adapters are normally switched on via the **Enable** toggles in Settings → Ad platforms (which are added to this list at runtime); set them here only if you prefer env-based activation. | `meta_mock,google_mock` |
+| `LODGELY_AD_METRICS_SOURCES` | Comma-separated list of ad source adapters to activate. Available: `meta_mock`, `google_mock`, `meta`, `google`. The live `meta` / `google` adapters are normally switched on via the **Enable** toggles in Settings → Ad platforms (which are added to this list at runtime); set them here only if you prefer env-based activation. The `*_mock` demo adapters are automatically dropped once any real platform is connected through the UI, so live reporting never mixes in fabricated demo campaigns. | `meta_mock,google_mock` |
 | `LODGELY_AD_METRICS_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound ad platform API calls. | `30` |
 | `LODGELY_META_ADS_ACCESS_TOKEN` | Meta Marketing API long-lived (system-user) access token. Optional — prefer Settings → Ad platforms; used only as a fallback when not set there. | — |
 | `LODGELY_META_ADS_ACCOUNT_ID` | Meta ad account id, with or without the `act_` prefix. | — |

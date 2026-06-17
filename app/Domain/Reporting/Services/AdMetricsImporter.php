@@ -60,7 +60,9 @@ class AdMetricsImporter
     /**
      * Which adapters actually run: the env list (mocks by default) plus any
      * live Meta/Google adapters the operator switched on in Settings → Ad
-     * platforms. See {@see AdPlatformSetting::activeSourceKeys()}.
+     * platforms — but with the demo mocks dropped once a real platform is
+     * connected, so live reporting never mixes in fabricated demo campaigns.
+     * See {@see AdPlatformSetting::activeSourceKeys()}.
      *
      * @return AdMetricsSource[]
      */
