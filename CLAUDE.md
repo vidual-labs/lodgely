@@ -1,7 +1,9 @@
 # Working notes for Claude / future maintainers
 
-This file is intentionally short. It's meant to keep future contributors —
-human or AI — from wandering off the architectural rails set in the MVP.
+This file is a concise orientation, not exhaustive docs (the README is the
+full reference). It exists to keep future contributors — human or AI — from
+wandering off the architectural rails, and to record the current feature
+surface and the hard-won gotchas worth not repeating.
 
 ## Product north star
 
@@ -15,15 +17,64 @@ The two real personas:
 - **Client** — small business owner who just wants to *see* their leads
   in a clean read-only-ish view.
 
+## Tech stack
+
+- **PHP 8.4 · Laravel 12 · Livewire 3.5.** Server-rendered Blade + Livewire,
+  no SPA. `league/csv` for CSV parsing.
+- **Tailwind CSS 4 · Alpine.js 3 · Vite 5.** Alpine only for local UI state
+  (dropdowns, toggles); no front-end framework, no chart library (the reporting
+  charts are hand-rolled inline SVG).
+- **PostgreSQL** is the only supported DB (migrations use `jsonb`, partial
+  indexes, etc.). **Queue driver is `database`** — the worker runs AI summaries
+  and report emails. Sessions/cache configurable; tests run on SQLite `:memory:`.
+- **Docker** for production (see Runtime environment below).
+- **Outbound HTTP** goes through Laravel's `Http` client with timeout + retry;
+  every integration is opt-in and credential-gated (self-hosted-friendly).
+
+## Feature surface (what's actually built)
+
+Beyond the lead inbox, these are all live — don't treat them as greenfield:
+
+- **Lead intake** from CSV, Email (mock + real IMAP), Webhook, Manual entry,
+  **Google Sheets** (`/imports/google-sheets`) and **Meta Lead Ads via the
+  Graph API** (`/imports/meta-leads`). All flow through `LeadIngestor`.
+- **Reporting** (`app/Domain/Reporting/`, operator `/reporting` + client
+  `/my-reports`) — ad-spend ingestion from Meta Marketing API + Google Ads
+  REST API (with deterministic mock adapters), campaign rollups, KPI cards,
+  inline-SVG trend charts, client reporting views, and scheduled report emails.
+- **Ad platform / API connections** (`/settings/ad-platforms`,
+  `AdPlatformSetting`) — Meta token + ad account, Google Ads one-click OAuth.
+  Secrets encrypted at rest; env vars remain a fallback.
+- **Outbound mail / SMTP** (`/settings/mail`, `MailSetting`) — UI-configured
+  SMTP that overrides `.env` MAIL_* at runtime (applied in `AppServiceProvider`
+  for the web request and again on `Queue::before` so the long-lived worker
+  picks up changes without a restart).
+- **AI** (`app/Domain/Ai/`, opt-in via `ai.enabled`) — report-view summaries
+  and pseudonymized lead qualification via OpenAI-compatible or Ollama
+  providers, behind an operator approve-then-share workflow.
+- **Ops** — encrypted DB backups (`/settings/backups`), demo data load/unload
+  (`/settings/demo-data`), webhook endpoints (`/webhooks`), users (`/users`),
+  EN/DE i18n, dark/light mode.
+
 ## Architecture rails
 
 - **Modular monolith.** No microservices, no SPA, no live websockets in MVP.
-- **Domain code lives in `app/Domain/Leads/`.** Importers live in
-  `app/Importers/`. UI lives in `app/Livewire/` and `resources/views/`.
-- **New sources are adapters**, not new tables. Add a class implementing
-  `App\Importers\Contracts\LeadSource`, register it in
-  `AppServiceProvider::IMPORTERS`, and hand `IncomingLead` DTOs to
-  `LeadIngestor`. That's the whole extension surface.
+- **Domain code lives under `app/Domain/`** — `Leads/` (intake, dedupe,
+  normalization), `Reporting/` (ad metrics, rollups, report emails), `Ai/`
+  (summaries, qualification). Importers/adapters live in `app/Importers/`.
+  UI lives in `app/Livewire/` and `resources/views/`.
+- **`app/Importers/` holds two adapter families.** Lead-intake adapters
+  implement `App\Importers\Contracts\LeadSource` (CSV, IMAP, Google Sheets,
+  Meta Lead Ads, …); ad-metrics adapters implement
+  `App\Domain\Reporting\Contracts\AdMetricsSource` (Meta/Google live + mocks).
+  Both are tiny fetch-and-map classes — persistence is not their job.
+- **New lead sources are adapters**, not new tables. Add a class implementing
+  `LeadSource`, register it in `AppServiceProvider::IMPORTERS`, and hand
+  `IncomingLead` DTOs to `LeadIngestor`. New ad-metrics sources register in
+  `AppServiceProvider::AD_METRICS_SOURCES` and yield `AdMetricsSnapshot` DTOs to
+  `MetricsIngestor` (driven via `AdMetricsImporter`). That's the whole
+  extension surface — recurring sources stay idempotent by setting a stable
+  `external_id` so re-fetches skip rows already ingested.
 - **Duplicate detection is centralized** in `DuplicateDetector`. Don't add
   ad-hoc duplicate queries elsewhere — extend the detector instead.
 - **Visibility is enforced in `Lead::scopeVisibleTo()`.** Mutations also
@@ -41,13 +92,15 @@ The two real personas:
 
 ## Reserved seams (don't fill in prematurely)
 
-- `app/Domain/Reporting/` — Meta Ads / Google Ads ingestion, campaign rollups.
-- `app/Domain/Ai/` — summaries / quality scoring on reporting data.
 - `app/Support/Tenancy/` — full multi-tenant scoping. `tenant_id` columns
-  already exist but only the default tenant is wired.
+  already exist everywhere and code resolves `Tenant::DEFAULT_ID`, but only the
+  default tenant is wired. This is the one genuine "don't pull it forward yet"
+  seam left.
 
-These exist as empty folders on purpose. They mark the architectural
-direction without pulling the work forward.
+> Historical note: `app/Domain/Reporting/` and `app/Domain/Ai/` used to be
+> reserved seams. **They are now fully built** (see Feature surface above) — do
+> not re-stub or treat them as empty. Extend them through their existing
+> services/contracts.
 
 ## Style
 
@@ -219,4 +272,15 @@ docker compose exec app php artisan lodgely:user:create --role=client  # add a s
 docker compose exec app php artisan lodgely:import:email-mock --count=5
 docker compose exec app php artisan lodgely:import:meta-mock --count=6 # Meta Lead Ads demo data
 docker compose exec app php artisan lodgely:leads:purge --dry-run      # GDPR cleanup, preview only
+
+# Recurring source / reporting pulls (also wired into the scheduler in routes/console.php)
+docker compose exec app php artisan lodgely:google-sheets:fetch        # pull due Google Sheet sources
+docker compose exec app php artisan lodgely:meta-leads:fetch           # pull due Meta Lead Ads connections
+docker compose exec app php artisan lodgely:import:ad-metrics --days=7 # backfill ad spend/metrics
 ```
+
+> The scheduler (`php artisan schedule:work` / cron) drives the recurring jobs —
+> Google Sheets + Meta Lead Ads fetches (hourly, each source decides if it's
+> due), the daily 05:00 ad-metrics pull, report emails, and the GDPR purge.
+> Without it, nothing recurring runs. Reporting also has a **"Fetch data now"**
+> button so operators don't have to wait for the 05:00 run.

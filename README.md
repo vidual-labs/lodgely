@@ -7,15 +7,15 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.37.0-6366F1" alt="Version 0.37.0">
+  <img src="https://img.shields.io/badge/version-0.38.0-6366F1" alt="Version 0.38.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
 # lodgely
 
 **lodgely** is a lightweight, open-source **lead intake hub** for small teams.
-It collects leads from CSV files, email (mock and real IMAP), webhook, Google Sheets fetch, and
-manual entry, normalizes them into a single schema, and gives reviewers a
+It collects leads from CSV files, email (mock and real IMAP), webhook, Google Sheets fetch,
+Meta Lead Ads (API), and manual entry, normalizes them into a single schema, and gives reviewers a
 clean inbox to prioritize, deduplicate and forward.
 
 > lodgely is intentionally **not** a CRM. No deals, no pipelines, no
@@ -107,6 +107,21 @@ clean place to *triage* leads before anything else happens, you are at home.
   count). Run `lodgely:google-sheets:dedupe` once to collapse any duplicate
   backlog left by older versions. Google OAuth credentials (client ID + secret,
   stored encrypted in the DB) are managed at `/settings/google-sheets`.
+- 📥 **Meta Lead Ads lead source (API)** — pull leads straight from Meta Lead
+  Ads instead of routing them through a Google Sheet. Once Meta is connected
+  under **Settings → Ad platforms**, an **Imports → Meta Lead Ads (API)** page
+  (`/imports/meta-leads`) appears. Configure one or more connections by Facebook
+  Page ID (every active lead form on the page is pulled) or pin a single Form ID;
+  a **"Load forms"** button validates the token and lists the page's lead forms.
+  Standard Meta fields (`full_name`, `email`, `phone_number`, first/last name)
+  map onto the core lead columns plus the pre-wired Meta attribution fields
+  (ad / adset / campaign / form / platform), and every other answer is preserved
+  as a custom answer. The Meta lead id is the stable `external_id`, so re-fetches
+  are **idempotent**. Each connection has its own look-back window, refresh
+  interval and active toggle; "Fetch now" runs an immediate import, and the
+  scheduler sweeps due connections hourly via `lodgely:meta-leads:fetch`. Reuses
+  the existing Meta access token — it must additionally carry the
+  `leads_retrieval` permission and access to the page that owns the forms.
   **Set the Google OAuth consent screen to "In production"** — apps left in
   Testing status get their refresh tokens expired by Google after 7 days,
   which silently breaks the connection every week.
@@ -171,7 +186,7 @@ clean place to *triage* leads before anything else happens, you are at home.
   answers can swap it for that custom column.
 - 🌙 **Dark / Light mode switch** — OS preference is respected on first load; a labeled pill toggle (`Light · Dark`) in the topbar lets users switch manually. For authenticated users the choice is saved to `users.ui_theme` in the database and injected server-side on the next load (no localStorage flash); guests fall back to `localStorage`.
 - 🌍 **i18n ready** — all UI strings go through Laravel's `__()` helper. Ships with English (`en`) and German (`de`). Language is switched via a `POST /locale` route; for authenticated users the preference is saved to `users.locale` in the database; for guests it falls back to session.
-- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), a row of **modern trend charts** (TradingView-style daily area/line charts — smooth line, gradient fill and an interactive hover crosshair + tooltip, all dependency-free inline SVG, no chart library), a per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. A **"Clear ad-metrics data"** button wipes the `ad_spend_reports` rows — the mock spend a demo install ships with has no per-import tag, so this is the way to get a clean slate (mock sources repopulate on the next import run). Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads, plus live API adapters that pull aggregate campaign metrics from Meta's Marketing API and Google Ads' REST API once credentials are configured. Operators connect both platforms from **Settings → Ad platforms** (`/settings/ad-platforms`): paste the Meta access token / ad account, and for Google Ads click **"Connect Google Ads"** for a one-click OAuth flow that captures the refresh token automatically — no `.env` editing or token scripts. Credentials are stored encrypted, each platform has a "Test connection" button, and per-platform Enable toggles control the daily pull. Env vars (see [Configuration reference](#configuration-reference)) remain supported as a fallback. Run `php artisan lodgely:import:ad-metrics --days=30` to seed/backfill data. Scheduled to pull yesterday's data daily at 05:00.
+- 📈 **Reporting** — operator-only `/reporting` page with platform/date-range filters, KPI cards (total spend, clicks, impressions, cost per lead, lodgely lead count), a row of **modern trend charts** (TradingView-style daily area/line charts — smooth line, gradient fill and an interactive hover crosshair + tooltip, all dependency-free inline SVG, no chart library), a per-campaign breakdown table (spend, CPL, platform leads vs. lodgely leads), and a leads-by-source table. A **"Clear ad-metrics data"** button wipes the `ad_spend_reports` rows — the mock spend a demo install ships with has no per-import tag, so this is the way to get a clean slate (mock sources repopulate on the next import run). Ad spend data is ingested via swappable adapter classes (`AdMetricsSource`) — ships with deterministic mock adapters for Meta and Google Ads, plus live API adapters that pull aggregate campaign metrics from Meta's Marketing API and Google Ads' REST API once credentials are configured. Operators connect both platforms from **Settings → Ad platforms** (`/settings/ad-platforms`): paste the Meta access token / ad account, and for Google Ads click **"Connect Google Ads"** for a one-click OAuth flow that captures the refresh token automatically — no `.env` editing or token scripts. Credentials are stored encrypted, each platform has a "Test connection" button, and per-platform Enable toggles control the daily pull. Env vars (see [Configuration reference](#configuration-reference)) remain supported as a fallback. Scheduled to pull yesterday's data daily at 05:00 — so a freshly connected platform shows an empty report until that run. A **"Fetch data now"** button (header toolbar and empty state) triggers an immediate pull of the last 7 days, so reporting fills right after you connect a platform without waiting for the cron. Run `php artisan lodgely:import:ad-metrics --days=30` to seed/backfill a wider window from the CLI.
 - 📊 **Custom client reporting views** — operators define named reporting views by selecting any combination of metrics (Leads, Clicks, Impressions, CTR, Ad Spend, Cost per Lead, Platform Leads, **CPC**, **CPM**, **Conversion rate**, etc.) and assign each view to specific client users. Each view has a **Live / Hidden** toggle: views default to Live (assigning a client makes them visible), and an operator can take a view offline without unassigning anyone — hidden views disappear from clients' "My reports" and pause their scheduled report emails. Clients see a "My reports" tab page at `/my-reports` with per-metric monthly **trend charts** (the same modern TradingView-style area/line charts as the operator dashboard, with a hover crosshair + tooltip — dependency-free inline SVG) above a monthly table, showing only their assigned columns. Different clients can see entirely different views — client A might see only Leads and Clicks, client B sees full ad performance metrics. Lead data is always scoped to each client's own leads.
 - 🤖 **AI summaries & lead qualification** *(optional, off by default)* — admins plug in either an OpenAI-compatible API (OpenAI, Together, Groq, LM Studio, …) or a local Ollama endpoint at `/settings/ai`, set a free-text "house style" instruction, and choose which AI tasks to enable. Two kinds in v1: **report-view summaries** (narrative + evaluation + follow-ups on a custom reporting view, aggregate data only) and **lead qualification** (priority recommendation with pseudonymized lead context). Every AI output is a draft that an operator reviews at `/ai/drafts` — approve, reject, regenerate, then share with the client. API keys are stored encrypted; lead-level kinds require an explicit consent toggle; a daily per-tenant cap prevents cost runaway.
 - 📨 **Custom client report emails** — operators compose modular report emails at `/reporting/emails` and either send them now, schedule them as a one-off, or recur them weekly / monthly. Each template picks any combination of: a free-text intro (markdown), the KPI summary strip, the monthly metrics table, and the latest operator-approved AI summary for a reporting view. The HTML email is **mobile-responsive** — a `<style>` media query stacks the KPI cards one-per-row and lets the metrics table scroll/shrink on phones, so it reads cleanly in iOS / Gmail / webmail. Recipients are existing Client users (visibility is honoured because the metrics are built against the recipient). Every dispatch writes a `client_report_email_sends` audit row that surfaces as a "Recent sends" history. The `lodgely:report-emails:dispatch` artisan command runs hourly via the scheduler and advances each schedule's `next_run_at`.
@@ -304,8 +319,8 @@ php artisan queue:work
 ```
 
 And the scheduler in a third — without it none of the recurring jobs
-(Google Sheets fetch, IMAP pull, ad-metrics import, report emails,
-GDPR purge) ever run:
+(Google Sheets fetch, Meta Lead Ads fetch, IMAP pull, ad-metrics import,
+report emails, GDPR purge) ever run:
 
 ```bash
 php artisan schedule:work
@@ -365,7 +380,8 @@ app/
 │   ├── Google/              GoogleAdsSource (live Google Ads REST API)
 │   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
 │   ├── GoogleSheets/        GoogleSheetsClient (OAuth + Sheets v4 API)
-│   ├── Meta/                MetaAdsSource (live Meta Marketing API)
+│   ├── Meta/                MetaAdsSource (live Meta Marketing API),
+│   │                        MetaLeadsSource (live Meta Lead Ads import)
 │   ├── MetaMock/            MetaMockAdMetricsSource adapter
 │   └── Manual/              ManualLeadSource adapter
 ├── Jobs/                    GenerateAiSummary, SendClientReportEmail
@@ -375,7 +391,8 @@ app/
 │   │   └── Concerns/        URL filters, saved views, bulk actions,
 │   │                        manual-lead modal (composed via traits)
 │   ├── Imports/*            CSV + email (mock & IMAP) import UIs;
-│   │                        GoogleSheetsImportPage (sheet sources CRUD)
+│   │                        GoogleSheetsImportPage (sheet sources CRUD);
+│   │                        MetaLeadsImportPage (Meta Lead Ads API CRUD)
 │   ├── Reporting/
 │   │   ├── ReportingPage    operator ad spend + campaign rollup dashboard
 │   │   ├── ReportingViewsPage  operator CRUD for client reporting views
@@ -397,7 +414,8 @@ app/
 │                            ClientReportingView, AiSetting, AiSummary,
 │                            AiEvent, ClientReportEmail,
 │                            ClientReportEmailSchedule, ClientReportEmailSend,
-│                            GoogleSheetsSetting, GoogleSheetSource
+│                            GoogleSheetsSetting, GoogleSheetSource,
+│                            MetaLeadSource, AdPlatformSetting
 ├── Providers/AppServiceProvider
 ├── Support/Audit/           AuditLogger, AiAuditLogger
 └── Support/Backup/          BackupManager (pg_dump/pg_restore archive create/restore)
@@ -547,6 +565,7 @@ and are listed in the roadmap.
 
 ### Completed
 
+- ~~**Meta Lead Ads lead source (API)**~~ ✓ Done in v0.38.0 — `/imports/meta-leads` page where operators pull leads straight from the Meta Lead Ads Graph API (by Page ID or pinned Form ID), reusing the Meta connection from Settings → Ad platforms. Per-connection look-back / refresh interval, "Load forms" validation, "Fetch now", idempotent re-fetches keyed on the Meta lead id, and a `lodgely:meta-leads:fetch` hourly cron.
 - ~~**Google Sheets lead source**~~ ✓ Done in v0.20.0 — `/imports/google-sheets` page where operators configure multiple sheets as recurring lead sources with per-column field mapping, per-sheet refresh interval, "Fetch now" button, and a `lodgely:google-sheets:fetch` hourly cron. OAuth credentials managed at `/settings/google-sheets` (done in v0.19.0).
 - ~~**Password recovery + per-user profile page**~~ ✓ Done in v0.14.0 — public `/forgot-password` flow with rate-limited reset emails, operator "Reset link" action on the `/users` table, and a `/profile` page that lets every role manage their name, email, password, language and theme.
 - ~~**Custom client report emails**~~ ✓ Done in v0.12.0 — `/reporting/emails` for composing modular templates (intro, KPI strip, monthly table, latest approved AI summary), send-now / one-off / weekly / monthly schedules, audited `client_report_email_sends` history, `lodgely:report-emails:dispatch` hourly cron.
