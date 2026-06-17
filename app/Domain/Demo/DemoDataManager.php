@@ -4,6 +4,8 @@ namespace App\Domain\Demo;
 
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
+use App\Models\AdPlatformSetting;
+use App\Models\AdSpendReport;
 use App\Models\Import;
 use App\Models\Lead;
 use App\Models\Tenant;
@@ -42,7 +44,7 @@ class DemoDataManager
     public function __construct(private readonly DuplicateDetector $detector) {}
 
     /**
-     * @return array{loaded: bool, demo_leads: int, demo_users: int, has_import: bool}
+     * @return array{loaded: bool, demo_leads: int, demo_users: int, has_import: bool, ad_metrics: int, ad_metrics_removable: bool}
      */
     public function status(): array
     {
@@ -59,12 +61,33 @@ class DemoDataManager
             ->where('source', self::IMPORT_SOURCE)
             ->exists();
 
+        // ad_spend_reports carry no per-import tag, so we treat them as demo
+        // content only while no live ad platform is connected (i.e. the rows
+        // can only have come from the meta_mock / google_mock adapters).
+        $removableAdMetrics = ! $this->liveAdPlatformConnected();
+        $adMetrics = $removableAdMetrics
+            ? AdSpendReport::where('tenant_id', Tenant::DEFAULT_ID)->count()
+            : 0;
+
         return [
-            'loaded'     => $leadCount > 0 || $userCount > 0 || $hasImport,
+            'loaded' => $leadCount > 0 || $userCount > 0 || $hasImport || $adMetrics > 0,
             'demo_leads' => $leadCount,
             'demo_users' => $userCount,
             'has_import' => $hasImport,
+            'ad_metrics' => $adMetrics,
+            'ad_metrics_removable' => $removableAdMetrics,
         ];
+    }
+
+    /**
+     * True when a live Meta or Google Ads connection is configured, meaning
+     * ad_spend_reports may hold real spend data we must not auto-delete.
+     */
+    private function liveAdPlatformConnected(): bool
+    {
+        $settings = AdPlatformSetting::resolveSafe(Tenant::DEFAULT_ID);
+
+        return $settings->isMetaConnected() || $settings->isGoogleConnected();
     }
 
     /**
@@ -90,10 +113,10 @@ class DemoDataManager
             $operator = User::where('email', self::DEMO_OPERATOR_EMAIL)->first();
             if (! $operator) {
                 User::create([
-                    'name'      => 'Demo Operator',
-                    'email'     => self::DEMO_OPERATOR_EMAIL,
-                    'password'  => Hash::make('password'),
-                    'role'      => 'operator',
+                    'name' => 'Demo Operator',
+                    'email' => self::DEMO_OPERATOR_EMAIL,
+                    'password' => Hash::make('password'),
+                    'role' => 'operator',
                     'is_active' => true,
                 ]);
                 $createdUsers++;
@@ -115,9 +138,9 @@ class DemoDataManager
 
             $import = Import::create([
                 'tenant_id' => Tenant::DEFAULT_ID,
-                'source'    => self::IMPORT_SOURCE,
-                'label'     => 'Demo dataset · '.now()->format('Y-m-d H:i'),
-                'meta'      => ['loaded_at' => now()->toIso8601String()],
+                'source' => self::IMPORT_SOURCE,
+                'label' => 'Demo dataset · '.now()->format('Y-m-d H:i'),
+                'meta' => ['loaded_at' => now()->toIso8601String()],
             ]);
 
             Lead::factory()->count(60)->create(['import_id' => $import->id]);
@@ -125,7 +148,7 @@ class DemoDataManager
             foreach (['Northwind Studio', 'Acme Wellness'] as $clientName) {
                 Lead::factory()->count(6)->meta()->create([
                     'client_name' => $clientName,
-                    'import_id'   => $import->id,
+                    'import_id' => $import->id,
                 ]);
             }
 
@@ -152,26 +175,26 @@ class DemoDataManager
                 });
 
             $primary = Lead::factory()->create([
-                'import_id'        => $import->id,
-                'full_name'        => 'Jordan Bennett',
-                'email'            => 'jordan.bennett@example.com',
+                'import_id' => $import->id,
+                'full_name' => 'Jordan Bennett',
+                'email' => 'jordan.bennett@example.com',
                 'email_normalized' => 'jordan.bennett@example.com',
-                'phone'            => '+49 30 1112233',
+                'phone' => '+49 30 1112233',
                 'phone_normalized' => '49301112233',
-                'client_name'      => 'Northwind Studio',
-                'source'           => 'csv',
-                'status'           => LeadStatus::New->value,
+                'client_name' => 'Northwind Studio',
+                'source' => 'csv',
+                'status' => LeadStatus::New->value,
             ]);
             Lead::factory()->create([
-                'import_id'        => $import->id,
-                'full_name'        => 'Jordan Bennett',
-                'email'            => 'JORDAN.bennett+test@example.com',
+                'import_id' => $import->id,
+                'full_name' => 'Jordan Bennett',
+                'email' => 'JORDAN.bennett+test@example.com',
                 'email_normalized' => 'jordan.bennett@example.com',
-                'phone'            => '+49 30 1112233',
+                'phone' => '+49 30 1112233',
                 'phone_normalized' => '49301112233',
-                'client_name'      => 'Northwind Studio',
-                'source'           => 'email_mock',
-                'status'           => LeadStatus::New->value,
+                'client_name' => 'Northwind Studio',
+                'source' => 'email_mock',
+                'status' => LeadStatus::New->value,
             ]);
 
             foreach (Lead::query()->where('import_id', $import->id)->orderBy('id')->cursor() as $lead) {
@@ -181,15 +204,15 @@ class DemoDataManager
             $createdLeads = Lead::query()->where('import_id', $import->id)->count();
 
             $import->update([
-                'rows_total'    => $createdLeads,
+                'rows_total' => $createdLeads,
                 'rows_imported' => $createdLeads,
-                'started_at'    => $import->created_at,
-                'finished_at'   => now(),
+                'started_at' => $import->created_at,
+                'finished_at' => now(),
             ]);
 
             return [
-                'created_leads'  => $createdLeads,
-                'created_users'  => $createdUsers,
+                'created_leads' => $createdLeads,
+                'created_users' => $createdUsers,
                 'already_loaded' => false,
             ];
         });
@@ -203,11 +226,17 @@ class DemoDataManager
      * The currently authenticated user is never deleted, so an operator
      * who signed in as a demo account can still safely click "unload".
      *
-     * @return array{deleted_leads: int, deleted_users: int}
+     * @return array{deleted_leads: int, deleted_users: int, deleted_ad_metrics: int}
      */
     public function unload(): array
     {
         return DB::transaction(function (): array {
+            // Mock ad spend (only when no live platform is connected — see status()).
+            $deletedAdMetrics = 0;
+            if (! $this->liveAdPlatformConnected()) {
+                $deletedAdMetrics = AdSpendReport::where('tenant_id', Tenant::DEFAULT_ID)->delete();
+            }
+
             $importIds = $this->demoImportIds();
 
             $deletedLeads = 0;
@@ -240,6 +269,7 @@ class DemoDataManager
             return [
                 'deleted_leads' => $deletedLeads,
                 'deleted_users' => $deletedUsers,
+                'deleted_ad_metrics' => $deletedAdMetrics,
             ];
         });
     }
@@ -250,17 +280,17 @@ class DemoDataManager
 
         if (! $user) {
             $user = User::create([
-                'name'      => $name,
-                'email'     => $email,
-                'password'  => Hash::make('password'),
-                'role'      => 'client',
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make('password'),
+                'role' => 'client',
                 'is_active' => true,
             ]);
             $createdCounter++;
         }
 
         UserLeadScope::firstOrCreate([
-            'user_id'     => $user->id,
+            'user_id' => $user->id,
             'client_name' => $clientName,
         ]);
 

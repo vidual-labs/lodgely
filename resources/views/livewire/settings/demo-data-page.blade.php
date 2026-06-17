@@ -32,6 +32,12 @@
                     <dt class="uppercase tracking-wider">{{ __('Demo client users') }}</dt>
                     <dd class="mt-0.5 font-mono tabular-nums text-base text-slate-800 dark:text-slate-200">{{ $status['demo_users'] }}</dd>
                 </div>
+                @if($status['ad_metrics_removable'])
+                    <div>
+                        <dt class="uppercase tracking-wider">{{ __('Mock ad-metrics rows') }}</dt>
+                        <dd class="mt-0.5 font-mono tabular-nums text-base text-slate-800 dark:text-slate-200">{{ $status['ad_metrics'] }}</dd>
+                    </div>
+                @endif
             </dl>
         </div>
     </div>
@@ -49,6 +55,9 @@
 
         <p class="text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
             {{ __('All demo leads are attached to a tracking import labelled "Demo dataset", so unloading is a single scoped delete — your real imports stay intact. The currently signed-in user is never removed.') }}
+            @if($status['ad_metrics_removable'])
+                {{ __('Unloading also clears the mock ad-spend rows behind Reporting. (Skipped automatically once a live Meta or Google Ads connection exists, so real spend is never deleted — clear that from the Reporting page instead.)') }}
+            @endif
         </p>
     </div>
 
@@ -64,7 +73,7 @@
             </button>
         @else
             <button type="button" wire:click="unload"
-                    wire:confirm="{{ __('Remove all demo leads and demo client users? Your real imports and webhook leads will not be affected.') }}"
+                    wire:confirm="{{ __('Remove all demo leads, demo client users and mock ad-metrics rows? Your real imports and webhook leads will not be affected.') }}"
                     wire:loading.attr="disabled"
                     wire:target="unload"
                     class="rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 px-4 py-2 text-sm font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors disabled:opacity-60">

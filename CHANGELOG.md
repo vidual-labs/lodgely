@@ -8,6 +8,35 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Modern trend charts on the Reporting dashboard.** The operator `/reporting`
+  page now renders a row of TradingView-style daily charts (total spend, clicks,
+  impressions, platform leads, lodgely leads) above the campaign table: a smooth
+  area/line with a gradient fill and an interactive hover crosshair + tooltip.
+  They are dependency-free inline SVG with a sprinkle of Alpine for the hover —
+  no chart library, no build step. The client `/my-reports` per-metric charts
+  were upgraded to the same component, so operators and clients see the same
+  modern visuals.
+- **"Clear ad-metrics data" button on the Reporting page.** The mock ad-spend
+  rows a demo install ships with live in `ad_spend_reports`, which carries no
+  per-import tag — so until now there was no way to delete them from the UI.
+  Operators get an explicit, confirm-gated purge (native form → controller →
+  redirect, per the Livewire-morph rails) that wipes every ad-metrics row for
+  the tenant. Leads are untouched; mock sources repopulate on the next import.
+
+### Changed
+
+- **Unloading demo data now also clears the mock ad-spend rows** behind
+  Reporting, so "Unload demo data" really does leave a clean slate. This is
+  skipped automatically once a live Meta or Google Ads connection is configured,
+  so real spend data is never deleted — clear that from the Reporting page
+  instead. The demo-data page shows the mock ad-metrics row count alongside the
+  lead/user counts.
+- **Client report emails are now mobile-responsive.** Added a `<style>` media
+  query to the email head: on phones the KPI cards stack one-per-row (instead of
+  a cramped fixed three-across grid) and the monthly metrics table scrolls /
+  shrinks rather than overflowing. The layout still falls back to the inline
+  styles in clients that strip `<style>`.
+
 - **Outbound email (SMTP) is now configurable in the UI under Settings →
   Email.** Operators can point lodgely at their mail server — host, port,
   encryption (STARTTLS / SSL / none), username, password, and the From
