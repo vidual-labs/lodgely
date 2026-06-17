@@ -212,9 +212,13 @@ class AdPlatformSetting extends Model
     /**
      * Which ad-metrics source keys should run for this tenant. The env list
      * (LODGELY_AD_METRICS_SOURCES, default the mocks) is the base; the UI
-     * toggles additively switch on the live `meta` / `google` adapters, so an
-     * operator can go live without touching .env, and env-only installs keep
-     * working.
+     * toggles switch on the live `meta` / `google` adapters, so an operator can
+     * go live without touching .env, and env-only installs keep working.
+     *
+     * The demo `*_mock` adapters are suppressed the moment any real platform is
+     * connected through the UI: once an operator has live data, the
+     * deterministic demo campaigns must not pollute their reporting. Fresh /
+     * demo installs that haven't connected anything keep the mocks.
      *
      * @return string[]
      */
@@ -227,11 +231,21 @@ class AdPlatformSetting extends Model
 
         $row = self::resolveSafe($tenantId);
 
+        $liveConnected = false;
         if ($row->meta_enabled) {
             $keys[] = 'meta';
+            $liveConnected = true;
         }
         if ($row->google_enabled) {
             $keys[] = 'google';
+            $liveConnected = true;
+        }
+
+        // Real connection present → drop the demo mock sources so only live
+        // data is ingested. The `_mock` suffix is the established convention
+        // for demo adapters (meta_mock, google_mock).
+        if ($liveConnected) {
+            $keys = array_filter($keys, static fn (string $key): bool => ! str_ends_with($key, '_mock'));
         }
 
         return array_values(array_unique($keys));

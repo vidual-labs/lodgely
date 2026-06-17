@@ -6,6 +6,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Reporting no longer mixes demo mock data into live reports.** The demo
+  `meta_mock` / `google_mock` ad-metrics adapters were running *additively*
+  alongside the real ones, so once an operator connected Meta their reporting
+  showed three fabricated "Lodgely – …" Meta campaigns plus two fabricated
+  "Search – …" Google campaigns next to the genuine data — even though Google was
+  never connected. The mock adapters are now suppressed the moment any real ad
+  platform is connected through Settings → Ad platforms, so reporting reflects
+  live data only. Fresh / demo installs that haven't connected anything keep the
+  mocks. (Existing fabricated rows can be removed with "Clear ad-metrics data",
+  then re-pulled with "Fetch data now".)
+
 ### Added
 
 - **Meta Lead Ads import over the API (no Google Sheets in between).** Once Meta
