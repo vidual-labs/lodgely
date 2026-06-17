@@ -7,6 +7,7 @@ use App\Http\Controllers\InboxColumnPickerController;
 use App\Http\Controllers\InboxSavedFilterController;
 use App\Http\Controllers\LeadExportController;
 use App\Http\Controllers\OAuth\GoogleAdsOAuthController;
+use App\Http\Controllers\ReportingDataController;
 use App\Http\Controllers\OAuth\GoogleSheetsOAuthController;
 use App\Livewire\Imports\GoogleSheetsImportPage;
 use App\Livewire\Settings\GoogleSheetsSettingsPage;
@@ -81,6 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/users',           UsersPage::class)->name('users');
     Route::get('/webhooks',        WebhooksPage::class)->name('webhooks');
     Route::get('/reporting',       ReportingPage::class)->name('reporting');
+    Route::post('/reporting/ad-metrics/purge', [ReportingDataController::class, 'purge'])->name('reporting.ad-metrics.purge');
     Route::get('/reporting/views',  ReportingViewsPage::class)->name('reporting.views');
     Route::get('/reporting/emails', ReportEmailsPage::class)->name('reporting.emails');
     Route::get('/my-reports',       MyReportsPage::class)->name('my-reports');

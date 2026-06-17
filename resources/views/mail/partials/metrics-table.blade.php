@@ -3,7 +3,7 @@
     /** @var array<int, \App\Domain\Reporting\Enums\ReportColumn> $columns */
 @endphp
 
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse: collapse; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="metrics-table" style="border-collapse: collapse; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; min-width:480px;">
     <thead>
         <tr style="background-color:#f8fafc;">
             <th align="left" style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color:#64748b; border-bottom:1px solid #e2e8f0;">
