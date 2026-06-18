@@ -135,14 +135,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @foreach($trendCharts as $chart)
                 @php
-                    $points = $series->map(function ($row) use ($chart, $fmtDay) {
+                    $currency = $kpis['currency'];
+                    $points = $series->map(function ($row) use ($chart, $fmtDay, $currency) {
                         $value = $row->{$chart['key']};
 
                         return [
                             'label'   => $fmtDay($row->date),
                             'value'   => (float) ($chart['money'] ? $value / 100 : $value),
                             'display' => $chart['money']
-                                ? \App\Support\Money::fromCents($value, $kpis['currency'])
+                                ? \App\Support\Money::fromCents($value, $currency)
                                 : number_format($value),
                         ];
                     })->all();

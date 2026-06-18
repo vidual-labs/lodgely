@@ -8,6 +8,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Fixed a 500 on the operator reporting page whenever ad-spend data
+  existed.** The trend-chart loop referenced the `$kpis` array inside a
+  closure without capturing it (`use (...)`), so once any spend row was
+  present the page threw `Undefined variable $kpis`. The currency is now
+  captured into the closure. Added a regression test that renders the live
+  reporting component with data.
 - **Reporting now displays the ad account's currency instead of always "$".**
   Spend, cost-per-lead, CPC and CPM on the operator reporting page, the client
   "My reports" view and the report emails read the currency stored on each
