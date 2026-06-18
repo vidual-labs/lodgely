@@ -21,9 +21,10 @@ class ReportingDataController extends Controller
 {
     /**
      * Pull the most recent ad metrics on demand, instead of waiting for the
-     * daily scheduled run (which only fetches yesterday at 05:00). Imports the
-     * last week through today so the reporting page fills immediately after an
-     * operator connects a platform.
+     * daily scheduled run (which only fetches yesterday at 05:00). Backfills
+     * `lodgely.reporting.backfill_days` (default 30) through today so the
+     * reporting page's 30-day view fills immediately after an operator connects
+     * a platform — fetching only a week left the 30-/90-day ranges near-empty.
      */
     public function fetch(Request $request, AdMetricsImporter $importer): RedirectResponse
     {
@@ -33,7 +34,9 @@ class ReportingDataController extends Controller
         // synchronous request a little more headroom than the PHP default.
         @set_time_limit(120);
 
-        $result = $importer->run(Tenant::DEFAULT_ID, new \DateTimeImmutable('today'), days: 7);
+        $days = max(1, (int) config('lodgely.reporting.backfill_days', 30));
+
+        $result = $importer->run(Tenant::DEFAULT_ID, new \DateTimeImmutable('today'), days: $days);
 
         Log::info('lodgely.reporting.ad_metrics_fetched', [
             'user_id' => $request->user()->id,

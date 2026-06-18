@@ -1,6 +1,8 @@
 @php
     /** @var array<string, mixed> $totals */
     /** @var array<int, \App\Domain\Reporting\Enums\ReportColumn> $columns */
+    /** @var string $currency */
+    $currency = $currency ?? 'USD';
     $cards = collect($columns)->take(6)->values();
 @endphp
 
@@ -18,7 +20,7 @@
                                     {{ $col->label() }}
                                 </div>
                                 <div style="font-size: 18px; font-weight: 600; color:#0f172a;">
-                                    {{ $col->format($totals[$col->value] ?? null) }}
+                                    {{ $col->format($totals[$col->value] ?? null, $currency) }}
                                 </div>
                             </td>
                         </tr>

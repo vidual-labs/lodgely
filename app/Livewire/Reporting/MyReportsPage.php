@@ -7,6 +7,7 @@ use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Exceptions\AiDisabledException;
 use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Reporting\Services\ClientViewDataBuilder;
+use App\Models\AdSpendReport;
 use App\Models\AiSummary;
 use App\Models\ClientReportingView;
 use App\Models\Tenant;
@@ -119,6 +120,7 @@ class MyReportsPage extends Component
             'columns'      => $columns,
             'totals'       => $totals,
             'aiSummary'    => $aiSummary,
+            'currency'     => AdSpendReport::dominantCurrency(Tenant::DEFAULT_ID),
         ]);
     }
 }

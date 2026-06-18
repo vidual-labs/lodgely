@@ -81,7 +81,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <x-kpi-card
                 label="{{ __('Total spend') }}"
-                value="{{ '$'.number_format($kpis['total_spend_cents'] / 100, 2) }}"
+                value="{{ \App\Support\Money::fromCents($kpis['total_spend_cents'], $kpis['currency']) }}"
                 tone="blue"
             />
             <x-kpi-card
@@ -115,7 +115,7 @@
         @if($cpl !== null)
             <p class="text-xs text-slate-500 dark:text-slate-400">
                 {{ __('Cost per lead (platform):') }}
-                <span class="font-semibold text-slate-800 dark:text-slate-200">${{ number_format($cpl, 2) }}</span>
+                <span class="font-semibold text-slate-800 dark:text-slate-200">{{ \App\Support\Money::amount($cpl, $kpis['currency']) }}</span>
             </p>
         @endif
 
@@ -142,7 +142,7 @@
                             'label'   => $fmtDay($row->date),
                             'value'   => (float) ($chart['money'] ? $value / 100 : $value),
                             'display' => $chart['money']
-                                ? '$'.number_format($value / 100, 2)
+                                ? \App\Support\Money::fromCents($value, $kpis['currency'])
                                 : number_format($value),
                         ];
                     })->all();
@@ -176,7 +176,7 @@
                         @forelse($campaigns as $row)
                             @php
                                 $rowCpl = $row->platform_leads > 0
-                                    ? '$'.number_format($row->spend_cents / $row->platform_leads / 100, 2)
+                                    ? \App\Support\Money::amount($row->spend_cents / $row->platform_leads / 100, $row->currency)
                                     : '—';
                             @endphp
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -191,7 +191,7 @@
                                 </td>
                                 <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->impressions) }}</td>
                                 <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->clicks) }}</td>
-                                <td class="px-3 py-2.5 text-right text-slate-800 dark:text-slate-200 tabular-nums font-medium">${{ number_format($row->spend_cents / 100, 2) }}</td>
+                                <td class="px-3 py-2.5 text-right text-slate-800 dark:text-slate-200 tabular-nums font-medium">{{ \App\Support\Money::fromCents($row->spend_cents, $row->currency) }}</td>
                                 <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ $rowCpl }}</td>
                                 <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->platform_leads) }}</td>
                                 <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->lodgely_leads) }}</td>

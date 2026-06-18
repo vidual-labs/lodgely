@@ -34,6 +34,9 @@ class ReportingFetchTest extends TestCase
     {
         // Keep only the deterministic mock active — no live HTTP needed.
         config()->set('lodgely.reporting.sources', ['meta_mock']);
+        // Pin the backfill window so the row count is deterministic regardless
+        // of the configurable default.
+        config()->set('lodgely.reporting.backfill_days', 7);
 
         $op = $this->user('operator', 'ops@example.com');
 

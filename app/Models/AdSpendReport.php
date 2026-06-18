@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class AdSpendReport extends Model
 {
@@ -31,5 +32,40 @@ class AdSpendReport extends Model
     public function spendFormatted(): string
     {
         return sprintf('%s %.2f', strtoupper($this->currency), $this->spend_cents / 100);
+    }
+
+    /**
+     * The currency to display a tenant's reporting in. Ad accounts report spend
+     * in their own currency, so we pick the currency carrying the most spend in
+     * the window (handles a tenant running, say, Meta in EUR and Google in USD),
+     * and fall back to the configured Meta currency when there's no data yet.
+     */
+    public static function dominantCurrency(
+        int $tenantId,
+        ?string $from = null,
+        ?string $to = null,
+        ?string $platform = null,
+    ): string {
+        $query = static::query()->where('tenant_id', $tenantId);
+
+        if ($from !== null && $to !== null) {
+            $query->whereBetween('date', [$from, $to]);
+        }
+
+        if ($platform && $platform !== 'all') {
+            $query->where('platform', $platform);
+        }
+
+        $currency = $query
+            ->select('currency', DB::raw('SUM(spend_cents) as spend_total'))
+            ->groupBy('currency')
+            ->orderByDesc('spend_total')
+            ->value('currency');
+
+        if (is_string($currency) && $currency !== '') {
+            return strtoupper($currency);
+        }
+
+        return strtoupper(AdPlatformSetting::resolveSafe($tenantId)->effectiveMetaCurrency() ?: 'USD');
     }
 }

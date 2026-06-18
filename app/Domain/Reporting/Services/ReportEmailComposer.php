@@ -4,6 +4,7 @@ namespace App\Domain\Reporting\Services;
 
 use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
+use App\Models\AdSpendReport;
 use App\Models\AiSummary;
 use App\Models\ClientReportEmail;
 use App\Models\ClientReportingView;
@@ -33,6 +34,7 @@ class ReportEmailComposer
      *   rows: \Illuminate\Support\Collection,
      *   totals: array<string, mixed>,
      *   ai_summary: ?AiSummary,
+     *   currency: string,
      *   subject: string,
      * }
      */
@@ -97,6 +99,7 @@ class ReportEmailComposer
             'rows'       => $rows,
             'totals'     => $totals,
             'ai_summary' => $aiSummary,
+            'currency'   => AdSpendReport::dominantCurrency((int) $email->tenant_id),
             'subject'    => $this->renderSubject($email, $recipient, $period['label']),
         ];
     }
