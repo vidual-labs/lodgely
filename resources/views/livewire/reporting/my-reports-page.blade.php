@@ -75,7 +75,7 @@
                     @foreach($columns as $col)
                         <x-kpi-card
                             label="{{ $col->label() }}"
-                            value="{{ $col->format($totals[$col->value] ?? null) }}"
+                            value="{{ $col->format($totals[$col->value] ?? null, $currency) }}"
                             tone="slate"
                         />
                     @endforeach
@@ -86,7 +86,7 @@
             @if($columns && $rows->isNotEmpty())
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach($columns as $col)
-                        <x-reporting.metric-chart :column="$col" :rows="$rows" />
+                        <x-reporting.metric-chart :column="$col" :rows="$rows" :currency="$currency" />
                     @endforeach
                 </div>
             @endif
@@ -111,7 +111,7 @@
                                     </td>
                                     @foreach($columns as $col)
                                         <td class="px-3 py-2.5 text-right text-slate-600 dark:text-slate-400 tabular-nums">
-                                            {{ $col->format($row->{$col->value} ?? null) }}
+                                            {{ $col->format($row->{$col->value} ?? null, $currency) }}
                                         </td>
                                     @endforeach
                                 </tr>

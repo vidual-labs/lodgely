@@ -72,7 +72,7 @@
                     @if($data['email']->include_kpi_strip && ! empty($data['totals']))
                         <tr>
                             <td class="email-pad" style="padding: 20px 28px 0;">
-                                @include('mail.partials.kpi', ['totals' => $data['totals'], 'columns' => $data['columns']])
+                                @include('mail.partials.kpi', ['totals' => $data['totals'], 'columns' => $data['columns'], 'currency' => $data['currency'] ?? 'USD'])
                             </td>
                         </tr>
                     @endif
@@ -82,7 +82,7 @@
                         <tr>
                             <td class="email-pad" style="padding: 20px 28px 0;">
                                 <div class="metrics-scroll">
-                                    @include('mail.partials.metrics-table', ['rows' => $data['rows'], 'columns' => $data['columns']])
+                                    @include('mail.partials.metrics-table', ['rows' => $data['rows'], 'columns' => $data['columns'], 'currency' => $data['currency'] ?? 'USD'])
                                 </div>
                             </td>
                         </tr>

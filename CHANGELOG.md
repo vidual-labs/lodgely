@@ -8,6 +8,23 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Reporting now displays the ad account's currency instead of always "$".**
+  Spend, cost-per-lead, CPC and CPM on the operator reporting page, the client
+  "My reports" view and the report emails read the currency stored on each
+  ad-spend row (e.g. a Meta account billed in EUR now renders as `€1,234.56`),
+  falling back to the configured Meta currency when there's no data yet. Unknown
+  currency codes render as the ISO code (e.g. `AED 1,234.00`) rather than a bare
+  number.
+- **Connecting a live ad platform now purges leftover demo mock rows.** Earlier
+  the demo `meta_mock` / `google_mock` rows were only suppressed from *future*
+  imports — any already-imported demo campaigns lingered in reporting next to the
+  real data (correct campaign name, fabricated numbers). The next import after a
+  platform goes live now deletes the stale `mock`-tagged rows for that platform
+  automatically.
+- **"Fetch data now" backfills 30 days instead of 7.** The on-demand fetch only
+  pulled the last week, so the reporting page's 30-day and 90-day ranges stayed
+  near-empty after connecting a platform. It now backfills 30 days by default
+  (configurable via `LODGELY_AD_METRICS_BACKFILL_DAYS`).
 - **Reporting no longer mixes demo mock data into live reports.** The demo
   `meta_mock` / `google_mock` ad-metrics adapters were running *additively*
   alongside the real ones, so once an operator connected Meta their reporting

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Reporting\Enums;
 
+use App\Support\Money;
+
 enum ReportColumn: string
 {
     case Impressions   = 'impressions';
@@ -83,16 +85,16 @@ enum ReportColumn: string
         ], true);
     }
 
-    public function format(mixed $value): string
+    public function format(mixed $value, string $currency = 'USD'): string
     {
         if ($value === null) {
             return '—';
         }
 
         return match ($this) {
-            self::Spend                              => '$'.number_format($value / 100, 2),
+            self::Spend                              => Money::amount($value / 100, $currency),
             self::Ctr, self::ConvRate                => number_format((float) $value, 2).'%',
-            self::Cpl, self::Cpc, self::Cpm          => '$'.number_format((float) $value, 2),
+            self::Cpl, self::Cpc, self::Cpm          => Money::amount((float) $value, $currency),
             default                                  => number_format((int) $value),
         };
     }

@@ -1,6 +1,8 @@
 @php
     /** @var \Illuminate\Support\Collection $rows */
     /** @var array<int, \App\Domain\Reporting\Enums\ReportColumn> $columns */
+    /** @var string $currency */
+    $currency = $currency ?? 'USD';
 @endphp
 
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="metrics-table" style="border-collapse: collapse; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; min-width:480px;">
@@ -24,7 +26,7 @@
                 </td>
                 @foreach($columns as $col)
                     <td align="right" style="padding: 10px 12px; font-size: 13px; color:#334155; border-bottom:1px solid #f1f5f9;">
-                        {{ $col->format($row->{$col->value} ?? null) }}
+                        {{ $col->format($row->{$col->value} ?? null, $currency) }}
                     </td>
                 @endforeach
             </tr>

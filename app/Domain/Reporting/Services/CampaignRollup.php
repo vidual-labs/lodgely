@@ -57,7 +57,7 @@ class CampaignRollup
     /**
      * KPI totals for the given period.
      *
-     * @return array{total_spend_cents: int, total_clicks: int, total_impressions: int, total_platform_leads: int, total_lodgely_leads: int, has_data: bool}
+     * @return array{total_spend_cents: int, total_clicks: int, total_impressions: int, total_platform_leads: int, total_lodgely_leads: int, currency: string, has_data: bool}
      */
     public function kpis(int $tenantId, string $from, string $to, ?string $platform = null): array
     {
@@ -86,6 +86,7 @@ class CampaignRollup
             'total_impressions' => (int) ($agg->total_impressions ?? 0),
             'total_platform_leads' => (int) ($agg->total_platform_leads ?? 0),
             'total_lodgely_leads' => $lodgelyLeads,
+            'currency' => AdSpendReport::dominantCurrency($tenantId, $from, $to, $platform),
             'has_data' => ((int) ($agg->row_count ?? 0)) > 0,
         ];
     }

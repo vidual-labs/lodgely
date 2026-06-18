@@ -96,6 +96,13 @@ return [
         // HTTP timeout (seconds) for outbound calls to ad platform APIs.
         'http_timeout_sec' => (int) env('LODGELY_AD_METRICS_HTTP_TIMEOUT', 30),
 
+        // How many days the reporting page's "Fetch data now" button backfills
+        // in one go. The daily 05:00 scheduler only pulls yesterday, so this is
+        // what fills the 30-/90-day reporting views right after an operator
+        // connects a platform (each day is a separate API call per source, so
+        // very large windows make the synchronous fetch slow).
+        'backfill_days' => (int) env('LODGELY_AD_METRICS_BACKFILL_DAYS', 30),
+
         // Meta (Facebook/Instagram) Marketing API credentials. Only consulted
         // when the `meta` key is in the `sources` list above.
         'meta' => [
