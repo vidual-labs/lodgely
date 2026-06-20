@@ -9,8 +9,13 @@ use App\Console\Commands\ImportEmailsMock;
 use App\Console\Commands\PurgeExpiredLeads;
 use Illuminate\Support\Facades\Schedule;
 
-// Daily mock email pull — useful for demos and dev.
-Schedule::command(ImportEmailsMock::class)->dailyAt('06:00')->withoutOverlapping();
+// Daily mock email pull — generates fake demo leads, useful for demos and dev.
+// Opt-in only: real installs would otherwise keep getting synthetic leads at 06:00.
+// The manual command (lodgely:import:email-mock) and the in-app "pull now" button
+// still work regardless of this flag.
+if (config('lodgely.importers.email.mock_schedule_enabled')) {
+    Schedule::command(ImportEmailsMock::class)->dailyAt('06:00')->withoutOverlapping();
+}
 
 // Scheduled IMAP pull — only runs when a host is configured.
 if (config('lodgely.importers.email.imap.host')) {

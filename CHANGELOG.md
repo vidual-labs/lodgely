@@ -8,6 +8,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Stopped fake demo leads appearing every day at 06:00.** The scheduled mock
+  email pull (which generates synthetic leads like `alex.bennett@sample.org`)
+  ran unconditionally on every install. It is now opt-in via the new
+  `LODGELY_EMAIL_MOCK_SCHEDULE` flag (default `false`), matching how the IMAP
+  pull is already gated. The manual `lodgely:import:email-mock` command and the
+  in-app "pull now" button are unaffected.
 - **Fixed a 500 on the operator reporting page whenever ad-spend data
   existed.** The trend-chart loop referenced the `$kpis` array inside a
   closure without capturing it (`use (...)`), so once any spend row was

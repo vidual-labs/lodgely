@@ -58,6 +58,10 @@ return [
         'email' => [
             // 'mock' generates simulated leads; 'imap' connects to a real mailbox.
             'driver' => env('LODGELY_EMAIL_IMPORT_DRIVER', 'mock'),
+            // Opt-in switch for the daily 06:00 scheduled mock-email pull. Off by
+            // default so real installs are not flooded with synthetic demo leads;
+            // the manual command and the in-app "pull now" button still work.
+            'mock_schedule_enabled' => (bool) env('LODGELY_EMAIL_MOCK_SCHEDULE', false),
             'imap' => [
                 'host' => env('LODGELY_IMAP_HOST', ''),
                 'port' => (int) env('LODGELY_IMAP_PORT', 993),

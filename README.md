@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.39.1-6366F1" alt="Version 0.39.1">
+  <img src="https://img.shields.io/badge/version-0.39.2-6366F1" alt="Version 0.39.2">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -523,6 +523,7 @@ and are listed in the roadmap.
 | `LODGELY_BRAND_NAME` / `LODGELY_BRAND_TAGLINE` | Optional white-label-ish strings (still under the lodgely identity) | `lodgely` / `Lead intake, unified.` |
 | `LODGELY_CSV_MAX_ROWS` | Hard cap on rows ingested per CSV | `10000` |
 | `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
+| `LODGELY_EMAIL_MOCK_SCHEDULE` | Enable the daily 06:00 scheduled pull of fake demo leads (manual command/UI still work either way) | `false` |
 | `LODGELY_IMAP_HOST` | IMAP server hostname (activates real email backend) | — |
 | `LODGELY_IMAP_PORT` | IMAP port | `993` |
 | `LODGELY_IMAP_ENCRYPTION` | `ssl`, `tls`, or `notls` | `ssl` |
