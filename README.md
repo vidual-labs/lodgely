@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.39.2-6366F1" alt="Version 0.39.2">
+  <img src="https://img.shields.io/badge/version-0.40.0-6366F1" alt="Version 0.40.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -106,7 +106,12 @@ clean place to *triage* leads before anything else happens, you are at home.
   imported instead of creating duplicates (the import summary shows a *Skipped*
   count). Run `lodgely:google-sheets:dedupe` once to collapse any duplicate
   backlog left by older versions. Google OAuth credentials (client ID + secret,
-  stored encrypted in the DB) are managed at `/settings/google-sheets`.
+  stored encrypted in the DB) are managed at `/settings/google-sheets`. A fetch
+  that fails (e.g. an expired refresh token — see the production-consent note
+  below) is recorded with its reason and shown as a red **Failed** row under
+  "Recent imports" instead of a silent empty import, and the source then waits
+  for its next scheduled slot rather than retrying every hour; fix the cause and
+  hit **Fetch** to retry right away.
 - 📥 **Meta Lead Ads lead source (API)** — pull leads straight from Meta Lead
   Ads instead of routing them through a Google Sheet. Once Meta is connected
   under **Settings → Ad platforms**, an **Imports → Meta Lead Ads (API)** page

@@ -14,7 +14,7 @@ class Import extends Model
     protected $fillable = [
         'tenant_id', 'user_id', 'source', 'label', 'reference',
         'rows_total', 'rows_imported', 'rows_duplicate', 'rows_invalid', 'rows_skipped',
-        'meta', 'started_at', 'finished_at',
+        'error', 'meta', 'started_at', 'finished_at',
     ];
 
     protected function casts(): array
@@ -24,6 +24,12 @@ class Import extends Model
             'started_at'  => 'datetime',
             'finished_at' => 'datetime',
         ];
+    }
+
+    /** True when the run threw before completing — see ImportRunner::run(). */
+    public function failed(): bool
+    {
+        return $this->error !== null && $this->error !== '';
     }
 
     public function user(): BelongsTo

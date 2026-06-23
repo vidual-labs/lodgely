@@ -128,13 +128,19 @@
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                             @foreach($recentImports as $imp)
                                 <tr wire:key="meta-imp-{{ $imp->id }}">
-                                    <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ $imp->created_at?->format('Y-m-d H:i') }}</td>
-                                    <td class="px-4 py-2 text-slate-700 dark:text-slate-300">{{ $imp->label }}</td>
-                                    <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_imported }}</td>
-                                    <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_skipped }}</td>
-                                    <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_duplicate }}</td>
-                                    <td class="px-4 py-2 text-right dark:text-slate-300">{{ $imp->rows_invalid }}</td>
-                                    <td class="px-4 py-2 text-right">
+                                    <td class="px-4 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap align-top">{{ $imp->created_at?->format('Y-m-d H:i') }}</td>
+                                    <td class="px-4 py-2 text-slate-700 dark:text-slate-300 align-top">
+                                        {{ $imp->label }}
+                                        @if($imp->failed())
+                                            <span class="ml-2 inline-flex items-center rounded-full bg-rose-100 dark:bg-rose-950/50 px-2 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-400">{{ __('Failed') }}</span>
+                                            <div class="mt-0.5 max-w-md truncate text-xs text-rose-600 dark:text-rose-400" title="{{ $imp->error }}">{{ $imp->error }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2 text-right dark:text-slate-300 align-top">{{ $imp->failed() ? '—' : $imp->rows_imported }}</td>
+                                    <td class="px-4 py-2 text-right dark:text-slate-300 align-top">{{ $imp->failed() ? '—' : $imp->rows_skipped }}</td>
+                                    <td class="px-4 py-2 text-right dark:text-slate-300 align-top">{{ $imp->failed() ? '—' : $imp->rows_duplicate }}</td>
+                                    <td class="px-4 py-2 text-right dark:text-slate-300 align-top">{{ $imp->failed() ? '—' : $imp->rows_invalid }}</td>
+                                    <td class="px-4 py-2 text-right align-top">
                                         <form method="POST" action="{{ route('imports.meta-leads.imports.destroy', $imp->id) }}"
                                               onsubmit="return confirm('{{ __('Delete this import and all the leads it created? This cannot be undone.') }}')">
                                             @csrf
