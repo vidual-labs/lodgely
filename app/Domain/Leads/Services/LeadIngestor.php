@@ -80,14 +80,15 @@ class LeadIngestor
         $retentionDays = config('lodgely.compliance.default_retention_days');
         $retentionUntil = $retentionDays ? now()->addDays((int) $retentionDays) : null;
 
-        $status = $payload['status'] ?? LeadStatus::New;
-        if ($status instanceof LeadStatus) {
-            $status = $status->value;
-        }
-        $priority = $payload['priority'] ?? LeadPriority::Medium;
-        if ($priority instanceof LeadPriority) {
-            $priority = $priority->value;
-        }
+        // Status / priority can arrive as arbitrary strings from external
+        // sources (a Google Sheet "Status" column might hold "CREATED", a CRM
+        // export "OPEN", etc.). Coerce to a known enum value case-insensitively
+        // and fall back to the default rather than letting an unrecognized value
+        // blow up the enum cast on save — the raw value is still kept in
+        // raw_payload for audit. This is the single chokepoint every importer
+        // passes through, so it protects CSV, Meta, Manual and Sheets alike.
+        $status = $this->coerceStatus($payload['status'] ?? null);
+        $priority = $this->coercePriority($payload['priority'] ?? null);
 
         return DB::transaction(function () use (
             $payload, $import, $tenantId, $emailNormalized, $phoneNormalized,
@@ -136,5 +137,35 @@ class LeadIngestor
 
             return $lead;
         });
+    }
+
+    /**
+     * Resolve an incoming status to a valid LeadStatus value, defaulting to
+     * New for anything unrecognized (case-insensitive). Never throws.
+     */
+    private function coerceStatus(LeadStatus|string|null $value): string
+    {
+        if ($value instanceof LeadStatus) {
+            return $value->value;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+
+        return LeadStatus::tryFrom($normalized)?->value ?? LeadStatus::New->value;
+    }
+
+    /**
+     * Resolve an incoming priority to a valid LeadPriority value, defaulting to
+     * Medium for anything unrecognized (case-insensitive). Never throws.
+     */
+    private function coercePriority(LeadPriority|string|null $value): string
+    {
+        if ($value instanceof LeadPriority) {
+            return $value->value;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+
+        return LeadPriority::tryFrom($normalized)?->value ?? LeadPriority::Medium->value;
     }
 }
