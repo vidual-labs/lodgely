@@ -8,6 +8,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **An unrecognized Status/Priority value from a source no longer breaks the
+  whole import.** If a mapped sheet/CSV column fed a value that isn't one of
+  lodgely's statuses (`new/reviewed/incomplete/duplicate/forwarded`) or
+  priorities (`low/medium/high`) — e.g. a "Status" column holding `CREATED` —
+  the enum cast threw `"CREATED" is not a valid backing value for enum
+  LeadStatus` on save and the entire fetch failed. `LeadIngestor` now coerces
+  incoming status/priority to a known value case-insensitively and falls back to
+  the default (New / Medium) for anything else; the original value is still kept
+  in `raw_payload`. This is the single chokepoint all importers use, so CSV,
+  Meta, Manual and Google Sheets are all protected.
 - **Google Sheets "Fetch" button now actually fetches.** The per-source
   **Fetch** button on `/imports/google-sheets` was a Livewire `wire:click`,
   which silently dropped clicks in production (the same morph-drop gotcha that
