@@ -86,6 +86,18 @@ semantic-ish versioning once a 1.0 is tagged.
   mocks. (Existing fabricated rows can be removed with "Clear ad-metrics data",
   then re-pulled with "Fetch data now".)
 
+### Changed
+
+- **README compressed; detail externalized into `docs/`.** The README had
+  grown to 600+ lines as features piled up. The full Features write-up,
+  Architecture tree + AI/Meta field detail, the complete env-var
+  Configuration reference, Privacy & GDPR notes, and the Roadmap's
+  "Completed" history now live in `docs/FEATURES.md`,
+  `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/PRIVACY.md` and
+  `docs/ROADMAP.md` respectively. The README keeps the condensed version of
+  each section plus a link to the corresponding doc, so it stays a fast
+  orientation read instead of the full reference.
+
 ### Added
 
 - **Meta Lead Ads import over the API (no Google Sheets in between).** Once Meta
