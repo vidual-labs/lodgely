@@ -8,6 +8,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Google Sheets "Fetch" button now actually fetches.** The per-source
+  **Fetch** button on `/imports/google-sheets` was a Livewire `wire:click`,
+  which silently dropped clicks in production (the same morph-drop gotcha that
+  already forced the delete buttons onto native forms) — so clicking "Fetch"
+  did nothing: no import, no error, no toast, which read as "Google Sheets
+  import is completely broken." It is now a plain `<form method="POST">` posting
+  to a controller that always runs the import (no `isDue` gate, so it also
+  recovers a source the hourly scheduler is holding off after an earlier
+  failure) and redirects back with a clear result. The result message now spells
+  out the silent-success cases too: *the sheet returned no rows* (check the
+  range / that the connected account can read the spreadsheet), *rows had no
+  name/email/phone* (check the column mapping), or *all rows were already
+  imported*, instead of an unhelpful "0 imported".
 - **Failed recurring imports are no longer silent.** A scheduled Google Sheets
   or Meta Lead Ads fetch that threw (for example an expired Google OAuth refresh
   token — these expire after 7 days while the OAuth app is in "Testing" mode)

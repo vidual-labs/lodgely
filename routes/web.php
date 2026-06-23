@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/imports/email',      EmailMockImportPage::class)->name('imports.email');
     Route::get('/imports/email-imap',    EmailImapImportPage::class)->name('imports.email-imap');
     Route::get('/imports/google-sheets', GoogleSheetsImportPage::class)->name('imports.google-sheets');
+    Route::post('/imports/google-sheets/sources/{source}/fetch', [GoogleSheetsImportController::class, 'fetch'])->name('imports.google-sheets.fetch');
     Route::post('/imports/google-sheets/imports', [GoogleSheetsImportController::class, 'destroyAll'])->name('imports.google-sheets.imports.destroy-all');
     Route::post('/imports/google-sheets/imports/{import}', [GoogleSheetsImportController::class, 'destroy'])->name('imports.google-sheets.imports.destroy');
     Route::get('/imports/meta-leads', MetaLeadsImportPage::class)->name('imports.meta-leads');

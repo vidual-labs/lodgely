@@ -54,13 +54,17 @@
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-2">
-                                    <button type="button"
-                                            wire:click="fetchNow({{ $s->id }})"
-                                            wire:loading.attr="disabled"
-                                            title="{{ __('Fetch now') }}"
-                                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors disabled:opacity-50">
-                                        {{ __('Fetch') }}
-                                    </button>
+                                    {{-- Native POST, not wire:click: the Livewire action silently --}}
+                                    {{-- dropped clicks in production (CLAUDE.md morph-drop gotcha), --}}
+                                    {{-- so "Fetch" appeared to do nothing. A real form always fires. --}}
+                                    <form method="POST" action="{{ route('imports.google-sheets.fetch', $s->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                title="{{ __('Fetch now') }}"
+                                                class="text-xs text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+                                            {{ __('Fetch') }}
+                                        </button>
+                                    </form>
                                     <button type="button"
                                             wire:click="editSource({{ $s->id }})"
                                             class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
