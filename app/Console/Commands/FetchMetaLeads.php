@@ -53,12 +53,17 @@ class FetchMetaLeads extends Command
 
             try {
                 $result = $runner->run($import, $source);
-                $leadSource->update(['last_fetched_at' => now()]);
 
                 $this->info("  Done — {$result->rows_imported} imported, {$result->rows_skipped} skipped, {$result->rows_duplicate} duplicates, {$result->rows_invalid} invalid.");
                 $ran++;
             } catch (\Throwable $e) {
+                // The import row already carries the error (see ImportRunner).
                 $this->error("  Failed: {$e->getMessage()}");
+            } finally {
+                // Advance the clock on every attempt — success or failure — so a
+                // persistently broken connection respects its refresh interval
+                // instead of being re-fetched on every hourly scheduler tick.
+                $leadSource->update(['last_fetched_at' => now()]);
             }
         }
 

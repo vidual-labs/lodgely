@@ -41,6 +41,8 @@ class InboxPage extends Component
         'manual' => 'Manual',
         'webhook' => 'Webhook',
         'meta_ads' => 'Meta Lead Ads',
+        'meta_leads' => 'Meta Lead Ads',
+        'google_sheets' => 'Google Sheets',
     ];
 
     /** Outreach toggle fields — settable by clients and operators alike. */

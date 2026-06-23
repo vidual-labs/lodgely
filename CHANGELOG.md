@@ -8,6 +8,21 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Failed recurring imports are no longer silent.** A scheduled Google Sheets
+  or Meta Lead Ads fetch that threw (for example an expired Google OAuth refresh
+  token — these expire after 7 days while the OAuth app is in "Testing" mode)
+  was swallowed: the import row was left a misleading `0 / 0 / 0 / 0`, no reason
+  was recorded, and `last_fetched_at` was never advanced — so the scheduler
+  re-ran the broken source on *every* hourly tick, piling up identical empty
+  imports while the inbox quietly stopped receiving new leads. The failure
+  reason is now stored on the import (new `imports.error` column) and shown as a
+  red **Failed — <reason>** row under "Recent imports" on both import pages, and
+  the source's clock advances on every attempt so a broken source respects its
+  refresh interval instead of hammering hourly. Use the **Fetch** button to
+  retry immediately once the cause is fixed.
+- **Inbox now labels Google Sheets and Meta Lead Ads sources.** The source
+  filter dropdown showed the raw `google_sheets` / `meta_leads` keys for leads
+  from those importers; they now render as "Google Sheets" and "Meta Lead Ads".
 - **Stopped fake demo leads appearing every day at 06:00.** The scheduled mock
   email pull (which generates synthetic leads like `alex.bennett@sample.org`)
   ran unconditionally on every install. It is now opt-in via the new
