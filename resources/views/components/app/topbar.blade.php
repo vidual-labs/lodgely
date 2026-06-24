@@ -9,7 +9,7 @@
         && \App\Models\AdPlatformSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->isMetaConnected();
 
     // Group memberships so we can highlight a dropdown when any of its children is active
-    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'imports.meta-leads', 'settings.google-sheets'];
+    $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'imports.meta-leads', 'imports.openflow', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
     $settingsRoutes  = ['users', 'webhooks', 'settings.mail', 'settings.demo-data', 'settings.backups'];
@@ -89,6 +89,10 @@
                                         {{ __('Meta Lead Ads (API)') }}
                                     </a>
                                 @endif
+                                <a href="{{ route('imports.openflow') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('imports.openflow') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('OpenFlow') }}
+                                </a>
                                 <hr class="my-1 border-slate-100 dark:border-slate-800">
                                 <a href="{{ route('settings.google-sheets') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">
@@ -331,6 +335,8 @@
                         <a href="{{ route('imports.meta-leads') }}"
                            class="{{ $menuItem }} {{ request()->routeIs('imports.meta-leads') ? $menuItemActive : $menuItemIdle }}">{{ __('Meta Lead Ads (API)') }}</a>
                     @endif
+                    <a href="{{ route('imports.openflow') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('imports.openflow') ? $menuItemActive : $menuItemIdle }}">{{ __('OpenFlow') }}</a>
                     <a href="{{ route('settings.google-sheets') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.google-sheets') ? $menuItemActive : $menuItemIdle }}">{{ __('Google Sheets settings') }}</a>
 

@@ -6,6 +6,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **OpenFlow recurring lead source.** A new connector at `/imports/openflow`
+  pulls submissions from a self-hosted [OpenFlow](https://github.com/vidual-labs/openflow)
+  form straight into a lodgely client. Each source stores the OpenFlow base URL,
+  a login email and an encrypted password (OpenFlow exposes no API token, so the
+  connector signs in to mint a JWT), the form to pull, and an operator-defined
+  field mapping (OpenFlow field → lead field; unmapped fields are kept as
+  custom answers). Leads are assigned to a specific client via the source's
+  **Client** name, so a client only ever sees their own. Pulls are idempotent on
+  the OpenFlow submission id and run hourly via the scheduler (each source
+  decides if it is due), with a **Fetch** button for an immediate run. New
+  artisan command `lodgely:openflow:fetch`. The adapter follows the existing
+  `LeadSource` rail — no new tables in the lead path, everything flows through
+  `LeadIngestor`.
+
 ### Fixed
 
 - **An unrecognized Status/Priority value from a source no longer breaks the

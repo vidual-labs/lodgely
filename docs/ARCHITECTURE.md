@@ -39,6 +39,7 @@ app/
 │   ├── Meta/                MetaAdsSource (live Meta Marketing API),
 │   │                        MetaLeadsSource (live Meta Lead Ads import)
 │   ├── MetaMock/            MetaMockAdMetricsSource adapter
+│   ├── Openflow/            OpenflowClient + OpenflowLeadSource (OpenFlow form pull)
 │   └── Manual/              ManualLeadSource adapter
 ├── Jobs/                    GenerateAiSummary, SendClientReportEmail
 ├── Livewire/
@@ -71,7 +72,7 @@ app/
 │                            AiEvent, ClientReportEmail,
 │                            ClientReportEmailSchedule, ClientReportEmailSend,
 │                            GoogleSheetsSetting, GoogleSheetSource,
-│                            MetaLeadSource, AdPlatformSetting
+│                            MetaLeadSource, OpenflowSource, AdPlatformSetting
 ├── Providers/AppServiceProvider
 ├── Support/Audit/           AuditLogger, AiAuditLogger
 └── Support/Backup/          BackupManager (pg_dump/pg_restore archive create/restore)
