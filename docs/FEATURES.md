@@ -78,10 +78,12 @@ below.
 - 🌊 **OpenFlow lead source** — pull submissions from a self-hosted
   [OpenFlow](https://github.com/vidual-labs/openflow) form straight into a
   lodgely client. The **Imports → OpenFlow** page (`/imports/openflow`) lets an
-  operator add one or more sources; each stores the OpenFlow base URL, a login
-  email and an **encrypted** password (OpenFlow has no API token, so the
-  connector signs in to mint a short-lived JWT and scrapes it from the login
-  cookie). A **"Load forms"** button validates the login and lists the account's
+  operator add one or more sources; each stores the OpenFlow base URL and an
+  auth credential — a **read-only OpenFlow API token** (recommended; created in
+  OpenFlow under Settings → API Tokens, stored **encrypted**, sent as a Bearer
+  token) or an email + **encrypted** password login (the connector then signs in
+  to mint a short-lived JWT, scraped from the login cookie). A **"Load forms"**
+  button validates the credential and lists the account's
   forms; **"Load fields"** then fetches the picked form's fields so the operator
   can map each one to a lead column (`full_name` / `email` / `phone` / `message`
   / status / priority / named custom answer). Any unmapped field is preserved as

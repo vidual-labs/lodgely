@@ -33,6 +33,7 @@ class OpenflowSource extends Model
         'base_url',
         'email',
         'password_encrypted',
+        'api_token_encrypted',
         'form_id',
         'form_name',
         'field_map',
@@ -107,11 +108,43 @@ class OpenflowSource extends Model
             : Crypt::encryptString($plain);
     }
 
+    /** Decrypt the stored read-only API token, or null if absent/corrupt. */
+    public function apiToken(): ?string
+    {
+        if (! $this->api_token_encrypted) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($this->api_token_encrypted);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** Encrypt and store an API token. Passing null/'' clears it. */
+    public function setApiToken(?string $plain): void
+    {
+        $this->api_token_encrypted = ($plain === null || $plain === '')
+            ? null
+            : Crypt::encryptString(trim($plain));
+    }
+
+    /** True when this source authenticates with an API token rather than a login. */
+    public function usesToken(): bool
+    {
+        return $this->api_token_encrypted !== null;
+    }
+
     public function hasCredentials(): bool
     {
-        return trim((string) $this->base_url) !== ''
-            && trim((string) $this->email) !== ''
-            && $this->password_encrypted !== null;
+        if (trim((string) $this->base_url) === '') {
+            return false;
+        }
+
+        // Either a token, or an email + password login.
+        return $this->api_token_encrypted !== null
+            || (trim((string) $this->email) !== '' && $this->password_encrypted !== null);
     }
 
     /**

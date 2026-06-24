@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.41.0-6366F1" alt="Version 0.41.0">
+  <img src="https://img.shields.io/badge/version-0.42.0-6366F1" alt="Version 0.42.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -89,6 +89,8 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 📥 Meta Lead Ads (API) recurring lead source, idempotent on the Meta lead id.
 - 🌊 OpenFlow recurring lead source — pull a form's submissions into a specific
   client with operator-defined field mapping, idempotent on the submission id.
+  Authenticates with a read-only OpenFlow API token (recommended) or an
+  email/password login.
 
 **Users & access**
 

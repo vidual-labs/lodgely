@@ -8,6 +8,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **OpenFlow API-token authentication.** An OpenFlow source can now authenticate
+  with a **read-only API token** (created in OpenFlow under Settings → API
+  Tokens) instead of storing a login password — the recommended path. The token
+  is encrypted at rest and sent as a Bearer token, so lodgely never holds an
+  OpenFlow password and the token can be revoked independently. Email/password
+  login remains as a fallback, and existing password-based sources keep working
+  unchanged. The connect form now offers an "API token (recommended)" field with
+  the login as a secondary option.
+
 - **OpenFlow recurring lead source.** A new connector at `/imports/openflow`
   pulls submissions from a self-hosted [OpenFlow](https://github.com/vidual-labs/openflow)
   form straight into a lodgely client. Each source stores the OpenFlow base URL,

@@ -189,21 +189,41 @@
                     @error('form.base_url') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('OpenFlow login email') }}</label>
-                        <input wire:model="form.email" type="email" autocomplete="off"
-                               placeholder="admin@openflow.local"
-                               class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
-                        @error('form.email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('OpenFlow password') }}</label>
-                        <input wire:model="form.password" type="password" autocomplete="new-password"
-                               placeholder="{{ $editingId ? __('Leave blank to keep current') : '••••••••' }}"
-                               class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
-                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Stored encrypted. OpenFlow has no API token, so a login is required.') }}</p>
-                        @error('form.password') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                {{-- Auth: API token (recommended) --}}
+                <div>
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {{ __('API token') }} <span class="text-emerald-600 dark:text-emerald-400">{{ __('(recommended)') }}</span>
+                    </label>
+                    <input wire:model="form.api_token" type="password" autocomplete="off"
+                           placeholder="{{ $editingId ? __('Leave blank to keep current') : 'ofw_…' }}"
+                           class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                        {{ __('In OpenFlow, go to Settings → API Tokens and create a read-only token. Stored encrypted. Preferred over a password.') }}
+                    </p>
+                    @error('form.api_token') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Auth: login fallback --}}
+                <div class="rounded-lg border border-slate-200 dark:border-slate-700/60 p-4 space-y-3">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        {{ __('Or sign in with an OpenFlow login instead of a token:') }}
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('OpenFlow login email') }}</label>
+                            <input wire:model="form.email" type="email" autocomplete="off"
+                                   placeholder="admin@openflow.local"
+                                   class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            @error('form.email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('OpenFlow password') }}</label>
+                            <input wire:model="form.password" type="password" autocomplete="new-password"
+                                   placeholder="{{ $editingId ? __('Leave blank to keep current') : '••••••••' }}"
+                                   class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Stored encrypted. Used only if no API token is set.') }}</p>
+                            @error('form.password') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
             </div>

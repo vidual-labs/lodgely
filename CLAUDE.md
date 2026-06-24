@@ -40,12 +40,13 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   Graph API** (`/imports/meta-leads`) and **OpenFlow forms**
   (`/imports/openflow`). All flow through `LeadIngestor`.
 - **OpenFlow lead source** (`app/Importers/Openflow/`, `OpenflowSource`) —
-  pulls a self-hosted OpenFlow form's submissions into a single client. OpenFlow
-  has no API token, so each source stores the base URL + login email + an
-  **encrypted** password and mints a short-lived JWT per pull (scraped from the
-  login cookie). Operator-defined field mapping; unmapped fields become custom
-  answers; idempotent on the OpenFlow submission id. Recurring via
-  `lodgely:openflow:fetch` (hourly scheduler) + a "Fetch" button.
+  pulls a self-hosted OpenFlow form's submissions into a single client. Auth is
+  a **read-only OpenFlow API token** (preferred, stored **encrypted**, sent as a
+  Bearer token) or an email + **encrypted** password login fallback (mints a
+  short-lived JWT per pull, scraped from the login cookie). Operator-defined
+  field mapping; unmapped fields become custom answers; idempotent on the
+  OpenFlow submission id. Recurring via `lodgely:openflow:fetch` (hourly
+  scheduler) + a "Fetch" button.
 - **Reporting** (`app/Domain/Reporting/`, operator `/reporting` + client
   `/my-reports`) — ad-spend ingestion from Meta Marketing API + Google Ads
   REST API (with deterministic mock adapters), campaign rollups, KPI cards,
