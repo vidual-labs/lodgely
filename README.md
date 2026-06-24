@@ -240,8 +240,8 @@ php artisan queue:work
 ```
 
 And the scheduler in a third — without it none of the recurring jobs
-(Google Sheets fetch, Meta Lead Ads fetch, IMAP pull, ad-metrics import,
-report emails, GDPR purge) ever run:
+(Google Sheets fetch, Meta Lead Ads fetch, OpenFlow fetch, IMAP pull,
+ad-metrics import, report emails, GDPR purge) ever run:
 
 ```bash
 php artisan schedule:work

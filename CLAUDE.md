@@ -36,8 +36,16 @@ The two real personas:
 Beyond the lead inbox, these are all live — don't treat them as greenfield:
 
 - **Lead intake** from CSV, Email (mock + real IMAP), Webhook, Manual entry,
-  **Google Sheets** (`/imports/google-sheets`) and **Meta Lead Ads via the
-  Graph API** (`/imports/meta-leads`). All flow through `LeadIngestor`.
+  **Google Sheets** (`/imports/google-sheets`), **Meta Lead Ads via the
+  Graph API** (`/imports/meta-leads`) and **OpenFlow forms**
+  (`/imports/openflow`). All flow through `LeadIngestor`.
+- **OpenFlow lead source** (`app/Importers/Openflow/`, `OpenflowSource`) —
+  pulls a self-hosted OpenFlow form's submissions into a single client. OpenFlow
+  has no API token, so each source stores the base URL + login email + an
+  **encrypted** password and mints a short-lived JWT per pull (scraped from the
+  login cookie). Operator-defined field mapping; unmapped fields become custom
+  answers; idempotent on the OpenFlow submission id. Recurring via
+  `lodgely:openflow:fetch` (hourly scheduler) + a "Fetch" button.
 - **Reporting** (`app/Domain/Reporting/`, operator `/reporting` + client
   `/my-reports`) — ad-spend ingestion from Meta Marketing API + Google Ads
   REST API (with deterministic mock adapters), campaign rollups, KPI cards,
@@ -276,11 +284,12 @@ docker compose exec app php artisan lodgely:leads:purge --dry-run      # GDPR cl
 # Recurring source / reporting pulls (also wired into the scheduler in routes/console.php)
 docker compose exec app php artisan lodgely:google-sheets:fetch        # pull due Google Sheet sources
 docker compose exec app php artisan lodgely:meta-leads:fetch           # pull due Meta Lead Ads connections
+docker compose exec app php artisan lodgely:openflow:fetch             # pull due OpenFlow sources
 docker compose exec app php artisan lodgely:import:ad-metrics --days=7 # backfill ad spend/metrics
 ```
 
 > The scheduler (`php artisan schedule:work` / cron) drives the recurring jobs —
-> Google Sheets + Meta Lead Ads fetches (hourly, each source decides if it's
-> due), the daily 05:00 ad-metrics pull, report emails, and the GDPR purge.
+> Google Sheets + Meta Lead Ads + OpenFlow fetches (hourly, each source decides
+> if it's due), the daily 05:00 ad-metrics pull, report emails, and the GDPR purge.
 > Without it, nothing recurring runs. Reporting also has a **"Fetch data now"**
 > button so operators don't have to wait for the 05:00 run.
