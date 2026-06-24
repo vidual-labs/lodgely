@@ -85,8 +85,9 @@ class OpenflowImportPageTest extends TestCase
             ->assertSee('Acme contact form');
     }
 
-    public function test_save_source_requires_password_on_create(): void
+    public function test_save_source_requires_a_credential_on_create(): void
     {
+        // No token and no password → blocked with an error on the token field.
         Livewire::actingAs($this->operator())
             ->test(OpenflowImportPage::class)
             ->call('openCreate')
@@ -96,7 +97,49 @@ class OpenflowImportPageTest extends TestCase
             ->set('form.form_id', 'FORM-1')
             ->set('form.password', '')
             ->call('saveSource')
-            ->assertHasErrors(['form.password']);
+            ->assertHasErrors(['form.api_token']);
+    }
+
+    public function test_save_source_with_api_token_encrypts_it_and_skips_login(): void
+    {
+        Livewire::actingAs($this->operator())
+            ->test(OpenflowImportPage::class)
+            ->call('openCreate')
+            ->set('form.label', 'Token source')
+            ->set('form.base_url', 'https://forms.example.com')
+            ->set('form.api_token', 'ofw_abc123')
+            ->set('form.form_id', 'FORM-1')
+            ->set('form.refresh_hours', 24)
+            ->call('saveSource')
+            ->assertSet('mode', 'list')
+            ->assertHasNoErrors()
+            ->assertDispatched('toast');
+
+        $saved = OpenflowSource::where('label', 'Token source')->first();
+        $this->assertNotNull($saved);
+        $this->assertTrue($saved->usesToken());
+        $this->assertSame('ofw_abc123', $saved->apiToken());
+        $this->assertNotSame('ofw_abc123', $saved->api_token_encrypted);
+        $this->assertNull($saved->email);
+    }
+
+    public function test_load_forms_uses_api_token_without_logging_in(): void
+    {
+        $client = $this->mock(OpenflowClient::class);
+        $client->shouldNotReceive('login');
+        $client->shouldReceive('listForms')
+            ->once()
+            ->with('https://forms.example.com', 'ofw_tok')
+            ->andReturn([['id' => 'F1', 'title' => 'Lead form', 'submission_count' => 2]]);
+        $this->app->instance(OpenflowClient::class, $client);
+
+        Livewire::actingAs($this->operator())
+            ->test(OpenflowImportPage::class)
+            ->call('openCreate')
+            ->set('form.base_url', 'https://forms.example.com')
+            ->set('form.api_token', 'ofw_tok')
+            ->call('loadForms')
+            ->assertSet('formsLoaded', true);
     }
 
     public function test_save_source_creates_record_and_encrypts_password(): void

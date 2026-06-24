@@ -79,6 +79,38 @@ class OpenflowLeadSourceTest extends TestCase
         $this->assertSame('openflow', (new OpenflowLeadSource($client))->key());
     }
 
+    public function test_pull_with_api_token_uses_it_directly_without_login(): void
+    {
+        $source = new OpenflowSource([
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'label'     => 'Token source',
+            'base_url'  => 'https://forms.example.com',
+            'form_id'   => 'FORM-UUID',
+            'field_map' => ['fEmail' => 'email'],
+        ]);
+        $source->setApiToken('ofw_secret');
+        $source->save();
+        $import = $this->makeImport($source->id);
+
+        $client = $this->mock(OpenflowClient::class);
+        // The token is used as the bearer directly — login is never called.
+        $client->shouldNotReceive('login');
+        $client->shouldReceive('formFields')
+            ->with('https://forms.example.com', 'ofw_secret', 'FORM-UUID')
+            ->andReturn(['title' => 'Contact', 'fields' => [['id' => 'fEmail', 'label' => 'Email', 'type' => 'email']]]);
+        $client->shouldReceive('submissionsPage')
+            ->with('https://forms.example.com', 'ofw_secret', 'FORM-UUID', 1, 100)
+            ->andReturn([
+                'submissions' => [['id' => 's1', 'created_at' => '2026-06-20T10:00:00Z', 'data' => ['fEmail' => 'a@example.com']]],
+                'total' => 1, 'page' => 1, 'limit' => 100,
+            ]);
+
+        $leads = iterator_to_array((new OpenflowLeadSource($client))->pull($import));
+
+        $this->assertCount(1, $leads);
+        $this->assertSame('a@example.com', $leads[0]->email);
+    }
+
     public function test_pull_maps_fields_and_keeps_unmapped_as_custom_answers(): void
     {
         $source = $this->makeSource();

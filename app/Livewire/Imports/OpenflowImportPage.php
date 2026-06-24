@@ -32,6 +32,7 @@ class OpenflowImportPage extends Component
     public array $form = [
         'label'                 => '',
         'base_url'              => '',
+        'api_token'             => '',
         'email'                 => '',
         'password'              => '',
         'form_id'               => '',
@@ -72,6 +73,7 @@ class OpenflowImportPage extends Component
         $this->form = [
             'label'                 => '',
             'base_url'              => '',
+            'api_token'             => '',
             'email'                 => '',
             'password'              => '',
             'form_id'               => '',
@@ -94,7 +96,8 @@ class OpenflowImportPage extends Component
         $this->form = [
             'label'                 => $source->label,
             'base_url'              => (string) $source->base_url,
-            'email'                 => (string) $source->email,
+            'api_token'             => '', // never round-trip the stored secret
+            'email'                 => (string) ($source->email ?? ''),
             'password'              => '', // never round-trip the stored secret
             'form_id'               => (string) $source->form_id,
             'form_name'             => (string) ($source->form_name ?? ''),
@@ -135,9 +138,9 @@ class OpenflowImportPage extends Component
         $this->formsLoaded = false;
         $this->availableForms = [];
 
-        $password = $this->resolvePassword();
-        if ($password === null) {
-            $this->loadError = __('Enter the OpenFlow password before loading forms.');
+        [$token, $email, $password] = $this->resolveAuth();
+        if (! $this->hasUsableAuth($token, $email, $password)) {
+            $this->loadError = __('Enter an API token, or an email and password, before loading forms.');
 
             return;
         }
@@ -145,7 +148,8 @@ class OpenflowImportPage extends Component
         try {
             $this->availableForms = $source->availableForms(
                 trim((string) $this->form['base_url']),
-                trim((string) $this->form['email']),
+                $token,
+                $email,
                 $password,
             );
             $this->formsLoaded = true;
@@ -179,9 +183,9 @@ class OpenflowImportPage extends Component
             return;
         }
 
-        $password = $this->resolvePassword();
-        if ($password === null) {
-            $this->loadError = __('Enter the OpenFlow password before loading fields.');
+        [$token, $email, $password] = $this->resolveAuth();
+        if (! $this->hasUsableAuth($token, $email, $password)) {
+            $this->loadError = __('Enter an API token, or an email and password, before loading fields.');
 
             return;
         }
@@ -189,7 +193,8 @@ class OpenflowImportPage extends Component
         try {
             $form = $source->availableFields(
                 trim((string) $this->form['base_url']),
-                trim((string) $this->form['email']),
+                $token,
+                $email,
                 $password,
                 $formId,
             );
@@ -224,23 +229,39 @@ class OpenflowImportPage extends Component
     {
         abort_unless(auth()->user()?->isOperator(), 403);
 
-        $rules = [
+        $data = $this->validate([
             'form.label'                 => ['required', 'string', 'max:120'],
             'form.base_url'              => ['required', 'url', 'max:255'],
-            'form.email'                 => ['required', 'email', 'max:255'],
+            'form.api_token'             => ['nullable', 'string', 'max:255'],
+            'form.email'                 => ['nullable', 'email', 'max:255'],
+            'form.password'              => ['nullable', 'string', 'max:255'],
             'form.form_id'               => ['required', 'string', 'max:64'],
             'form.form_name'             => ['nullable', 'string', 'max:255'],
             'form.default_client_name'   => ['nullable', 'string', 'max:120'],
             'form.default_campaign_name' => ['nullable', 'string', 'max:120'],
             'form.refresh_hours'         => ['required', 'integer', 'min:1', 'max:8760'],
             'form.is_active'             => ['boolean'],
-        ];
-        // Password is mandatory on create, optional on edit (blank = keep).
-        $rules['form.password'] = $this->editingId
-            ? ['nullable', 'string', 'max:255']
-            : ['required', 'string', 'max:255'];
+        ])['form'];
 
-        $data = $this->validate($rules)['form'];
+        $token = trim((string) $data['api_token']);
+        $email = trim((string) $data['email']);
+        $password = (string) $data['password'];
+
+        // Require *some* credential: a token, or an email + password login. On
+        // edit, blanks keep the stored secrets, so an existing source already
+        // satisfies this.
+        if (! $this->editingId && $token === '' && ! ($email !== '' && $password !== '')) {
+            $this->addError('form.api_token', __('Provide an API token, or an email and password.'));
+
+            return;
+        }
+
+        // A password without a token needs an email to log in with.
+        if ($token === '' && $password !== '' && $email === '') {
+            $this->addError('form.email', __('An email is required to use a password login.'));
+
+            return;
+        }
 
         $fieldMap = $this->buildFieldMap();
 
@@ -251,7 +272,7 @@ class OpenflowImportPage extends Component
         $source->fill([
             'label'                 => $data['label'],
             'base_url'              => rtrim(trim($data['base_url']), '/'),
-            'email'                 => trim($data['email']),
+            'email'                 => $email ?: null,
             'form_id'               => trim($data['form_id']),
             'form_name'             => trim((string) $data['form_name']) ?: null,
             'field_map'             => $fieldMap ?: null,
@@ -261,8 +282,11 @@ class OpenflowImportPage extends Component
             'is_active'             => (bool) $data['is_active'],
         ]);
 
-        if (filled($data['password'])) {
-            $source->setPassword($data['password']);
+        if ($token !== '') {
+            $source->setApiToken($token);
+        }
+        if ($password !== '') {
+            $source->setPassword($password);
         }
 
         $source->save();
@@ -349,6 +373,40 @@ class OpenflowImportPage extends Component
                 168 => __('Weekly'),
             ],
         ]);
+    }
+
+    /**
+     * Resolve the credentials to use for a live API call (Load forms / fields):
+     * freshly typed values win, falling back to the stored secrets when editing
+     * and a field was left blank.
+     *
+     * @return array{0:?string, 1:?string, 2:?string} [apiToken, email, password]
+     */
+    private function resolveAuth(): array
+    {
+        $stored = $this->editingId
+            ? OpenflowSource::forTenant(Tenant::DEFAULT_ID)->find($this->editingId)
+            : null;
+
+        $token = trim((string) ($this->form['api_token'] ?? ''));
+        if ($token === '' && $stored) {
+            $token = (string) ($stored->apiToken() ?? '');
+        }
+
+        $email = trim((string) ($this->form['email'] ?? ''));
+        if ($email === '' && $stored) {
+            $email = (string) ($stored->email ?? '');
+        }
+
+        $password = $this->resolvePassword();
+
+        return [$token !== '' ? $token : null, $email !== '' ? $email : null, $password];
+    }
+
+    private function hasUsableAuth(?string $token, ?string $email, ?string $password): bool
+    {
+        return $token !== null
+            || ($email !== null && $email !== '' && $password !== null && $password !== '');
     }
 
     /**

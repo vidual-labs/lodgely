@@ -118,15 +118,16 @@ class OpenflowLeadSource implements LeadSource
 
     /**
      * Validate connectivity and list the forms on an OpenFlow install, for the
-     * configuration UI. Throws with a human-readable reason on failure.
+     * configuration UI. Authenticates with the API token if given, else the
+     * email/password login. Throws with a human-readable reason on failure.
      *
      * @return array<int, array{id:string, title:?string, submission_count:int}>
      */
-    public function availableForms(string $baseUrl, string $email, string $password): array
+    public function availableForms(string $baseUrl, ?string $apiToken, ?string $email, ?string $password): array
     {
-        $token = $this->client->login($baseUrl, $email, $password);
+        $bearer = $this->resolveBearer($baseUrl, $apiToken, $email, $password);
 
-        return $this->client->listForms($baseUrl, $token);
+        return $this->client->listForms($baseUrl, $bearer);
     }
 
     /**
@@ -134,21 +135,43 @@ class OpenflowLeadSource implements LeadSource
      *
      * @return array{title:?string, fields:array<int, array{id:string, label:string, type:?string}>}
      */
-    public function availableFields(string $baseUrl, string $email, string $password, string $formId): array
+    public function availableFields(string $baseUrl, ?string $apiToken, ?string $email, ?string $password, string $formId): array
     {
-        $token = $this->client->login($baseUrl, $email, $password);
+        $bearer = $this->resolveBearer($baseUrl, $apiToken, $email, $password);
 
-        return $this->client->formFields($baseUrl, $token, $formId);
+        return $this->client->formFields($baseUrl, $bearer, $formId);
     }
 
     private function authenticate(OpenflowSource $source): string
     {
-        $password = $source->password();
-        if ($password === null) {
-            throw new RuntimeException('OpenFlow source: no password stored. Edit the source and re-enter the password.');
+        return $this->resolveBearer(
+            $source->normalizedBaseUrl(),
+            $source->apiToken(),
+            $source->email,
+            $source->password(),
+        );
+    }
+
+    /**
+     * Resolve the Bearer value to send: a read-only API token is used directly
+     * (no login round-trip); otherwise we sign in with email + password and use
+     * the minted JWT. Throws when neither is usable.
+     */
+    private function resolveBearer(string $baseUrl, ?string $apiToken, ?string $email, ?string $password): string
+    {
+        $apiToken = $apiToken !== null ? trim($apiToken) : '';
+        if ($apiToken !== '') {
+            return $apiToken;
         }
 
-        return $this->client->login($source->normalizedBaseUrl(), (string) $source->email, $password);
+        $email = $email !== null ? trim($email) : '';
+        if ($email === '' || $password === null || $password === '') {
+            throw new RuntimeException(
+                'OpenFlow source: no credentials. Provide an API token, or an email and password.'
+            );
+        }
+
+        return $this->client->login($baseUrl, $email, $password);
     }
 
     /** @return array<string, string> field id → label */
