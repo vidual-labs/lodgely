@@ -55,6 +55,12 @@ return [
             // HTTP timeout (seconds) for outbound calls to Google APIs.
             'http_timeout_sec' => (int) env('LODGELY_GOOGLE_SHEETS_HTTP_TIMEOUT', 30),
         ],
+        'openflow' => [
+            // HTTP timeout (seconds) for outbound calls to an OpenFlow install.
+            // Each source stores its own base URL + login; there are no global
+            // credentials here because OpenFlow has no API token.
+            'http_timeout_sec' => (int) env('LODGELY_OPENFLOW_HTTP_TIMEOUT', 30),
+        ],
         'email' => [
             // 'mock' generates simulated leads; 'imap' connects to a real mailbox.
             'driver' => env('LODGELY_EMAIL_IMPORT_DRIVER', 'mock'),

@@ -18,6 +18,7 @@ use App\Importers\Manual\ManualLeadSource;
 use App\Importers\Meta\MetaAdsSource;
 use App\Importers\Meta\MetaLeadsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
+use App\Importers\Openflow\OpenflowLeadSource;
 use App\Models\MailSetting;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Router;
@@ -40,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         'manual' => ManualLeadSource::class,
         'google_sheets' => GoogleSheetsLeadSource::class,
         'meta_leads' => MetaLeadsSource::class,
+        'openflow' => OpenflowLeadSource::class,
     ];
 
     /**

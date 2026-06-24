@@ -3,6 +3,7 @@
 use App\Console\Commands\DispatchScheduledReportEmails;
 use App\Console\Commands\FetchGoogleSheets;
 use App\Console\Commands\FetchMetaLeads;
+use App\Console\Commands\FetchOpenflow;
 use App\Console\Commands\ImportAdMetrics;
 use App\Console\Commands\ImportEmailsImap;
 use App\Console\Commands\ImportEmailsMock;
@@ -39,3 +40,7 @@ Schedule::command(FetchGoogleSheets::class)->hourly()->withoutOverlapping();
 // Hourly pass over active Meta Lead Ads connections; each source decides internally
 // whether it is due (based on its own refresh_hours interval).
 Schedule::command(FetchMetaLeads::class)->hourly()->withoutOverlapping();
+
+// Hourly pass over active OpenFlow sources; each source decides internally whether
+// it is due (based on its own refresh_hours interval).
+Schedule::command(FetchOpenflow::class)->hourly()->withoutOverlapping();

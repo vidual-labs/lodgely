@@ -37,6 +37,7 @@ headless / scripted installs.
 | `LODGELY_GOOGLE_ADS_API_VERSION` | Google Ads REST API version. | `v18` |
 | `LODGELY_GOOGLE_SHEETS_CLIENT_ID` / `LODGELY_GOOGLE_SHEETS_CLIENT_SECRET` / `LODGELY_GOOGLE_SHEETS_REFRESH_TOKEN` | Legacy env-based fallback for Google Sheets OAuth credentials. Prefer the in-app settings page at `/settings/google-sheets` — credentials entered there are stored encrypted in the DB and take precedence over these env vars. | — |
 | `LODGELY_GOOGLE_SHEETS_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound calls to Google Sheets / OAuth endpoints. | `30` |
+| `LODGELY_OPENFLOW_HTTP_TIMEOUT` | HTTP timeout (seconds) for outbound calls to an OpenFlow install (login + form/submission fetches). Per-source base URL and login are configured in-app at `/imports/openflow`. | `30` |
 | `MAIL_MAILER` | Outbound mail transport: `log` (writes to the log, does not send), `smtp`, etc. Optional — prefer **Settings → Email**; settings saved there are stored encrypted and override these at runtime. Used as a fallback when the UI toggle is off. | `log` |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP server + credentials (when `MAIL_MAILER=smtp`). Prefer Settings → Email. | — |
 | `MAIL_SCHEME` | `smtp` (STARTTLS, port 587) or `smtps` (implicit TLS, port 465). | — |
