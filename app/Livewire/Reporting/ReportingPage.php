@@ -3,6 +3,7 @@
 namespace App\Livewire\Reporting;
 
 use App\Domain\Reporting\Services\CampaignRollup;
+use App\Models\Lead;
 use App\Models\Tenant;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -17,6 +18,9 @@ class ReportingPage extends Component
 
     #[Url]
     public string $range = '30';
+
+    #[Url(except: '')]
+    public string $client = '';
 
     public function mount(): void
     {
@@ -44,17 +48,26 @@ class ReportingPage extends Component
         [$from, $to] = $this->dateRange();
         $tenantId = Tenant::DEFAULT_ID;
         $platform = $this->platform !== 'all' ? $this->platform : null;
+        $client = $this->client !== '' ? $this->client : null;
 
-        $kpis = $rollup->kpis($tenantId, $from, $to, $platform);
-        $campaigns = $rollup->forTenant($tenantId, $from, $to, $platform);
-        $bySource = $rollup->bySource($tenantId, $from, $to);
-        $series = $rollup->dailySeries($tenantId, $from, $to, $platform);
+        $kpis = $rollup->kpis($tenantId, $from, $to, $platform, $client);
+        $campaigns = $rollup->forTenant($tenantId, $from, $to, $platform, $client);
+        $bySource = $rollup->bySource($tenantId, $from, $to, $client);
+        $series = $rollup->dailySeries($tenantId, $from, $to, $platform, $client);
+
+        $clientOptions = Lead::where('tenant_id', $tenantId)
+            ->whereNotNull('client_name')
+            ->distinct()
+            ->orderBy('client_name')
+            ->pluck('client_name')
+            ->all();
 
         return view('livewire.reporting.reporting-page', [
             'kpis' => $kpis,
             'campaigns' => $campaigns,
             'bySource' => $bySource,
             'series' => $series,
+            'clientOptions' => $clientOptions,
             'from' => $from,
             'to' => $to,
         ]);

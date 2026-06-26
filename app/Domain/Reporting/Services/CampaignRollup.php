@@ -13,10 +13,16 @@ class CampaignRollup
     /**
      * Aggregate ad metrics + lodgely lead counts, grouped by campaign.
      *
+     * When $client is given, ad metrics are scoped to the campaigns that the
+     * client's leads carry (see campaignIdsForClient) and lead counts are scoped
+     * to that client_name.
+     *
      * @return Collection<int, object{platform: string, campaign_id: string, campaign_name: ?string, impressions: int, clicks: int, spend_cents: int, currency: string, platform_leads: int, lodgely_leads: int}>
      */
-    public function forTenant(int $tenantId, string $from, string $to, ?string $platform = null): Collection
+    public function forTenant(int $tenantId, string $from, string $to, ?string $platform = null, ?string $client = null): Collection
     {
+        $campaignIds = $this->campaignIdsForClient($tenantId, $client);
+
         $query = AdSpendReport::query()
             ->select([
                 'platform',
@@ -30,12 +36,10 @@ class CampaignRollup
             ])
             ->where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
+            ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
+            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->groupBy(['platform', 'campaign_id'])
             ->orderByDesc(DB::raw('SUM(spend_cents)'));
-
-        if ($platform && $platform !== 'all') {
-            $query->where('platform', $platform);
-        }
 
         $adRows = $query->get();
 
@@ -43,6 +47,7 @@ class CampaignRollup
         $leadCounts = Lead::where('tenant_id', $tenantId)
             ->whereNotNull('campaign_id')
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
             ->select('campaign_id', DB::raw('COUNT(*) as cnt'))
             ->groupBy('campaign_id')
             ->pluck('cnt', 'campaign_id');
@@ -59,14 +64,14 @@ class CampaignRollup
      *
      * @return array{total_spend_cents: int, total_clicks: int, total_impressions: int, total_platform_leads: int, total_lodgely_leads: int, currency: string, has_data: bool}
      */
-    public function kpis(int $tenantId, string $from, string $to, ?string $platform = null): array
+    public function kpis(int $tenantId, string $from, string $to, ?string $platform = null, ?string $client = null): array
     {
-        $query = AdSpendReport::where('tenant_id', $tenantId)
-            ->whereBetween('date', [$from, $to]);
+        $campaignIds = $this->campaignIdsForClient($tenantId, $client);
 
-        if ($platform && $platform !== 'all') {
-            $query->where('platform', $platform);
-        }
+        $query = AdSpendReport::where('tenant_id', $tenantId)
+            ->whereBetween('date', [$from, $to])
+            ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
+            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds));
 
         $agg = $query->selectRaw('
             COALESCE(SUM(spend_cents), 0)    as total_spend_cents,
@@ -78,6 +83,7 @@ class CampaignRollup
 
         $lodgelyLeads = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
             ->count();
 
         return [
@@ -86,7 +92,7 @@ class CampaignRollup
             'total_impressions' => (int) ($agg->total_impressions ?? 0),
             'total_platform_leads' => (int) ($agg->total_platform_leads ?? 0),
             'total_lodgely_leads' => $lodgelyLeads,
-            'currency' => AdSpendReport::dominantCurrency($tenantId, $from, $to, $platform),
+            'currency' => AdSpendReport::dominantCurrency($tenantId, $from, $to, $platform, $campaignIds),
             'has_data' => ((int) ($agg->row_count ?? 0)) > 0,
         ];
     }
@@ -98,8 +104,10 @@ class CampaignRollup
      *
      * @return Collection<int, object{date: string, spend_cents: int, clicks: int, impressions: int, platform_leads: int, lodgely_leads: int}>
      */
-    public function dailySeries(int $tenantId, string $from, string $to, ?string $platform = null): Collection
+    public function dailySeries(int $tenantId, string $from, string $to, ?string $platform = null, ?string $client = null): Collection
     {
+        $campaignIds = $this->campaignIdsForClient($tenantId, $client);
+
         $query = AdSpendReport::query()
             ->select([
                 'date',
@@ -110,11 +118,9 @@ class CampaignRollup
             ])
             ->where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
+            ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
+            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
             ->groupBy('date');
-
-        if ($platform && $platform !== 'all') {
-            $query->where('platform', $platform);
-        }
 
         $adByDay = $query->get()->keyBy(
             fn ($r) => Carbon::parse($r->date)->toDateString()
@@ -122,6 +128,7 @@ class CampaignRollup
 
         $leadsByDay = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
             ->select(DB::raw('DATE(created_at) as d'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('d')
             ->pluck('cnt', 'd');
@@ -152,13 +159,37 @@ class CampaignRollup
     /**
      * Leads by source from lodgely's own data (not ad platform data).
      */
-    public function bySource(int $tenantId, string $from, string $to): Collection
+    public function bySource(int $tenantId, string $from, string $to, ?string $client = null): Collection
     {
         return Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
             ->select('source', DB::raw('COUNT(*) as lead_count'))
             ->groupBy('source')
             ->orderByDesc('lead_count')
             ->get();
+    }
+
+    /**
+     * Resolve a client_name into the set of campaign_ids that the client's leads
+     * carry, used to scope tenant-wide ad metrics (which have no client column)
+     * down to a single client. Returns null when no client is selected (→ no
+     * ad-side scoping at all), or an array (possibly empty: the client has leads
+     * but none reference a campaign, so their ad metrics are legitimately zero).
+     *
+     * @return list<string>|null
+     */
+    private function campaignIdsForClient(int $tenantId, ?string $client): ?array
+    {
+        if ($client === null || $client === '') {
+            return null;
+        }
+
+        return Lead::where('tenant_id', $tenantId)
+            ->whereNotNull('campaign_id')
+            ->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)])
+            ->distinct()
+            ->pluck('campaign_id')
+            ->all();
     }
 }

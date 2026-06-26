@@ -49,6 +49,24 @@
                 @endforeach
             </div>
 
+            {{-- Client filter (operators only). Clients in lodgely are just the
+                 distinct client_name values on leads; this scopes lead figures by
+                 client_name and ad spend by the campaigns those leads carry. --}}
+            @if(auth()->user()->isOperator() && count($clientOptions))
+                <div class="flex rounded-lg bg-slate-100 dark:bg-slate-800/80 p-0.5 text-xs font-medium gap-0.5 flex-wrap">
+                    <button wire:click="$set('client', '')"
+                            class="px-3 py-1.5 rounded-md transition-colors {{ $client === '' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}">
+                        {{ __('All clients') }}
+                    </button>
+                    @foreach($clientOptions as $c)
+                        <button wire:click="$set('client', @js($c))"
+                                class="px-3 py-1.5 rounded-md transition-colors {{ $client === $c ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}">
+                            {{ $c }}
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
             {{-- Date range filter --}}
             <div class="flex rounded-lg bg-slate-100 dark:bg-slate-800/80 p-0.5 text-xs font-medium gap-0.5">
                 @foreach(['7' => __('7 days'), '30' => __('30 days'), '90' => __('90 days')] as $val => $label)
