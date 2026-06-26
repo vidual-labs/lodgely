@@ -40,11 +40,15 @@ class AdSpendReport extends Model
      * the window (handles a tenant running, say, Meta in EUR and Google in USD),
      * and fall back to the configured Meta currency when there's no data yet.
      */
+    /**
+     * @param  list<string>|null  $campaignIds  scope to these campaigns (null = no scoping)
+     */
     public static function dominantCurrency(
         int $tenantId,
         ?string $from = null,
         ?string $to = null,
         ?string $platform = null,
+        ?array $campaignIds = null,
     ): string {
         $query = static::query()->where('tenant_id', $tenantId);
 
@@ -54,6 +58,10 @@ class AdSpendReport extends Model
 
         if ($platform && $platform !== 'all') {
             $query->where('platform', $platform);
+        }
+
+        if ($campaignIds !== null) {
+            $query->whereIn('campaign_id', $campaignIds);
         }
 
         $currency = $query

@@ -8,6 +8,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Per-client filter on the operator reporting page.** `/reporting` now carries a
+  pill toggle row — `(All clients) (Client A) (Client B) …` — next to the Platform
+  and Range filters, letting an operator with several clients view one client's
+  numbers in isolation. Lead figures (Lodgely Leads KPI, leads-by-source, the lead
+  trend line) scope by `client_name`; ad-spend figures (spend, clicks, impressions,
+  platform leads, charts and the "By campaign" table) scope to the campaigns that
+  the selected client's leads carry, so spend and leads stay consistent. The
+  selection is URL-bound (`?client=…`) so it survives reload and is shareable. Shown
+  to operators only; the client `/my-reports` view is unchanged. Note: a campaign
+  with spend but no leads yet can't be attributed to a client, so its spend appears
+  only under "All clients".
+
 - **OpenFlow API-token authentication.** An OpenFlow source can now authenticate
   with a **read-only API token** (created in OpenFlow under Settings → API
   Tokens) instead of storing a login password — the recommended path. The token

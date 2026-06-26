@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.42.0-6366F1" alt="Version 0.42.0">
+  <img src="https://img.shields.io/badge/version-0.43.0-6366F1" alt="Version 0.43.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -101,7 +101,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 **Reporting & AI**
 
-- 📈 Operator `/reporting` dashboard — KPI cards, trend charts, campaign breakdown, ad-spend ingestion from Meta + Google Ads (live or mock adapters).
+- 📈 Operator `/reporting` dashboard — KPI cards, trend charts, campaign breakdown, ad-spend ingestion from Meta + Google Ads (live or mock adapters). A per-client pill filter (`All clients / Client A / …`) narrows the whole dashboard to one client — lead figures by `client_name`, ad spend by that client's campaigns.
 - 📊 Custom client reporting views, assignable per client, with a Live/Hidden toggle and a `/my-reports` client tab.
 - 🤖 AI summaries & lead qualification *(optional, off by default)* — OpenAI-compatible or Ollama, operator-reviewed drafts.
 - 📨 Scheduled/one-off client report emails, mobile-responsive HTML.
