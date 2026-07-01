@@ -21,20 +21,25 @@ class UsersPage extends Component
 {
     use WithPagination;
 
-    #[Url(as: 'q', except: '')] public string $search = '';
-    #[Url(except: '')] public string $roleFilter = '';
+    #[Url(as: 'q', except: '')]
+    public string $search = '';
+
+    #[Url(except: '')]
+    public string $roleFilter = '';
 
     public bool $showForm = false;
+
     public ?int $editingUserId = null;
+
     public ?string $generatedPassword = null;
 
     /** @var array<string, mixed> */
     public array $form = [
-        'name'         => '',
-        'email'        => '',
-        'role'         => 'operator',
-        'password'     => '',
-        'is_active'    => true,
+        'name' => '',
+        'email' => '',
+        'role' => 'operator',
+        'password' => '',
+        'is_active' => true,
         'scopes_input' => '',
     ];
 
@@ -66,11 +71,11 @@ class UsersPage extends Component
 
         $this->editingUserId = $user->id;
         $this->form = [
-            'name'         => $user->name,
-            'email'        => $user->email,
-            'role'         => $user->role->value,
-            'password'     => '',
-            'is_active'    => (bool) $user->is_active,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role->value,
+            'password' => '',
+            'is_active' => (bool) $user->is_active,
             'scopes_input' => $user->leadScopes->pluck('client_name')->implode(', '),
         ];
         $this->generatedPassword = null;
@@ -96,29 +101,31 @@ class UsersPage extends Component
         $editing = $this->editingUserId !== null;
 
         $data = $this->validate([
-            'form.name'         => ['required', 'string', 'max:120'],
-            'form.email'        => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->editingUserId)],
-            'form.role'         => ['required', Rule::in(['operator', 'client'])],
-            'form.password'     => [$editing ? 'nullable' : 'required', 'string', 'min:8'],
-            'form.is_active'    => ['boolean'],
+            'form.name' => ['required', 'string', 'max:120'],
+            'form.email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->editingUserId)],
+            'form.role' => ['required', Rule::in(['operator', 'client'])],
+            'form.password' => [$editing ? 'nullable' : 'required', 'string', 'min:12'],
+            'form.is_active' => ['boolean'],
             'form.scopes_input' => ['nullable', 'string', 'max:2000'],
         ])['form'];
 
         if ($editing && $this->editingUserId === auth()->id()) {
             if ($data['role'] !== UserRole::Operator->value) {
                 $this->addError('form.role', __('You cannot remove your own operator role.'));
+
                 return;
             }
             if (! $data['is_active']) {
                 $this->addError('form.is_active', __('You cannot deactivate yourself.'));
+
                 return;
             }
         }
 
         $payload = [
-            'name'      => trim($data['name']),
-            'email'     => mb_strtolower(trim($data['email'])),
-            'role'      => $data['role'],
+            'name' => trim($data['name']),
+            'email' => mb_strtolower(trim($data['email'])),
+            'role' => $data['role'],
             'is_active' => (bool) $data['is_active'],
         ];
         if ($data['password'] !== '') {
@@ -132,10 +139,10 @@ class UsersPage extends Component
             $this->syncScopes($user, $data['scopes_input']);
 
             Log::info('lodgely.user.updated', [
-                'id'     => $user->id,
-                'actor'  => auth()->id(),
+                'id' => $user->id,
+                'actor' => auth()->id(),
                 'before' => $before,
-                'after'  => ['role' => $user->role->value, 'is_active' => $user->is_active],
+                'after' => ['role' => $user->role->value, 'is_active' => $user->is_active],
             ]);
             $this->dispatch('toast', message: __('User updated.'));
         } else {
@@ -143,9 +150,9 @@ class UsersPage extends Component
             $this->syncScopes($user, $data['scopes_input']);
 
             Log::info('lodgely.user.created', [
-                'id'    => $user->id,
+                'id' => $user->id,
                 'actor' => auth()->id(),
-                'role'  => $user->role->value,
+                'role' => $user->role->value,
             ]);
             $this->dispatch('toast', message: __('User created.'));
         }
@@ -160,14 +167,15 @@ class UsersPage extends Component
         $user = User::findOrFail($id);
         if (! $user->is_active) {
             $this->dispatch('toast', message: __('Enable the account before issuing a reset link.'));
+
             return;
         }
 
         $status = Password::sendResetLink(['email' => $user->email]);
 
         Log::info('lodgely.user.reset_link_sent', [
-            'id'     => $user->id,
-            'actor'  => auth()->id(),
+            'id' => $user->id,
+            'actor' => auth()->id(),
             'status' => $status,
         ]);
 
@@ -181,14 +189,15 @@ class UsersPage extends Component
         $user = User::findOrFail($id);
         if ($user->id === auth()->id()) {
             $this->dispatch('toast', message: __('You cannot deactivate yourself.'));
+
             return;
         }
 
         $user->update(['is_active' => ! $user->is_active]);
         Log::info('lodgely.user.toggled', [
-            'id'         => $user->id,
-            'actor'      => auth()->id(),
-            'is_active'  => $user->is_active,
+            'id' => $user->id,
+            'actor' => auth()->id(),
+            'is_active' => $user->is_active,
         ]);
     }
 
@@ -201,7 +210,7 @@ class UsersPage extends Component
                 $like = '%'.mb_strtolower($term).'%';
                 $q->where(function ($qq) use ($like) {
                     $qq->whereRaw('LOWER(name) LIKE ?', [$like])
-                       ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
                 });
             })
             ->when($this->roleFilter, fn ($q, $v) => $q->where('role', $v))
@@ -237,7 +246,7 @@ class UsersPage extends Component
 
         foreach ($scopes as $clientName) {
             UserLeadScope::create([
-                'user_id'     => $user->id,
+                'user_id' => $user->id,
                 'client_name' => $clientName,
             ]);
         }
@@ -248,11 +257,11 @@ class UsersPage extends Component
         $this->editingUserId = null;
         $this->generatedPassword = null;
         $this->form = [
-            'name'         => '',
-            'email'        => '',
-            'role'         => 'operator',
-            'password'     => '',
-            'is_active'    => true,
+            'name' => '',
+            'email' => '',
+            'role' => 'operator',
+            'password' => '',
+            'is_active' => true,
             'scopes_input' => '',
         ];
         $this->resetErrorBag();

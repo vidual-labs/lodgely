@@ -157,6 +157,20 @@ class LeadExportTest extends TestCase
         $this->assertStringNotContainsString('Low Pri', $body);
     }
 
+    public function test_csv_export_neutralizes_formula_injection(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['full_name' => '=cmd|\' /C calc\'!A1', 'message' => '+2+3']);
+
+        $response = $this->actingAs($op)->get('/inbox/export?format=csv');
+        $body = $this->streamBody($response->baseResponse);
+        $lines = array_values(array_filter(preg_split("/\r\n|\n/", $body)));
+        $row = str_getcsv($lines[1]);
+
+        $this->assertStringStartsWith("'=", $row[array_search('full_name', LeadExportController::COLUMNS)]);
+        $this->assertStringStartsWith("'+", $row[array_search('message', LeadExportController::COLUMNS)]);
+    }
+
     public function test_export_is_logged(): void
     {
         $op = $this->operator();
