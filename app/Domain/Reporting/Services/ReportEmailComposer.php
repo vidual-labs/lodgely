@@ -4,12 +4,13 @@ namespace App\Domain\Reporting\Services;
 
 use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
+use App\Domain\Reporting\Enums\ReportColumn;
 use App\Models\AdSpendReport;
 use App\Models\AiSummary;
 use App\Models\ClientReportEmail;
 use App\Models\ClientReportingView;
-use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -30,8 +31,8 @@ class ReportEmailComposer
      *   recipient: User,
      *   period: array{from: string, to: string, label: string},
      *   intro_html: ?string,
-     *   columns: array<int, \App\Domain\Reporting\Enums\ReportColumn>,
-     *   rows: \Illuminate\Support\Collection,
+     *   columns: array<int, ReportColumn>,
+     *   rows: Collection,
      *   totals: array<string, mixed>,
      *   ai_summary: ?AiSummary,
      *   currency: string,
@@ -41,20 +42,20 @@ class ReportEmailComposer
     public function compose(ClientReportEmail $email, User $recipient): array
     {
         $months = max(1, min(24, (int) $email->period_months));
-        $to     = now()->endOfDay();
-        $from   = now()->subMonths($months - 1)->startOfMonth();
+        $to = now()->endOfDay();
+        $from = now()->subMonths($months - 1)->startOfMonth();
 
         $period = [
-            'from'  => $from->format('Y-m-d'),
-            'to'    => $to->format('Y-m-d'),
+            'from' => $from->format('Y-m-d'),
+            'to' => $to->format('Y-m-d'),
             'label' => $months === 1
                 ? $from->format('F Y')
                 : $from->format('M Y').' – '.$to->format('M Y'),
         ];
 
         $columns = [];
-        $rows    = collect();
-        $totals  = [];
+        $rows = collect();
+        $totals = [];
 
         if ($email->client_reporting_view_id) {
             /** @var ClientReportingView|null $view */
@@ -62,7 +63,7 @@ class ReportEmailComposer
 
             if ($view) {
                 $columns = $view->columnEnums();
-                $rows    = $this->builder->build(
+                $rows = $this->builder->build(
                     $view,
                     $recipient,
                     (int) $email->tenant_id,
@@ -89,19 +90,40 @@ class ReportEmailComposer
         }
 
         return [
-            'email'      => $email,
-            'recipient'  => $recipient,
-            'period'     => $period,
+            'email' => $email,
+            'recipient' => $recipient,
+            'period' => $period,
             'intro_html' => $email->intro_markdown
-                ? strip_tags(Str::markdown($email->intro_markdown), '<p><br><strong><em><ul><ol><li><a><h1><h2><h3><h4><blockquote><code><pre>')
+                ? $this->sanitizeIntroHtml(Str::markdown($email->intro_markdown))
                 : null,
-            'columns'    => $columns,
-            'rows'       => $rows,
-            'totals'     => $totals,
+            'columns' => $columns,
+            'rows' => $rows,
+            'totals' => $totals,
             'ai_summary' => $aiSummary,
-            'currency'   => AdSpendReport::dominantCurrency((int) $email->tenant_id),
-            'subject'    => $this->renderSubject($email, $recipient, $period['label']),
+            'currency' => AdSpendReport::dominantCurrency((int) $email->tenant_id),
+            'subject' => $this->renderSubject($email, $recipient, $period['label']),
         ];
+    }
+
+    /**
+     * Markdown link syntax lets an operator author an <a href="..."> with any
+     * scheme (e.g. javascript:), and strip_tags() only allows/denies tags, not
+     * attribute values, so a malicious href would survive into the client's
+     * inbox. Restrict surviving <a> tags to http(s)/mailto before whitelisting.
+     */
+    private function sanitizeIntroHtml(string $html): string
+    {
+        $html = (string) preg_replace_callback(
+            '/<a\s+[^>]*href=(["\'])(.*?)\1[^>]*>/i',
+            function (array $m): string {
+                $href = trim($m[2]);
+
+                return preg_match('#^(https?://|mailto:)#i', $href) ? $m[0] : '<a>';
+            },
+            $html
+        );
+
+        return strip_tags($html, '<p><br><strong><em><ul><ol><li><a><h1><h2><h3><h4><blockquote><code><pre>');
     }
 
     private function renderSubject(ClientReportEmail $email, User $recipient, string $periodLabel): string
@@ -111,7 +133,7 @@ class ReportEmailComposer
         return strtr($tpl, [
             '{{period}}' => $periodLabel,
             '{{client}}' => $recipient->name ?? '',
-            '{{name}}'   => $email->name ?? '',
+            '{{name}}' => $email->name ?? '',
         ]);
     }
 }

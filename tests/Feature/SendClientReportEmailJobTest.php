@@ -33,27 +33,27 @@ class SendClientReportEmailJobTest extends TestCase
         ]);
 
         $email = ClientReportEmail::create([
-            'tenant_id'             => Tenant::DEFAULT_ID,
-            'name'                  => 'Plain',
-            'include_kpi_strip'     => false,
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'name' => 'Plain',
+            'include_kpi_strip' => false,
             'include_metrics_table' => false,
-            'include_ai_summary'    => false,
-            'period_months'         => 1,
-            'subject_template'      => 'Hi {{client}} — your {{period}} report',
-            'intro_markdown'        => 'Quick note: this is the test body.',
-            'is_active'             => true,
-            'created_by'            => $op->id,
+            'include_ai_summary' => false,
+            'period_months' => 1,
+            'subject_template' => 'Hi {{client}} — your {{period}} report',
+            'intro_markdown' => 'Quick note: this is the test body.',
+            'is_active' => true,
+            'created_by' => $op->id,
         ]);
         $email->recipients()->sync([$client->id]);
 
         $send = ClientReportEmailSend::create([
-            'tenant_id'              => Tenant::DEFAULT_ID,
+            'tenant_id' => Tenant::DEFAULT_ID,
             'client_report_email_id' => $email->id,
-            'triggered_by'           => $op->id,
-            'period_from'            => now()->subMonth()->format('Y-m-d'),
-            'period_to'              => now()->format('Y-m-d'),
-            'recipient_user_ids'     => [$client->id],
-            'status'                 => ReportEmailSendStatus::Queued->value,
+            'triggered_by' => $op->id,
+            'period_from' => now()->subMonth()->format('Y-m-d'),
+            'period_to' => now()->format('Y-m-d'),
+            'recipient_user_ids' => [$client->id],
+            'status' => ReportEmailSendStatus::Queued->value,
         ]);
 
         return [$op, $client, $email, $send];
@@ -87,5 +87,16 @@ class SendClientReportEmailJobTest extends TestCase
         $send->refresh();
         $this->assertSame(ReportEmailSendStatus::Failed, $send->status);
         $this->assertStringContainsString('No active recipients', (string) $send->error);
+    }
+
+    public function test_intro_html_strips_non_http_link_schemes(): void
+    {
+        [, $client, $email] = $this->setup_world();
+        $email->forceFill(['intro_markdown' => 'Click [here](javascript:alert(1)) or [here](https://lodgely.test).'])->save();
+
+        $data = app(ReportEmailComposer::class)->compose($email, $client);
+
+        $this->assertStringNotContainsString('javascript:', $data['intro_html']);
+        $this->assertStringContainsString('href="https://lodgely.test"', $data['intro_html']);
     }
 }

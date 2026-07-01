@@ -69,7 +69,7 @@ class LeadExportController extends Controller
                 $csv = Writer::createFromStream($handle);
                 $csv->insertOne(self::COLUMNS);
                 foreach ($query->lazyById(500) as $lead) {
-                    $csv->insertOne(array_values($this->row($lead)));
+                    $csv->insertOne(array_map([$this, 'escapeCsvFormula'], array_values($this->row($lead))));
                     $count++;
                 }
             } else {
@@ -98,6 +98,20 @@ class LeadExportController extends Controller
         ]);
 
         return $response;
+    }
+
+    /**
+     * Neutralizes CSV formula injection: lead fields are attacker-controlled
+     * (webhook/CSV/email intake), and a leading =, +, -, @, tab or CR can make
+     * spreadsheet software execute a formula when the export is opened.
+     */
+    private function escapeCsvFormula(mixed $value): mixed
+    {
+        if (! is_string($value) || $value === '') {
+            return $value;
+        }
+
+        return preg_match('/^[=+\-@\t\r]/', $value) ? "'".$value : $value;
     }
 
     /** @return array<string, mixed> */

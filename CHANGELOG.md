@@ -6,6 +6,27 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Security
+
+- **CSV/NDJSON lead export now neutralizes formula injection.** Lead fields
+  (name, message, client/campaign names, …) are attacker-controlled — they
+  arrive via webhook, CSV import or email intake — and `/inbox/export` wrote
+  them straight into export cells. A value like `=cmd|' /C calc'!A1` would
+  execute as a formula when an operator opened the export in Excel/LibreOffice.
+  Cells starting with `=`, `+`, `-`, `@`, tab or CR are now prefixed with a
+  leading `'` before being written.
+- **Report-email intro links restricted to http(s)/mailto.** The Markdown
+  intro on scheduled client report emails allowed an `<a href="...">` of any
+  scheme to survive into the sent HTML (e.g. `javascript:`), since the
+  existing tag whitelist didn't validate attribute values. Links with any
+  other scheme are now stripped down to plain `<a>` text before sending.
+- **New-user passwords now require 12 characters minimum** (`/users`), up
+  from 8, matching the self-service password-reset minimum already enforced
+  elsewhere.
+- **Added a `Strict-Transport-Security` header** on HTTPS responses (existing
+  `SecurityHeaders` middleware), so browsers still get HSTS even when the
+  reverse proxy in front of lodgely doesn't set it itself.
+
 ### Fixed
 
 - **OpenFlow external_id scoped per source, for safe multi-form imports.**
