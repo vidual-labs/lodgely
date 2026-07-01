@@ -139,7 +139,7 @@ class OpenflowLeadSourceTest extends TestCase
         $this->assertSame('Alice Smith', $leads[0]->fullName);
         $this->assertSame('555-1234', $leads[0]->phone);
         $this->assertSame('ACME Corp', $leads[0]->clientName);
-        $this->assertSame('sub-1', $leads[0]->externalId);
+        $this->assertSame(OpenflowLeadSource::scopedExternalId($source, 'sub-1'), $leads[0]->externalId);
         $this->assertSame('openflow', $leads[0]->platform);
 
         // The unmapped Budget field survives as a labelled custom answer.
@@ -218,6 +218,27 @@ class OpenflowLeadSourceTest extends TestCase
 
         $this->assertCount(1, $leads);
         $this->assertSame('new@example.com', $leads[0]->email);
+    }
+
+    public function test_scoped_external_id_differs_across_forms_and_installs(): void
+    {
+        $formA = $this->makeSource(['form_id' => 'FORM-A']);
+        $formB = $this->makeSource(['form_id' => 'FORM-B']);
+        $otherInstall = $this->makeSource(['base_url' => 'https://other.example.com', 'form_id' => 'FORM-A']);
+
+        // Two sources sharing a raw submission id (a very real risk when
+        // OpenFlow's own submission ids are small per-form sequential
+        // integers) must not collide once scoped.
+        $idA = OpenflowLeadSource::scopedExternalId($formA, '1');
+        $idB = OpenflowLeadSource::scopedExternalId($formB, '1');
+        $idOther = OpenflowLeadSource::scopedExternalId($otherInstall, '1');
+
+        $this->assertNotSame($idA, $idB);
+        $this->assertNotSame($idA, $idOther);
+        $this->assertNotSame($idB, $idOther);
+
+        // Deterministic: re-pulling the same form yields the same scoped id.
+        $this->assertSame($idA, OpenflowLeadSource::scopedExternalId($formA, '1'));
     }
 
     public function test_pull_throws_when_source_id_missing(): void

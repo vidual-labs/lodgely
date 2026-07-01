@@ -6,6 +6,25 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **OpenFlow external_id scoped per source, for safe multi-form imports.**
+  You could already add multiple OpenFlow sources for one client
+  (`/imports/openflow` → "Add OpenFlow source") — the connector was built
+  list/CRUD from the start, and the hourly `lodgely:openflow:fetch` scheduler
+  already pulls every active source. What wasn't safe: OpenFlow submission ids
+  are only unique within a single form's own sequence (often small integers),
+  so two sources — a second form on the same install, or the same form_id on a
+  second install — could produce colliding raw ids and have the second
+  source's leads silently dropped as "already imported" duplicates of the
+  first. `external_id` is now scoped to the source's install + form
+  (`OpenflowLeadSource::scopedExternalId()`), so dedup is correctly
+  partitioned per source. A new `lodgely:openflow:rescope-ids` command
+  backfills existing OpenFlow leads to the new scoped format (idempotent,
+  supports `--dry-run`) — run it once after upgrading if you already have
+  OpenFlow leads imported, to avoid a burst of duplicates on the next
+  scheduled fetch.
+
 ### Added
 
 - **Per-client filter on the operator reporting page.** `/reporting` now carries a
