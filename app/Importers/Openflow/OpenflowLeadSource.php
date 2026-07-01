@@ -23,10 +23,15 @@ use Throwable;
  * custom answer, using the OpenFlow field label as the question — so the full
  * submission survives the trip.
  *
- * Each OpenFlow submission id is the stable external_id, so re-pulling the same
- * form is idempotent: the LeadIngestor recognises and skips submissions it has
- * already ingested. last_fetched_at additionally bounds incremental pulls so we
- * don't walk the entire backlog on every scheduler tick.
+ * The external_id is the OpenFlow submission id scoped to its source (install +
+ * form), via {@see self::scopedExternalId()} — submission ids are only unique
+ * within a single form's own sequence (often small integers), so an unscoped id
+ * could collide across two different forms, or the same form_id on two
+ * different OpenFlow installs, and silently drop one source's leads as
+ * "already ingested" duplicates of the other's. Scoping keeps dedup correctly
+ * partitioned per source while remaining stable across pulls, so re-pulling the
+ * same form stays idempotent. last_fetched_at additionally bounds incremental
+ * pulls so we don't walk the entire backlog on every scheduler tick.
  */
 class OpenflowLeadSource implements LeadSource
 {
@@ -272,7 +277,8 @@ class OpenflowLeadSource implements LeadSource
             $customAnswers[] = ['question' => $label, 'answer' => $value];
         }
 
-        $externalId = isset($submission['id']) ? (string) $submission['id'] : '';
+        $submissionId = isset($submission['id']) ? (string) $submission['id'] : '';
+        $externalId = $submissionId !== '' ? self::scopedExternalId($source, $submissionId) : '';
 
         return new IncomingLead(
             source:        $this->key(),
@@ -291,6 +297,18 @@ class OpenflowLeadSource implements LeadSource
             priority:      $fields['priority']      ?? null,
             customAnswers: $customAnswers ?: null,
         );
+    }
+
+    /**
+     * Stable external_id for a submission, scoped to the OpenFlow install + form
+     * it came from (not to the OpenflowSource row id, so two sources pointing at
+     * the same form still dedupe against each other). The same formula is reused
+     * by the rescope command to backfill leads imported before this scoping
+     * existed, so keep them in lockstep.
+     */
+    public static function scopedExternalId(OpenflowSource $source, string $submissionId): string
+    {
+        return sha1($source->normalizedBaseUrl().'|'.$source->form_id).'-'.$submissionId;
     }
 
     /**
