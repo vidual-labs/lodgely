@@ -26,9 +26,10 @@ class MetaAdsSource implements AdMetricsSource
      * Meta exposes many "lead-ish" action types. We sum across the ones that
      * are commonly used for lead generation and pixel/CAPI lead events, so
      * `platform_leads` lines up with what an operator would call a lead in
-     * Ads Manager.
+     * Ads Manager. Public because {@see MetaCreativeSource} counts leads the
+     * same way at ad/segment level.
      */
-    private const LEAD_ACTION_TYPES = [
+    public const LEAD_ACTION_TYPES = [
         'lead',
         'leadgen.other',
         'onsite_conversion.lead_grouped',

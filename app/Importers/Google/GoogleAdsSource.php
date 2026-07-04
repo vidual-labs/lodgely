@@ -5,7 +5,6 @@ namespace App\Importers\Google;
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\DTOs\AdMetricsSnapshot;
 use App\Models\AdPlatformSetting;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -21,6 +20,8 @@ use RuntimeException;
  */
 class GoogleAdsSource implements AdMetricsSource
 {
+    use RefreshesGoogleAccessToken;
+
     public function platform(): string
     {
         return 'google';
@@ -101,54 +102,6 @@ class GoogleAdsSource implements AdMetricsSource
 
             $pageToken = $json['nextPageToken'] ?? null;
         } while (! empty($pageToken));
-    }
-
-    /**
-     * Exchange the refresh token for a fresh access token. Cached for just
-     * under the 1 h Google validity window so each scheduled run reuses the
-     * same token instead of refreshing on every campaign page.
-     */
-    private function accessToken(AdPlatformSetting $settings, int $timeout): string
-    {
-        $clientId = trim($settings->effectiveGoogleClientId());
-        $clientSecret = trim($settings->effectiveGoogleClientSecret());
-        $refreshToken = trim($settings->effectiveGoogleRefreshToken());
-
-        if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
-            throw new RuntimeException(
-                'Google Ads source: OAuth client id, client secret and refresh token must all be set. Connect Google Ads in Settings → Ad platforms.'
-            );
-        }
-
-        $cacheKey = 'lodgely.google_ads.access_token.'.sha1($clientId.'|'.$refreshToken);
-
-        return Cache::remember($cacheKey, 3300, function () use ($clientId, $clientSecret, $refreshToken, $timeout) {
-            $response = Http::timeout($timeout)
-                ->retry(2, 500, throw: false)
-                ->asForm()
-                ->acceptJson()
-                ->post('https://oauth2.googleapis.com/token', [
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                    'refresh_token' => $refreshToken,
-                    'grant_type' => 'refresh_token',
-                ]);
-
-            if (! $response->successful()) {
-                throw new RuntimeException(sprintf(
-                    'Google OAuth token refresh failed (%d): %s',
-                    $response->status(),
-                    substr($response->body(), 0, 300),
-                ));
-            }
-
-            $token = $response->json('access_token');
-            if (! is_string($token) || $token === '') {
-                throw new RuntimeException('Google OAuth token refresh returned an unexpected payload shape.');
-            }
-
-            return $token;
-        });
     }
 
     private function toSnapshot(array $row, string $dateStr): AdMetricsSnapshot

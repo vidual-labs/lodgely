@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Reporting\Services\AdMetricsImporter;
+use App\Models\AdCreativeReport;
 use App\Models\AdSpendReport;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
@@ -68,7 +69,8 @@ class ReportingDataController extends Controller
     {
         abort_unless($request->user()?->isOperator(), 403);
 
-        $deleted = AdSpendReport::where('tenant_id', Tenant::DEFAULT_ID)->delete();
+        $deleted = AdSpendReport::where('tenant_id', Tenant::DEFAULT_ID)->delete()
+            + AdCreativeReport::where('tenant_id', Tenant::DEFAULT_ID)->delete();
 
         Log::info('lodgely.reporting.ad_metrics_purged', [
             'user_id' => $request->user()->id,

@@ -1,7 +1,7 @@
 {
     "name": "lodgely/lodgely",
     "type": "project",
-    "version": "0.43.2",
+    "version": "0.44.0",
     "description": "lodgely - an open-source lead intake hub. Collects, unifies and reviews leads from CSV, email, webhooks and manual sources.",
     "keywords": ["lodgely", "leads", "intake", "laravel", "livewire", "open-source"],
     "license": "GPL-3.0-only",

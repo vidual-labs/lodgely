@@ -6,18 +6,23 @@ use App\Domain\Ai\Contracts\LlmProvider;
 use App\Domain\Ai\Providers\OllamaProvider;
 use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Reporting\Contracts\AdMetricsSource;
+use App\Domain\Reporting\Contracts\CreativeMetricsSource;
 use App\Http\Middleware\EnsureAiEnabled;
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
 use App\Importers\Email\ImapLeadSource;
 use App\Importers\EmailMock\EmailMockLeadSource;
 use App\Importers\Google\GoogleAdsSource;
-use App\Importers\GoogleSheets\GoogleSheetsLeadSource;
+use App\Importers\Google\GoogleCreativeSource;
 use App\Importers\GoogleMock\GoogleMockAdMetricsSource;
+use App\Importers\GoogleMock\GoogleMockCreativeSource;
+use App\Importers\GoogleSheets\GoogleSheetsLeadSource;
 use App\Importers\Manual\ManualLeadSource;
 use App\Importers\Meta\MetaAdsSource;
+use App\Importers\Meta\MetaCreativeSource;
 use App\Importers\Meta\MetaLeadsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
+use App\Importers\MetaMock\MetaMockCreativeSource;
 use App\Importers\Openflow\OpenflowLeadSource;
 use App\Models\MailSetting;
 use Illuminate\Pagination\Paginator;
@@ -58,6 +63,20 @@ class AppServiceProvider extends ServiceProvider
     ];
 
     /**
+     * Creative-level metrics source adapters (top ads / keywords / segments),
+     * keyed by the same source keys as AD_METRICS_SOURCES so the operator's
+     * platform toggles govern both levels at once.
+     *
+     * @var array<string, class-string<CreativeMetricsSource>>
+     */
+    public const CREATIVE_METRICS_SOURCES = [
+        'meta_mock' => MetaMockCreativeSource::class,
+        'google_mock' => GoogleMockCreativeSource::class,
+        'meta' => MetaCreativeSource::class,
+        'google' => GoogleCreativeSource::class,
+    ];
+
+    /**
      * LLM provider adapters. Resolution from `ai_settings.provider` key.
      * Implementations must implement {@see LlmProvider}.
      *
@@ -75,6 +94,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         foreach (self::AD_METRICS_SOURCES as $class) {
+            $this->app->singleton($class);
+        }
+
+        foreach (self::CREATIVE_METRICS_SOURCES as $class) {
             $this->app->singleton($class);
         }
 

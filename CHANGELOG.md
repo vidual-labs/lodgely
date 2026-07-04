@@ -6,6 +6,21 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Creative performance overview on the reporting dashboard.** `/reporting`
+  now shows a "Creative performance" section with up to four lean top-5
+  tables: top ads and top age/gender segments from Meta, top keywords and top
+  ads from Google Ads — each ranked by spend with impressions, clicks, spend,
+  platform leads and CPL, and honoring the existing platform / client / date
+  filters. Creative rows land in a new `ad_creative_reports` table via
+  `CreativeMetricsSource` adapters (live Meta Marketing API + Google Ads GAQL,
+  plus deterministic demo mocks) that run inside the same daily scheduled pull
+  and "Fetch data now" button as the campaign metrics, keyed by the same
+  Settings → Ad platforms toggles. Aggregate metrics only — no PII; the demo
+  mock rows are purged the moment the matching live platform is connected, and
+  "Clear ad-metrics data" wipes creative rows too.
+
 ### Security
 
 - **CSV/NDJSON lead export now neutralizes formula injection.** Lead fields

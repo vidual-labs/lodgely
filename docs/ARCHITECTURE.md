@@ -15,8 +15,10 @@ app/
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
 │   │                        LeadIngestor, ImportRunner, LeadKpis
-│   ├── Reporting/           AdMetricsSource contract, AdMetricsSnapshot DTO,
-│   │                        MetricsIngestor, CampaignRollup,
+│   ├── Reporting/           AdMetricsSource + CreativeMetricsSource contracts,
+│   │                        AdMetricsSnapshot + CreativeMetricsSnapshot DTOs,
+│   │                        MetricsIngestor, CreativeMetricsIngestor,
+│   │                        CampaignRollup, CreativeRollup,
 │   │                        ClientViewDataBuilder, ReportEmailDispatcher,
 │   │                        ReportColumn enum
 │   ├── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
@@ -33,12 +35,17 @@ app/
 │   ├── Csv/                 CsvLeadSource adapter
 │   ├── Email/               ImapLeadSource + MailBodyParser
 │   ├── EmailMock/           EmailMockLeadSource adapter
-│   ├── Google/               GoogleAdsSource (live Google Ads REST API)
-│   ├── GoogleMock/          GoogleMockAdMetricsSource adapter
+│   ├── Google/               GoogleAdsSource + GoogleCreativeSource
+│   │                        (live Google Ads REST API: campaigns,
+│   │                        keywords, ads)
+│   ├── GoogleMock/          GoogleMockAdMetricsSource +
+│   │                        GoogleMockCreativeSource adapters
 │   ├── GoogleSheets/        GoogleSheetsClient (OAuth + Sheets v4 API)
-│   ├── Meta/                MetaAdsSource (live Meta Marketing API),
+│   ├── Meta/                MetaAdsSource + MetaCreativeSource (live Meta
+│   │                        Marketing API: campaigns, ads, segments),
 │   │                        MetaLeadsSource (live Meta Lead Ads import)
-│   ├── MetaMock/            MetaMockAdMetricsSource adapter
+│   ├── MetaMock/            MetaMockAdMetricsSource +
+│   │                        MetaMockCreativeSource adapters
 │   ├── Openflow/            OpenflowClient + OpenflowLeadSource (OpenFlow form pull)
 │   └── Manual/              ManualLeadSource adapter
 ├── Jobs/                    GenerateAiSummary, SendClientReportEmail
