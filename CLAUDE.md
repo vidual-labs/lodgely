@@ -51,6 +51,10 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   `/my-reports`) — ad-spend ingestion from Meta Marketing API + Google Ads
   REST API (with deterministic mock adapters), campaign rollups, KPI cards,
   inline-SVG trend charts, client reporting views, and scheduled report emails.
+  Also a **creative performance overview** on `/reporting`: top ads +
+  age/gender segments (Meta) and top keywords + ads (Google), stored in
+  `ad_creative_reports` via the `CreativeMetricsSource` adapter family and
+  fetched by the same daily pull / "Fetch data now" button.
 - **Ad platform / API connections** (`/settings/ad-platforms`,
   `AdPlatformSetting`) — Meta token + ad account, Google Ads one-click OAuth.
   Secrets encrypted at rest; env vars remain a fallback.
@@ -72,11 +76,15 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   normalization), `Reporting/` (ad metrics, rollups, report emails), `Ai/`
   (summaries, qualification). Importers/adapters live in `app/Importers/`.
   UI lives in `app/Livewire/` and `resources/views/`.
-- **`app/Importers/` holds two adapter families.** Lead-intake adapters
+- **`app/Importers/` holds three adapter families.** Lead-intake adapters
   implement `App\Importers\Contracts\LeadSource` (CSV, IMAP, Google Sheets,
   Meta Lead Ads, …); ad-metrics adapters implement
-  `App\Domain\Reporting\Contracts\AdMetricsSource` (Meta/Google live + mocks).
-  Both are tiny fetch-and-map classes — persistence is not their job.
+  `App\Domain\Reporting\Contracts\AdMetricsSource` (Meta/Google live + mocks);
+  creative-metrics adapters implement
+  `App\Domain\Reporting\Contracts\CreativeMetricsSource` (per-ad / keyword /
+  segment rows, registered in `AppServiceProvider::CREATIVE_METRICS_SOURCES`
+  under the same source keys as the ad-metrics family). All are tiny
+  fetch-and-map classes — persistence is not their job.
 - **New lead sources are adapters**, not new tables. Add a class implementing
   `LeadSource`, register it in `AppServiceProvider::IMPORTERS`, and hand
   `IncomingLead` DTOs to `LeadIngestor`. New ad-metrics sources register in

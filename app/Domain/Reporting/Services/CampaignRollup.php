@@ -177,9 +177,11 @@ class CampaignRollup
      * ad-side scoping at all), or an array (possibly empty: the client has leads
      * but none reference a campaign, so their ad metrics are legitimately zero).
      *
+     * Public because {@see CreativeRollup} scopes by the same convention.
+     *
      * @return list<string>|null
      */
-    private function campaignIdsForClient(int $tenantId, ?string $client): ?array
+    public function campaignIdsForClient(int $tenantId, ?string $client): ?array
     {
         if ($client === null || $client === '') {
             return null;

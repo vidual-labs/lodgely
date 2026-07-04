@@ -224,6 +224,61 @@
                 </table>
             </div>
         </div>
+
+        {{-- Creative performance overview: top ads + segments (Meta), top
+             keywords + ads (Google). Sections without data are omitted, so
+             this whole block disappears until a platform delivers
+             creative-level rows. --}}
+        @if(count($creativeSections))
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-2">{{ __('Creative performance') }}</h2>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    @foreach($creativeSections as $section)
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+                            <div class="px-3 py-2.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                {{ $section['title'] }}
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700/50 text-sm">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left">{{ $section['heading'] }}</th>
+                                            <th class="px-3 py-2 text-right">{{ __('Impressions') }}</th>
+                                            <th class="px-3 py-2 text-right">{{ __('Clicks') }}</th>
+                                            <th class="px-3 py-2 text-right">{{ __('Spend') }}</th>
+                                            <th class="px-3 py-2 text-right">{{ __('Leads') }}</th>
+                                            <th class="px-3 py-2 text-right">{{ __('CPL') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                        @foreach($section['rows'] as $row)
+                                            @php
+                                                $rowCpl = $row->platform_leads > 0
+                                                    ? \App\Support\Money::amount($row->spend_cents / $row->platform_leads / 100, $row->currency)
+                                                    : '—';
+                                            @endphp
+                                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                <td class="px-3 py-2 text-slate-800 dark:text-slate-200 max-w-[16rem]">
+                                                    <span class="block truncate" title="{{ $row->label }}">{{ $row->label }}</span>
+                                                    @if($row->campaign_name)
+                                                        <span class="block truncate text-xs text-slate-400 dark:text-slate-500" title="{{ $row->campaign_name }}">{{ $row->campaign_name }}</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->impressions) }}</td>
+                                                <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->clicks) }}</td>
+                                                <td class="px-3 py-2 text-right text-slate-800 dark:text-slate-200 tabular-nums font-medium">{{ \App\Support\Money::fromCents($row->spend_cents, $row->currency) }}</td>
+                                                <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ number_format($row->platform_leads) }}</td>
+                                                <td class="px-3 py-2 text-right text-slate-600 dark:text-slate-400 tabular-nums">{{ $rowCpl }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     @endif
 
     {{-- Lead source breakdown (always shown, from lodgely's own data) --}}

@@ -3,6 +3,8 @@
 namespace App\Domain\Reporting\Services;
 
 use App\Domain\Reporting\Contracts\AdMetricsSource;
+use App\Domain\Reporting\Contracts\CreativeMetricsSource;
+use App\Models\AdCreativeReport;
 use App\Models\AdPlatformSetting;
 use App\Models\AdSpendReport;
 use App\Providers\AppServiceProvider;
@@ -19,7 +21,10 @@ use App\Providers\AppServiceProvider;
  */
 class AdMetricsImporter
 {
-    public function __construct(private readonly MetricsIngestor $ingestor) {}
+    public function __construct(
+        private readonly MetricsIngestor $ingestor,
+        private readonly CreativeMetricsIngestor $creativeIngestor,
+    ) {}
 
     /**
      * @return array{inserted:int, updated:int, errors:list<string>, sources:int, days:int}
@@ -36,6 +41,7 @@ class AdMetricsImporter
         $this->purgeStaleMockRows($tenantId, AdPlatformSetting::activeSourceKeys($tenantId));
 
         $sources = $this->resolveSources($tenantId, $platform);
+        $creativeSources = $this->resolveCreativeSources($tenantId, $platform);
 
         $anchor = \DateTimeImmutable::createFromInterface($anchorDate);
 
@@ -49,6 +55,16 @@ class AdMetricsImporter
             foreach ($sources as $source) {
                 try {
                     $result = $this->ingestor->ingest($source->fetch($tenantId, $date), $tenantId);
+                    $inserted += $result['inserted'];
+                    $updated += $result['updated'];
+                } catch (\Throwable $e) {
+                    $errors[] = sprintf('[%s %s] %s', $source->label(), $date->format('Y-m-d'), $e->getMessage());
+                }
+            }
+
+            foreach ($creativeSources as $source) {
+                try {
+                    $result = $this->creativeIngestor->ingest($source->fetch($tenantId, $date), $tenantId);
                     $inserted += $result['inserted'];
                     $updated += $result['updated'];
                 } catch (\Throwable $e) {
@@ -95,6 +111,32 @@ class AdMetricsImporter
     }
 
     /**
+     * Same resolution rules as resolveSources(), for the creative-level
+     * adapters — the source keys are shared, so a platform toggled on in
+     * Settings → Ad platforms pulls both campaign and creative metrics.
+     *
+     * @return CreativeMetricsSource[]
+     */
+    public function resolveCreativeSources(int $tenantId, ?string $platform = null): array
+    {
+        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
+
+        $sources = [];
+
+        foreach (AppServiceProvider::CREATIVE_METRICS_SOURCES as $key => $class) {
+            if ($enabledKeys && ! in_array($key, $enabledKeys, true)) {
+                continue;
+            }
+            $source = app($class);
+            if (! $platform || $source->platform() === $platform) {
+                $sources[] = $source;
+            }
+        }
+
+        return $sources;
+    }
+
+    /**
      * Delete demo mock ad-spend rows for any platform that now has a live
      * adapter active (i.e. its `_mock` key was dropped from the active set).
      * Mock rows are tagged with `raw_payload.mock = true` by the mock adapters,
@@ -118,6 +160,12 @@ class AdMetricsImporter
         }
 
         AdSpendReport::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('platform', $livePlatforms)
+            ->where('raw_payload->mock', true)
+            ->delete();
+
+        AdCreativeReport::query()
             ->where('tenant_id', $tenantId)
             ->whereIn('platform', $livePlatforms)
             ->where('raw_payload->mock', true)
