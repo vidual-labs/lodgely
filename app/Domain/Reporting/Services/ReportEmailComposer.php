@@ -5,7 +5,6 @@ namespace App\Domain\Reporting\Services;
 use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Reporting\Enums\ReportColumn;
-use App\Models\AdSpendReport;
 use App\Models\AiSummary;
 use App\Models\ClientReportEmail;
 use App\Models\ClientReportingView;
@@ -100,7 +99,7 @@ class ReportEmailComposer
             'rows' => $rows,
             'totals' => $totals,
             'ai_summary' => $aiSummary,
-            'currency' => AdSpendReport::dominantCurrency((int) $email->tenant_id),
+            'currency' => $this->builder->dominantCurrencyForUser((int) $email->tenant_id, $recipient),
             'subject' => $this->renderSubject($email, $recipient, $period['label']),
         ];
     }

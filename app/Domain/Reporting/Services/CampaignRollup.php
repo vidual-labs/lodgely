@@ -37,7 +37,7 @@ class CampaignRollup
             ->where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
             ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
-            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
+            ->when($client, fn ($q) => $q->forClients([$client], $campaignIds ?? []))
             ->groupBy(['platform', 'campaign_id'])
             ->orderByDesc(DB::raw('SUM(spend_cents)'));
 
@@ -71,7 +71,7 @@ class CampaignRollup
         $query = AdSpendReport::where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
             ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
-            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds));
+            ->when($client, fn ($q) => $q->forClients([$client], $campaignIds ?? []));
 
         $agg = $query->selectRaw('
             COALESCE(SUM(spend_cents), 0)    as total_spend_cents,
@@ -92,7 +92,7 @@ class CampaignRollup
             'total_impressions' => (int) ($agg->total_impressions ?? 0),
             'total_platform_leads' => (int) ($agg->total_platform_leads ?? 0),
             'total_lodgely_leads' => $lodgelyLeads,
-            'currency' => AdSpendReport::dominantCurrency($tenantId, $from, $to, $platform, $campaignIds),
+            'currency' => AdSpendReport::dominantCurrency($tenantId, $from, $to, $platform, $campaignIds, $client !== null && $client !== '' ? [$client] : null),
             'has_data' => ((int) ($agg->row_count ?? 0)) > 0,
         ];
     }
@@ -119,7 +119,7 @@ class CampaignRollup
             ->where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
             ->when($platform && $platform !== 'all', fn ($q) => $q->where('platform', $platform))
-            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
+            ->when($client, fn ($q) => $q->forClients([$client], $campaignIds ?? []))
             ->groupBy('date');
 
         $adByDay = $query->get()->keyBy(

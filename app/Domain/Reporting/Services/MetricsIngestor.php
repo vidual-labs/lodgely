@@ -19,12 +19,16 @@ class MetricsIngestor
         $updated  = 0;
 
         foreach ($snapshots as $snap) {
-            $existing = AdSpendReport::where([
-                'tenant_id'   => $tenantId,
-                'platform'    => $snap->platform,
-                'date'        => $snap->date,
-                'campaign_id' => $snap->campaignId,
-            ])->first();
+            $existing = AdSpendReport::where('tenant_id', $tenantId)
+                ->where('platform', $snap->platform)
+                ->where('date', $snap->date)
+                ->where('campaign_id', $snap->campaignId)
+                ->when(
+                    $snap->clientName === null,
+                    fn ($q) => $q->whereNull('client_name'),
+                    fn ($q) => $q->where('client_name', $snap->clientName),
+                )
+                ->first();
 
             if ($existing) {
                 $existing->update([
@@ -41,6 +45,7 @@ class MetricsIngestor
             } else {
                 AdSpendReport::create([
                     'tenant_id'      => $tenantId,
+                    'client_name'    => $snap->clientName,
                     'platform'       => $snap->platform,
                     'date'           => $snap->date,
                     'campaign_id'    => $snap->campaignId,

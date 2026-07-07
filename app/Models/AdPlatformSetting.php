@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
 
 /**
- * Per-tenant Meta Ads + Google Ads API credentials. One row per tenant.
- * Always resolve via forTenant() (creates a default row) for UI/admin
- * contexts, or resolveSafe() (read-only, never writes, survives a missing
- * table) from the import adapters.
+ * Meta Ads + Google Ads API credentials, one row per tenant *connector*.
+ * `client_name === null` is the original single "default" connector (shared
+ * across the tenant); a row with `client_name` set is a connector assigned
+ * to one client, so an operator can run separate Meta/Google ad accounts per
+ * client. Always resolve the default via forTenant() (creates it) for
+ * UI/admin contexts, or resolveSafe() (read-only, never writes, survives a
+ * missing table) from the import adapters.
  *
  * Secret columns hold Laravel-encrypted ciphertext and are never
  * re-displayed. The effective* getters resolve the live value: the stored
@@ -23,6 +27,7 @@ class AdPlatformSetting extends Model
 
     protected $fillable = [
         'tenant_id',
+        'client_name',
         'meta_enabled',
         'meta_ad_account_id',
         'meta_currency',
@@ -53,7 +58,13 @@ class AdPlatformSetting extends Model
 
     public static function forTenant(int $tenantId): self
     {
-        return self::firstOrCreate(['tenant_id' => $tenantId]);
+        return self::firstOrCreate(['tenant_id' => $tenantId, 'client_name' => null]);
+    }
+
+    /** Fetch (or create) the connector assigned to a specific client. */
+    public static function forClient(int $tenantId, string $clientName): self
+    {
+        return self::firstOrCreate(['tenant_id' => $tenantId, 'client_name' => $clientName]);
     }
 
     /**
@@ -61,13 +72,60 @@ class AdPlatformSetting extends Model
      * never throws if the table doesn't exist yet (e.g. unit tests that skip
      * migrations) — callers fall back to env config via the effective* getters.
      */
-    public static function resolveSafe(int $tenantId): self
+    public static function resolveSafe(int $tenantId, ?string $clientName = null): self
     {
         try {
-            return self::query()->firstWhere('tenant_id', $tenantId) ?? new self();
+            return self::query()
+                ->where('tenant_id', $tenantId)
+                ->where(function ($q) use ($clientName) {
+                    $clientName === null ? $q->whereNull('client_name') : $q->where('client_name', $clientName);
+                })
+                ->first() ?? new self();
         } catch (\Throwable) {
             return new self();
         }
+    }
+
+    /**
+     * Every connector row configured for a tenant — the default (client_name
+     * null) first, then per-client ones alphabetically. Used to render the
+     * connectors list and to resolve which credentials a fetch should run
+     * against.
+     *
+     * @return Collection<int, self>
+     */
+    public static function connectorsForTenant(int $tenantId): Collection
+    {
+        try {
+            return self::query()
+                ->where('tenant_id', $tenantId)
+                ->orderByRaw('client_name IS NOT NULL')
+                ->orderBy('client_name')
+                ->get();
+        } catch (\Throwable) {
+            return new Collection();
+        }
+    }
+
+    /**
+     * Connectors with the given platform toggled on, for the live fetch
+     * pipeline. Falls back to a single synthetic (unsaved) connector when
+     * nothing is toggled on in the UI, so pure env-var installs keep working
+     * exactly as before multi-connector support existed.
+     *
+     * @return list<self>
+     */
+    public static function activeConnectorsForPlatform(int $tenantId, string $platform): array
+    {
+        $column = $platform.'_enabled';
+
+        try {
+            $rows = self::query()->where('tenant_id', $tenantId)->where($column, true)->get();
+        } catch (\Throwable) {
+            $rows = new Collection();
+        }
+
+        return $rows->isEmpty() ? [new self()] : $rows->all();
     }
 
     private static function decrypt(?string $cipher): ?string
@@ -229,14 +287,20 @@ class AdPlatformSetting extends Model
             (array) config('lodgely.reporting.sources', []),
         )));
 
-        $row = self::resolveSafe($tenantId);
+        try {
+            $metaEnabled = self::query()->where('tenant_id', $tenantId)->where('meta_enabled', true)->exists();
+            $googleEnabled = self::query()->where('tenant_id', $tenantId)->where('google_enabled', true)->exists();
+        } catch (\Throwable) {
+            $metaEnabled = false;
+            $googleEnabled = false;
+        }
 
         $liveConnected = false;
-        if ($row->meta_enabled) {
+        if ($metaEnabled) {
             $keys[] = 'meta';
             $liveConnected = true;
         }
-        if ($row->google_enabled) {
+        if ($googleEnabled) {
             $keys[] = 'google';
             $liveConnected = true;
         }

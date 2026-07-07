@@ -25,6 +25,8 @@ class GoogleAdsOAuthController extends Controller
 {
     private const STATE_SESSION_KEY = 'google_ads_oauth_state';
 
+    private const CONNECTOR_SESSION_KEY = 'google_ads_oauth_connector_id';
+
     private const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -35,16 +37,18 @@ class GoogleAdsOAuthController extends Controller
     {
         abort_unless($request->user()?->isOperator(), 403);
 
-        $settings = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+        $settings = $this->resolveConnector($request);
+        $redirectRoute = $this->redirectRoute($settings);
         $clientId = trim($settings->effectiveGoogleClientId());
 
         if ($clientId === '' || trim($settings->effectiveGoogleClientSecret()) === '') {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', __('Save your Google Ads client ID and secret first, then connect.'));
         }
 
         $state = Str::random(40);
         $request->session()->put(self::STATE_SESSION_KEY, $state);
+        $request->session()->put(self::CONNECTOR_SESSION_KEY, $settings->exists ? $settings->id : null);
 
         $params = [
             'response_type' => 'code',
@@ -64,26 +68,31 @@ class GoogleAdsOAuthController extends Controller
     {
         abort_unless($request->user()?->isOperator(), 403);
 
+        $connectorId = $request->session()->pull(self::CONNECTOR_SESSION_KEY);
+        $settings = $connectorId
+            ? (AdPlatformSetting::query()->where('tenant_id', Tenant::DEFAULT_ID)->find($connectorId) ?? AdPlatformSetting::forTenant(Tenant::DEFAULT_ID))
+            : AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+        $redirectRoute = $this->redirectRoute($settings);
+
         $expectedState = $request->session()->pull(self::STATE_SESSION_KEY);
         $receivedState = (string) $request->query('state', '');
 
         if ($expectedState === null || $expectedState === '' || ! hash_equals($expectedState, $receivedState)) {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', __('OAuth state mismatch. Restart the authorize flow from the beginning.'));
         }
 
         if ($error = $request->query('error')) {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', __('Google returned an error: :error', ['error' => (string) $error]));
         }
 
         $code = (string) $request->query('code', '');
         if ($code === '') {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', __('Google did not return an authorization code.'));
         }
 
-        $settings = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
         $clientId = trim($settings->effectiveGoogleClientId());
         $clientSecret = trim($settings->effectiveGoogleClientSecret());
         $timeout = (int) config('lodgely.reporting.http_timeout_sec', 30);
@@ -102,18 +111,18 @@ class GoogleAdsOAuthController extends Controller
                 ]);
 
             if (! $response->successful()) {
-                return redirect()->route('settings.ad-platforms')
+                return redirect()->to($redirectRoute)
                     ->with('oauth_error', __('Google OAuth code exchange failed (:status).', ['status' => $response->status()]));
             }
 
             $refreshToken = $response->json('refresh_token');
         } catch (Throwable $e) {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', $e->getMessage());
         }
 
         if (! is_string($refreshToken) || $refreshToken === '') {
-            return redirect()->route('settings.ad-platforms')
+            return redirect()->to($redirectRoute)
                 ->with('oauth_error', __('Google did not return a refresh token. Revoke access at https://myaccount.google.com/permissions and try again.'));
         }
 
@@ -124,8 +133,34 @@ class GoogleAdsOAuthController extends Controller
         // immediately (matches the cache key GoogleAdsSource uses).
         Cache::forget('lodgely.google_ads.access_token.'.sha1($clientId.'|'.$refreshToken));
 
-        return redirect()->route('settings.ad-platforms')
+        return redirect()->to($redirectRoute)
             ->with('oauth_success', __('Google Ads connected successfully.'));
+    }
+
+    /** Resolve which connector this request is acting on: ?connector=<id> or the tenant default. */
+    private function resolveConnector(Request $request): AdPlatformSetting
+    {
+        $connectorId = $request->query('connector');
+
+        if ($connectorId) {
+            $connector = AdPlatformSetting::query()
+                ->where('tenant_id', Tenant::DEFAULT_ID)
+                ->find($connectorId);
+
+            if ($connector && $connector->client_name !== null) {
+                return $connector;
+            }
+        }
+
+        return AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+    }
+
+    /** Send the operator back to the right settings page: the connector edit page, or the main ad-platforms page for the default. */
+    private function redirectRoute(AdPlatformSetting $settings): string
+    {
+        return $settings->client_name !== null
+            ? route('settings.ad-platforms.connectors.edit', $settings)
+            : route('settings.ad-platforms');
     }
 
     private function redirectUri(): string

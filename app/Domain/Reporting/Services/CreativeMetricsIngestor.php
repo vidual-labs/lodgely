@@ -33,13 +33,17 @@ class CreativeMetricsIngestor
                 'raw_payload' => $snap->rawPayload,
             ];
 
-            $existing = AdCreativeReport::where([
-                'tenant_id' => $tenantId,
-                'platform' => $snap->platform,
-                'date' => $snap->date,
-                'dimension' => $snap->dimension,
-                'external_id' => $snap->externalId,
-            ])->first();
+            $existing = AdCreativeReport::where('tenant_id', $tenantId)
+                ->where('platform', $snap->platform)
+                ->where('date', $snap->date)
+                ->where('dimension', $snap->dimension)
+                ->where('external_id', $snap->externalId)
+                ->when(
+                    $snap->clientName === null,
+                    fn ($q) => $q->whereNull('client_name'),
+                    fn ($q) => $q->where('client_name', $snap->clientName),
+                )
+                ->first();
 
             if ($existing) {
                 $existing->update($values);
@@ -47,6 +51,7 @@ class CreativeMetricsIngestor
             } else {
                 AdCreativeReport::create($values + [
                     'tenant_id' => $tenantId,
+                    'client_name' => $snap->clientName,
                     'platform' => $snap->platform,
                     'date' => $snap->date,
                     'dimension' => $snap->dimension,

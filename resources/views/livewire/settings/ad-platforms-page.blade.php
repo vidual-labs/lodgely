@@ -28,6 +28,14 @@
         <div class="rounded-lg px-3 py-2 text-sm bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">{{ $oauthError }}</div>
     @endif
 
+    {{-- Connector CRUD flashes (native form → controller → redirect, see AdPlatformConnectorController) --}}
+    @if(session('connectorNotice'))
+        <div class="rounded-lg px-3 py-2 text-sm bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">{{ session('connectorNotice') }}</div>
+    @endif
+    @if(session('connectorError'))
+        <div class="rounded-lg px-3 py-2 text-sm bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">{{ session('connectorError') }}</div>
+    @endif
+
     <form wire:submit.prevent="save" class="space-y-6">
 
         {{-- ============ META ADS ============ --}}
@@ -230,4 +238,48 @@
             <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('Daily pull runs at 05:00. Use') }} <code class="font-mono text-xs">lodgely:import:ad-metrics --days=30</code> {{ __('to backfill.') }}</p>
         </div>
     </form>
+
+    {{-- ============ CLIENT CONNECTORS ============ --}}
+    <section id="connectors" class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
+        <div class="px-5 py-4">
+            <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ __('Client connectors') }}</h2>
+            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {{ __('Running separate Meta / Google Ads accounts per client? Add a dedicated connector here and assign it to one client — their ad spend is then reported to them alone, instead of the shared default above.') }}
+            </p>
+        </div>
+
+        @if($connectors->isNotEmpty())
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                @foreach($connectors as $connector)
+                    <li class="px-5 py-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ $connector->client_name }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-3">
+                                <span class="{{ $connector->isMetaConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Meta:') }} {{ $connector->isMetaConnected() ? __('configured') : __('not configured') }}</span>
+                                <span class="{{ $connector->isGoogleConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Google:') }} {{ $connector->isGoogleConnected() ? __('connected') : __('not connected') }}</span>
+                            </p>
+                        </div>
+                        <a href="{{ route('settings.ad-platforms.connectors.edit', $connector) }}"
+                           class="shrink-0 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            {{ __('Edit') }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+
+        <div class="px-5 py-4">
+            <form method="POST" action="{{ route('settings.ad-platforms.connectors.store') }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                <div class="flex-1 min-w-[200px]">
+                    <label class="{{ $labelClass }}">{{ __('Client name') }}</label>
+                    <input type="text" name="client_name" required autocomplete="off"
+                           placeholder="{{ __('e.g. Acme Roofing') }}" class="{{ $inputClass }}">
+                </div>
+                <button type="submit" class="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    {{ __('Add connector') }}
+                </button>
+            </form>
+        </div>
+    </section>
 </div>

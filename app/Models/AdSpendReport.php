@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class AdSpendReport extends Model
 {
     protected $fillable = [
-        'tenant_id', 'platform', 'date', 'campaign_id', 'campaign_name',
+        'tenant_id', 'client_name', 'platform', 'date', 'campaign_id', 'campaign_name',
         'impressions', 'clicks', 'spend_cents', 'currency', 'reach',
         'platform_leads', 'raw_payload',
     ];
@@ -35,13 +36,44 @@ class AdSpendReport extends Model
     }
 
     /**
+     * Scope to a client's ad spend: rows tagged with a matching client_name
+     * (fetched via a connector assigned directly to them), OR untagged rows
+     * (the shared/default connector) whose campaign_id appears among that
+     * client's leads — the same campaign-attribution heuristic
+     * {@see \App\Domain\Reporting\Services\CampaignRollup} has always used.
+     *
+     * @param  string[]  $clientNames
+     * @param  list<string>  $campaignIds
+     */
+    public function scopeForClients(Builder $query, array $clientNames, array $campaignIds = []): Builder
+    {
+        $lowerNames = array_map(static fn ($n) => mb_strtolower((string) $n), $clientNames);
+
+        return $query->where(function (Builder $q) use ($lowerNames, $campaignIds) {
+            if ($lowerNames !== []) {
+                $q->whereIn(DB::raw('LOWER(client_name)'), $lowerNames);
+            }
+
+            if ($campaignIds !== []) {
+                $q->orWhere(function (Builder $q2) use ($campaignIds) {
+                    $q2->whereNull('client_name')->whereIn('campaign_id', $campaignIds);
+                });
+            }
+
+            if ($lowerNames === [] && $campaignIds === []) {
+                $q->whereRaw('1 = 0');
+            }
+        });
+    }
+
+    /**
      * The currency to display a tenant's reporting in. Ad accounts report spend
      * in their own currency, so we pick the currency carrying the most spend in
      * the window (handles a tenant running, say, Meta in EUR and Google in USD),
      * and fall back to the configured Meta currency when there's no data yet.
-     */
-    /**
-     * @param  list<string>|null  $campaignIds  scope to these campaigns (null = no scoping)
+     *
+     * @param  list<string>|null  $campaignIds  legacy campaign-attribution scoping (null = no scoping)
+     * @param  string[]|null  $clientNames  direct client_name scoping, combined with $campaignIds via scopeForClients()
      */
     public static function dominantCurrency(
         int $tenantId,
@@ -49,6 +81,7 @@ class AdSpendReport extends Model
         ?string $to = null,
         ?string $platform = null,
         ?array $campaignIds = null,
+        ?array $clientNames = null,
     ): string {
         $query = static::query()->where('tenant_id', $tenantId);
 
@@ -60,7 +93,9 @@ class AdSpendReport extends Model
             $query->where('platform', $platform);
         }
 
-        if ($campaignIds !== null) {
+        if ($clientNames !== null) {
+            $query->forClients($clientNames, $campaignIds ?? []);
+        } elseif ($campaignIds !== null) {
             $query->whereIn('campaign_id', $campaignIds);
         }
 

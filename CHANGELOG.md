@@ -8,6 +8,30 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Multiple Meta/Google Ads connectors, assignable per client.** Previously
+  an install could only configure one Meta account and one Google Ads
+  account, shared by the whole tenant. `/settings/ad-platforms` now has a
+  "Client connectors" section: an operator can add a dedicated connector
+  (its own ad account, access token / OAuth) and assign it to a specific
+  client by name. Ad spend and creative rows fetched from that connector are
+  tagged with the client and shown to them alone on `/my-reports` and
+  scheduled report emails, instead of the shared default connector's
+  tenant-wide data. Managed via a native form → controller flow (like the
+  backup page), not Livewire, per the established pattern for dynamic
+  add/remove lists. The daily scheduled pull and "Fetch data now" button
+  automatically loop over every enabled connector per platform.
+
+### Fixed
+
+- **Client-facing `/my-reports` no longer shows every client the same ad
+  spend.** `ClientViewDataBuilder` queried `ad_spend_reports` scoped only to
+  the tenant, so every client assigned to a reporting view saw identical ad
+  metrics regardless of whose campaigns they actually owned. Ad spend is now
+  scoped to the viewer: directly, for spend tagged with their client_name via
+  a dedicated connector, and via the existing campaign-attribution heuristic
+  for the shared default connector's data — mirroring how the operator
+  `/reporting` page's client filter has always worked.
+
 - **Creative performance overview on the reporting dashboard.** `/reporting`
   now shows a "Creative performance" section with up to four lean top-5
   tables: top ads and top age/gender segments from Meta, top keywords and top

@@ -150,21 +150,26 @@ class AdPlatformsPage extends Component
     public function testMeta(): void
     {
         $this->guardOperator();
-        $this->metaTestResult = $this->runTest(new MetaAdsSource());
+        $this->metaTestResult = $this->runTest(new MetaAdsSource(), AdPlatformSetting::forTenant(Tenant::DEFAULT_ID));
     }
 
     public function testGoogle(): void
     {
         $this->guardOperator();
-        $this->googleTestResult = $this->runTest(new GoogleAdsSource());
+        $this->googleTestResult = $this->runTest(new GoogleAdsSource(), AdPlatformSetting::forTenant(Tenant::DEFAULT_ID));
     }
 
-    /** Pulls yesterday's metrics against the saved credentials and reports the outcome. */
-    private function runTest(\App\Domain\Reporting\Contracts\AdMetricsSource $source): string
+    /**
+     * Pulls yesterday's metrics against the saved credentials and reports the
+     * outcome. Calls fetchOne() directly (bypassing the enabled toggle, which
+     * only gates the scheduled fetch) so an operator can test a connection
+     * before deciding to switch on the daily pull.
+     */
+    private function runTest(MetaAdsSource|GoogleAdsSource $source, AdPlatformSetting $settings): string
     {
         try {
             $date = new \DateTimeImmutable('yesterday');
-            $snapshots = iterator_to_array($source->fetch(Tenant::DEFAULT_ID, $date));
+            $snapshots = iterator_to_array($source->fetchOne($settings, $date));
 
             return 'success:'.__(':count campaign(s) returned for :date.', [
                 'count' => count($snapshots),
@@ -180,6 +185,9 @@ class AdPlatformsPage extends Component
         $row = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
         $appUrl = rtrim((string) config('app.url'), '/');
 
+        $connectors = AdPlatformSetting::connectorsForTenant(Tenant::DEFAULT_ID)
+            ->filter(fn (AdPlatformSetting $c) => $c->client_name !== null);
+
         return view('livewire.settings.ad-platforms-page', [
             'isMetaConnected'   => $row->isMetaConnected(),
             'isGoogleConnected' => $row->isGoogleConnected(),
@@ -188,6 +196,7 @@ class AdPlatformsPage extends Component
             'appUrlIsHttps'     => str_starts_with($appUrl, 'https://'),
             'oauthSuccess'      => session('oauth_success'),
             'oauthError'        => session('oauth_error'),
+            'connectors'        => $connectors,
         ]);
     }
 
