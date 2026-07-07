@@ -113,6 +113,16 @@ class CreativePerformanceTest extends TestCase
         ]);
         $debug .= 'found_array_form='.($arrayForm->exists() ? 'YES' : 'NO')."\n";
 
+        $columns = \DB::select("PRAGMA table_info('ad_creative_reports')");
+        foreach ($columns as $col) {
+            if ($col->name === 'date') {
+                $debug .= 'date_column_type='.var_export($col->type, true)."\n";
+            }
+        }
+
+        $createSql = \DB::selectOne("SELECT sql FROM sqlite_master WHERE type='table' AND name='ad_creative_reports'");
+        $debug .= 'create_sql='.($createSql->sql ?? 'null')."\n";
+
         $this->fail($debug);
     }
 
