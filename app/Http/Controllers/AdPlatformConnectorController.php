@@ -78,6 +78,8 @@ class AdPlatformConnectorController extends Controller
         $this->guardOwnsConnector($connector);
 
         $data = $request->validate([
+            'internal_label' => ['nullable', 'string', 'max:255'],
+
             'meta_enabled' => ['boolean'],
             'meta_ad_account_id' => ['nullable', 'string', 'max:64'],
             'meta_currency' => ['nullable', 'string', 'max:8'],
@@ -92,6 +94,8 @@ class AdPlatformConnectorController extends Controller
             'google_client_secret' => ['nullable', 'string', 'max:255'],
             'google_developer_token' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $connector->internal_label = trim((string) ($data['internal_label'] ?? '')) ?: null;
 
         $connector->meta_enabled = (bool) ($data['meta_enabled'] ?? false);
         $connector->meta_ad_account_id = trim((string) ($data['meta_ad_account_id'] ?? ''));
@@ -149,6 +153,104 @@ class AdPlatformConnectorController extends Controller
 
         return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
             ->with('connectorNotice', __('Disconnected from Google Ads.'));
+    }
+
+    /**
+     * Set (or clear) this connector's Meta brand filter. Always resolves the
+     * typed Page id against the Graph API and shows the resolved name back
+     * before saving — the id is what's actually matched against at fetch
+     * time, the name is only ever cached for display.
+     */
+    public function resolveMetaPage(Request $request, AdPlatformSetting $connector): RedirectResponse
+    {
+        $this->guardOperator($request);
+        $this->guardOwnsConnector($connector);
+
+        $pageId = trim((string) $request->input('meta_page_id'));
+
+        if ($pageId === '') {
+            $connector->meta_page_id = null;
+            $connector->meta_page_name = null;
+            $connector->save();
+
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorNotice', __('Meta brand filter cleared — this connector now covers the whole ad account.'));
+        }
+
+        $token = trim($connector->effectiveMetaAccessToken());
+        $apiVer = trim($connector->effectiveMetaApiVersion());
+        $timeout = (int) config('lodgely.reporting.http_timeout_sec', 30);
+
+        if ($token === '') {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('Save a Meta access token first, then set the brand filter.'));
+        }
+
+        try {
+            $name = (new MetaAdsSource())->resolvePageName($pageId, $token, $apiVer, $timeout);
+        } catch (\Throwable $e) {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('Could not resolve that Page id: :error', ['error' => $e->getMessage()]));
+        }
+
+        if ($name === null) {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('No Page found for id ":id". Double-check the id and try again.', ['id' => $pageId]));
+        }
+
+        $connector->meta_page_id = $pageId;
+        $connector->meta_page_name = $name;
+        $connector->save();
+
+        return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+            ->with('connectorNotice', __('Brand filter set: only ads published as ":name" (Page :id) will be included.', ['name' => $name, 'id' => $pageId]));
+    }
+
+    /**
+     * Set (or clear) this connector's Google Business Name asset filter.
+     * Same resolve-then-save flow as the Meta Page filter.
+     */
+    public function resolveGoogleBusinessName(Request $request, AdPlatformSetting $connector): RedirectResponse
+    {
+        $this->guardOperator($request);
+        $this->guardOwnsConnector($connector);
+
+        $assetId = trim((string) $request->input('google_business_name_asset_id'));
+
+        if ($assetId === '') {
+            $connector->google_business_name_asset_id = null;
+            $connector->google_business_name_asset_name = null;
+            $connector->save();
+
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorNotice', __('Google brand filter cleared — this connector now covers the whole ad account.'));
+        }
+
+        $timeout = (int) config('lodgely.reporting.http_timeout_sec', 30);
+
+        if (trim($connector->effectiveGoogleDeveloperToken()) === '' || trim($connector->effectiveGoogleRefreshToken()) === '') {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('Connect Google Ads first, then set the brand filter.'));
+        }
+
+        try {
+            $name = (new GoogleAdsSource())->resolveBusinessNameAssetName($connector, $assetId, $timeout);
+        } catch (\Throwable $e) {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('Could not resolve that asset id: :error', ['error' => $e->getMessage()]));
+        }
+
+        if ($name === null) {
+            return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+                ->with('connectorError', __('No Business Name asset found for id ":id". Double-check the id and try again.', ['id' => $assetId]));
+        }
+
+        $connector->google_business_name_asset_id = $assetId;
+        $connector->google_business_name_asset_name = $name;
+        $connector->save();
+
+        return redirect()->route('settings.ad-platforms.connectors.edit', $connector)
+            ->with('connectorNotice', __('Brand filter set: only campaigns using the ":name" business name asset will be included.', ['name' => $name]));
     }
 
     public function test(Request $request, AdPlatformSetting $connector, string $platform): RedirectResponse

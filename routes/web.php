@@ -123,6 +123,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/settings/ad-platforms/connectors/{connector}', [AdPlatformConnectorController::class, 'destroy'])->name('settings.ad-platforms.connectors.destroy');
     Route::post('/settings/ad-platforms/connectors/{connector}/google/disconnect', [AdPlatformConnectorController::class, 'disconnectGoogle'])->name('settings.ad-platforms.connectors.google.disconnect');
     Route::post('/settings/ad-platforms/connectors/{connector}/test/{platform}', [AdPlatformConnectorController::class, 'test'])->name('settings.ad-platforms.connectors.test');
+    Route::post('/settings/ad-platforms/connectors/{connector}/meta/page-filter', [AdPlatformConnectorController::class, 'resolveMetaPage'])->name('settings.ad-platforms.connectors.meta.page-filter');
+    Route::post('/settings/ad-platforms/connectors/{connector}/google/business-name-filter', [AdPlatformConnectorController::class, 'resolveGoogleBusinessName'])->name('settings.ad-platforms.connectors.google.business-name-filter');
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
 

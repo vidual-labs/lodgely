@@ -8,6 +8,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Per-connector brand filtering for shared Meta/Google Ads accounts.** A
+  client connector can now be scoped to one brand within an ad account that
+  actually serves several — e.g. two businesses sharing one Google Ads or
+  Meta account. Google connectors match by a Business Name asset's id
+  (Performance Max / Demand Gen); Meta connectors match by the Facebook
+  Page id each ad publishes as. Matching is always by the platform's
+  permanent id, never the customer-facing name, since Page/asset text can
+  be edited later by whoever manages the account. The connector edit page
+  has a "Resolve & save" action per platform: typing an id and resolving it
+  shows the current name back before saving, so an operator can confirm
+  they've got the right one. Also added an optional, purely cosmetic
+  "internal label" per connector (never sent to Meta/Google) so the
+  connectors list stays easy to tell apart. Meta's page filter fetches at
+  ad level and aggregates back up to campaign_id, since Meta only exposes
+  the publishing Page per ad, not per campaign.
+
 - **Multiple Meta/Google Ads connectors, assignable per client.** Previously
   an install could only configure one Meta account and one Google Ads
   account, shared by the whole tenant. `/settings/ad-platforms` now has a

@@ -28,11 +28,14 @@ class AdPlatformSetting extends Model
     protected $fillable = [
         'tenant_id',
         'client_name',
+        'internal_label',
         'meta_enabled',
         'meta_ad_account_id',
         'meta_currency',
         'meta_api_version',
         'meta_access_token_encrypted',
+        'meta_page_id',
+        'meta_page_name',
         'google_enabled',
         'google_customer_id',
         'google_login_customer_id',
@@ -41,6 +44,8 @@ class AdPlatformSetting extends Model
         'google_client_secret_encrypted',
         'google_refresh_token_encrypted',
         'google_developer_token_encrypted',
+        'google_business_name_asset_id',
+        'google_business_name_asset_name',
     ];
 
     protected function casts(): array
@@ -265,6 +270,23 @@ class AdPlatformSetting extends Model
             && $this->effectiveGoogleRefreshToken() !== ''
             && $this->effectiveGoogleDeveloperToken() !== ''
             && $this->effectiveGoogleCustomerId() !== '';
+    }
+
+    /**
+     * True when this connector is scoped to one brand within a shared ad
+     * account (e.g. two businesses running Meta ads from a single account),
+     * rather than the whole account. Matching is always by the platform's
+     * permanent ID (Page ID / asset ID), never the customer-facing name —
+     * see the migration that added these columns.
+     */
+    public function hasMetaPageFilter(): bool
+    {
+        return trim((string) $this->meta_page_id) !== '';
+    }
+
+    public function hasGoogleBusinessNameFilter(): bool
+    {
+        return trim((string) $this->google_business_name_asset_id) !== '';
     }
 
     /**

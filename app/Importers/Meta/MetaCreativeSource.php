@@ -21,6 +21,8 @@ use RuntimeException;
  */
 class MetaCreativeSource implements CreativeMetricsSource
 {
+    use ResolvesMetaPageFilter;
+
     public function platform(): string
     {
         return 'meta';
@@ -57,6 +59,15 @@ class MetaCreativeSource implements CreativeMetricsSource
         $dateStr = $date->format('Y-m-d');
         $url = sprintf('https://graph.facebook.com/%s/%s/insights', $apiVer, $accountPath);
 
+        // Meta only exposes the publishing Page per *ad*, so a page filter
+        // means dropping non-matching ads from pass 1 and restricting pass
+        // 2's account-wide segment breakdown to just those ads' ids.
+        $adIds = $this->matchingAdIds($settings, $accountPath, $token, $apiVer, $timeout);
+        if ($adIds !== null && $adIds === []) {
+            return; // Filter set, but no ad in this account publishes as that Page.
+        }
+        $matchingAdIds = $adIds !== null ? array_flip($adIds) : null;
+
         $base = [
             'time_range' => json_encode(['since' => $dateStr, 'until' => $dateStr]),
             'time_increment' => 1,
@@ -70,7 +81,7 @@ class MetaCreativeSource implements CreativeMetricsSource
             'fields' => 'ad_id,ad_name,campaign_id,campaign_name,impressions,clicks,spend,actions',
         ], $timeout) as $row) {
             $adId = (string) ($row['ad_id'] ?? '');
-            if ($adId === '') {
+            if ($adId === '' || ($matchingAdIds !== null && ! isset($matchingAdIds[$adId]))) {
                 continue;
             }
 
@@ -85,12 +96,13 @@ class MetaCreativeSource implements CreativeMetricsSource
             );
         }
 
-        // Pass 2: account-level age × gender segments.
+        // Pass 2: account-level age × gender segments, restricted to the
+        // filtered ads' ids when a page filter is set.
         foreach ($this->rows($url, $base + [
             'level' => 'account',
             'fields' => 'impressions,clicks,spend,actions',
             'breakdowns' => 'age,gender',
-        ], $timeout) as $row) {
+        ] + ($adIds !== null ? ['filtering' => json_encode([['field' => 'ad.id', 'operator' => 'IN', 'value' => $adIds]])] : []), $timeout) as $row) {
             $age = (string) ($row['age'] ?? 'unknown');
             $gender = (string) ($row['gender'] ?? 'unknown');
 

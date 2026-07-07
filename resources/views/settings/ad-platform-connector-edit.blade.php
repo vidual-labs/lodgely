@@ -46,6 +46,13 @@
         <form method="POST" action="{{ route('settings.ad-platforms.connectors.update', $connector) }}" class="space-y-6">
             @csrf
 
+            <div>
+                <label class="{{ $labelClass }}">{{ __('Internal label') }} <span class="text-slate-400 font-normal">{{ __('— optional, for your reference only') }}</span></label>
+                <input type="text" name="internal_label" value="{{ old('internal_label', $connector->internal_label) }}" autocomplete="off"
+                       placeholder="{{ __('e.g. Acme — Brand A') }}" class="{{ $inputClass }} max-w-sm">
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ __('Never sent to Meta or Google, never used for matching — purely to help you tell connectors apart in the list.') }}</p>
+            </div>
+
             {{-- ============ META ADS ============ --}}
             <section class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
                 <div class="px-5 py-4 flex items-center justify-between gap-3">
@@ -92,6 +99,25 @@
                         </button>
                     @endif
                 </div>
+
+                @if($connector->isMetaConnected())
+                    <div class="px-5 py-4 space-y-2 bg-slate-50/50 dark:bg-slate-950/20">
+                        <label class="{{ $labelClass }}">{{ __('Brand filter — Facebook Page ID') }} <span class="text-slate-400 font-normal">{{ __('— optional') }}</span></label>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            {{ __('If this ad account runs more than one business, scope this connector to the ads published as one Facebook Page. Matched by the Page\'s permanent id, never its name.') }}
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="text" form="meta-page-filter-form" name="meta_page_id" value="{{ old('meta_page_id', $connector->meta_page_id) }}"
+                                   autocomplete="off" placeholder="{{ __('e.g. 111905751401508') }}" class="{{ $inputClass }} max-w-xs">
+                            <button type="submit" form="meta-page-filter-form" class="shrink-0 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                {{ __('Resolve & save') }}
+                            </button>
+                        </div>
+                        @if($connector->hasMetaPageFilter())
+                            <p class="text-xs text-emerald-700 dark:text-emerald-400">{{ __('✓ Scoped to Page ":name" (id :id). Clear the field and resolve again to cover the whole account.', ['name' => $connector->meta_page_name, 'id' => $connector->meta_page_id]) }}</p>
+                        @endif
+                    </div>
+                @endif
             </section>
 
             {{-- ============ GOOGLE ADS ============ --}}
@@ -175,6 +201,25 @@
                         @endif
                     </div>
                 </div>
+
+                @if($connector->isGoogleConnected())
+                    <div class="px-5 py-4 space-y-2 bg-slate-50/50 dark:bg-slate-950/20">
+                        <label class="{{ $labelClass }}">{{ __('Brand filter — Business Name asset ID') }} <span class="text-slate-400 font-normal">{{ __('— optional') }}</span></label>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            {{ __('If this account runs Performance Max / Demand Gen campaigns for more than one business, scope this connector to campaigns using one Business Name asset. Matched by the asset\'s id, never its text.') }}
+                        </p>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="text" form="google-business-name-filter-form" name="google_business_name_asset_id" value="{{ old('google_business_name_asset_id', $connector->google_business_name_asset_id) }}"
+                                   autocomplete="off" placeholder="{{ __('e.g. 987654321') }}" class="{{ $inputClass }} max-w-xs">
+                            <button type="submit" form="google-business-name-filter-form" class="shrink-0 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                {{ __('Resolve & save') }}
+                            </button>
+                        </div>
+                        @if($connector->hasGoogleBusinessNameFilter())
+                            <p class="text-xs text-emerald-700 dark:text-emerald-400">{{ __('✓ Scoped to business name ":name" (id :id). Clear the field and resolve again to cover the whole account.', ['name' => $connector->google_business_name_asset_name, 'id' => $connector->google_business_name_asset_id]) }}</p>
+                        @endif
+                    </div>
+                @endif
             </section>
 
             <div class="flex items-center gap-3">
@@ -192,6 +237,12 @@
             @csrf
         </form>
         <form id="disconnect-google-form" method="POST" action="{{ route('settings.ad-platforms.connectors.google.disconnect', $connector) }}">
+            @csrf
+        </form>
+        <form id="meta-page-filter-form" method="POST" action="{{ route('settings.ad-platforms.connectors.meta.page-filter', $connector) }}">
+            @csrf
+        </form>
+        <form id="google-business-name-filter-form" method="POST" action="{{ route('settings.ad-platforms.connectors.google.business-name-filter', $connector) }}">
             @csrf
         </form>
 
