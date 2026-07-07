@@ -45,7 +45,7 @@ class CreativeRollup
             ->where('platform', $platform)
             ->where('dimension', $dimension)
             ->whereBetween('date', [$from, $to])
-            ->when($campaignIds !== null, fn ($q) => $q->whereIn('campaign_id', $campaignIds))
+            ->when($client, fn ($q) => $q->forClients([$client], $campaignIds ?? []))
             ->groupBy(['platform', 'dimension', 'external_id'])
             ->orderByDesc(DB::raw('SUM(spend_cents)'))
             ->limit($limit)

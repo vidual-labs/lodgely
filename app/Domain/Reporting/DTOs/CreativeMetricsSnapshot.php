@@ -22,5 +22,6 @@ readonly class CreativeMetricsSnapshot
         public string $currency,
         public int $platformLeads,
         public ?array $rawPayload = null,
+        public ?string $clientName = null,
     ) {}
 }

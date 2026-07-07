@@ -51,7 +51,7 @@ class ClientViewDataBuilder
         $needsAd   = collect($columns)->some(fn (ReportColumn $c) => $c->isAdMetric());
         $needsLead = collect($columns)->some(fn (ReportColumn $c) => $c->isLeadMetric());
 
-        $adRows   = $needsAd   ? $this->adMonthlyRows($tenantId, $from, $to)   : collect();
+        $adRows   = $needsAd   ? $this->adMonthlyRows($tenantId, $from, $to, $user)   : collect();
         $leadRows = $needsLead ? $this->leadMonthlyRows($user, $tenantId, $from, $to) : collect();
 
         return $this->mergeByMonth($this->monthRange($from, $to), $adRows, $leadRows, $columns);
@@ -94,11 +94,17 @@ class ClientViewDataBuilder
         return $totals;
     }
 
-    private function adMonthlyRows(int $tenantId, string $from, string $to): Collection
+    private function adMonthlyRows(int $tenantId, string $from, string $to, User $user): Collection
     {
+        $allowed = $user->allowedClientNames();
+
         return AdSpendReport::query()
             ->where('tenant_id', $tenantId)
             ->whereBetween('date', [$from, $to])
+            ->when(
+                $allowed !== null,
+                fn ($q) => $q->forClients($allowed, $this->campaignIdsForAllowedClients($tenantId, $allowed ?? [])),
+            )
             ->selectRaw("
                 TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
                 SUM(impressions)    AS impressions,
@@ -111,6 +117,55 @@ class ClientViewDataBuilder
             ->orderByRaw("DATE_TRUNC('month', date)")
             ->get()
             ->keyBy('month');
+    }
+
+    /**
+     * The dominant ad-spend currency scoped to what a given user is allowed to
+     * see — an operator (or CLI/no user) sees the whole tenant, a client only
+     * their own connector(s) + campaign-attributed default-connector spend.
+     * Mirrors the scoping in adMonthlyRows() so the report currency symbol
+     * always matches the numbers shown.
+     */
+    public function dominantCurrencyForUser(int $tenantId, User $user): string
+    {
+        $allowed = $user->allowedClientNames();
+
+        if ($allowed === null) {
+            return AdSpendReport::dominantCurrency($tenantId);
+        }
+
+        return AdSpendReport::dominantCurrency(
+            $tenantId,
+            null,
+            null,
+            null,
+            $this->campaignIdsForAllowedClients($tenantId, $allowed),
+            $allowed,
+        );
+    }
+
+    /**
+     * Resolve the set of campaign ids a client's leads carry, across every
+     * client_name scope assigned to them — used to attribute the shared/
+     * default connector's ad spend the same way {@see CampaignRollup} does.
+     *
+     * @param  string[]  $allowedNames
+     * @return list<string>
+     */
+    private function campaignIdsForAllowedClients(int $tenantId, array $allowedNames): array
+    {
+        if ($allowedNames === []) {
+            return [];
+        }
+
+        $lower = array_map(static fn ($n) => mb_strtolower((string) $n), $allowedNames);
+
+        return Lead::where('tenant_id', $tenantId)
+            ->whereNotNull('campaign_id')
+            ->whereIn(DB::raw('LOWER(client_name)'), $lower)
+            ->distinct()
+            ->pluck('campaign_id')
+            ->all();
     }
 
     private function leadMonthlyRows(User $user, int $tenantId, string $from, string $to): Collection

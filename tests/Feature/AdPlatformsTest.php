@@ -96,6 +96,7 @@ class AdPlatformsTest extends TestCase
     public function test_meta_adapter_reads_credentials_from_the_database(): void
     {
         $row = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->meta_enabled = true;
         $row->meta_ad_account_id = '555';
         $row->setMetaAccessToken('db-token');
         $row->save();

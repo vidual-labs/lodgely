@@ -48,10 +48,23 @@ class MetaAdsSource implements AdMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        // Credentials come from the per-tenant settings row (configured in
-        // /settings/ad-platforms), falling back to env config when unset.
-        $settings = AdPlatformSetting::resolveSafe($tenantId);
+        // A tenant can have several Meta connectors (the shared default plus
+        // one per client with its own ad account/token) — pull each in turn.
+        foreach (AdPlatformSetting::activeConnectorsForPlatform($tenantId, 'meta') as $settings) {
+            yield from $this->fetchOne($settings, $date);
+        }
+    }
 
+    /**
+     * Fetch a single connector's campaigns for a day, tagging each snapshot
+     * with that connector's client_name. Public so the settings-page "Test
+     * connection" button and the connector-management controller can probe
+     * one connector directly, regardless of its enabled toggle.
+     *
+     * @return iterable<AdMetricsSnapshot>
+     */
+    public function fetchOne(AdPlatformSetting $settings, \DateTimeInterface $date): iterable
+    {
         $accountId = trim($settings->effectiveMetaAccountId());
         $token = trim($settings->effectiveMetaAccessToken());
         $apiVer = trim($settings->effectiveMetaApiVersion());
@@ -98,7 +111,7 @@ class MetaAdsSource implements AdMetricsSource
                 if (! is_array($row)) {
                     continue;
                 }
-                yield $this->toSnapshot($row, $dateStr, $currency);
+                yield $this->toSnapshot($row, $dateStr, $currency, $settings->client_name);
             }
 
             $url = $json['paging']['next'] ?? null;
@@ -106,7 +119,7 @@ class MetaAdsSource implements AdMetricsSource
         } while ($url);
     }
 
-    private function toSnapshot(array $row, string $dateStr, string $currency): AdMetricsSnapshot
+    private function toSnapshot(array $row, string $dateStr, string $currency, ?string $clientName): AdMetricsSnapshot
     {
         $impressions = (int) ($row['impressions'] ?? 0);
         $clicks = (int) ($row['clicks'] ?? 0);
@@ -137,6 +150,7 @@ class MetaAdsSource implements AdMetricsSource
             platformLeads: $leads,
             reach: $reach,
             rawPayload: $row,
+            clientName: $clientName,
         );
     }
 }

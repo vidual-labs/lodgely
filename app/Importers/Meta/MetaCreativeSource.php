@@ -33,8 +33,14 @@ class MetaCreativeSource implements CreativeMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        $settings = AdPlatformSetting::resolveSafe($tenantId);
+        foreach (AdPlatformSetting::activeConnectorsForPlatform($tenantId, 'meta') as $settings) {
+            yield from $this->fetchOne($settings, $date);
+        }
+    }
 
+    /** @return iterable<CreativeMetricsSnapshot> */
+    public function fetchOne(AdPlatformSetting $settings, \DateTimeInterface $date): iterable
+    {
         $accountId = trim($settings->effectiveMetaAccountId());
         $token = trim($settings->effectiveMetaAccessToken());
         $apiVer = trim($settings->effectiveMetaApiVersion());
@@ -75,6 +81,7 @@ class MetaCreativeSource implements CreativeMetricsSource
                 dimension: AdCreativeReport::DIMENSION_AD,
                 externalId: $adId,
                 label: (string) (($row['ad_name'] ?? '') !== '' ? $row['ad_name'] : 'Ad #'.$adId),
+                clientName: $settings->client_name,
             );
         }
 
@@ -94,6 +101,7 @@ class MetaCreativeSource implements CreativeMetricsSource
                 dimension: AdCreativeReport::DIMENSION_SEGMENT,
                 externalId: $age.'|'.$gender,
                 label: $age.' · '.$gender,
+                clientName: $settings->client_name,
             );
         }
     }
@@ -135,6 +143,7 @@ class MetaCreativeSource implements CreativeMetricsSource
         string $dimension,
         string $externalId,
         string $label,
+        ?string $clientName = null,
     ): CreativeMetricsSnapshot {
         $leads = 0;
         foreach (($row['actions'] ?? []) as $action) {
@@ -160,6 +169,7 @@ class MetaCreativeSource implements CreativeMetricsSource
             currency: $currency,
             platformLeads: $leads,
             rawPayload: $row,
+            clientName: $clientName,
         );
     }
 }

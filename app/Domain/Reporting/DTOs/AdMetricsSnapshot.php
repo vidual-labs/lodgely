@@ -16,5 +16,6 @@ readonly class AdMetricsSnapshot
         public int     $platformLeads,
         public ?int    $reach = null,
         public ?array  $rawPayload = null,
+        public ?string $clientName = null,
     ) {}
 }

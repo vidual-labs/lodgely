@@ -85,9 +85,8 @@ class DemoDataManager
      */
     private function liveAdPlatformConnected(): bool
     {
-        $settings = AdPlatformSetting::resolveSafe(Tenant::DEFAULT_ID);
-
-        return $settings->isMetaConnected() || $settings->isGoogleConnected();
+        return AdPlatformSetting::connectorsForTenant(Tenant::DEFAULT_ID)
+            ->some(fn (AdPlatformSetting $s) => $s->isMetaConnected() || $s->isGoogleConnected());
     }
 
     /**

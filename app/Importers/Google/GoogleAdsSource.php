@@ -34,10 +34,24 @@ class GoogleAdsSource implements AdMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        // Credentials come from the per-tenant settings row (configured in
-        // /settings/ad-platforms), falling back to env config when unset.
-        $settings = AdPlatformSetting::resolveSafe($tenantId);
+        // A tenant can have several Google Ads connectors (the shared default
+        // plus one per client with its own customer id/refresh token) — pull
+        // each in turn.
+        foreach (AdPlatformSetting::activeConnectorsForPlatform($tenantId, 'google') as $settings) {
+            yield from $this->fetchOne($settings, $date);
+        }
+    }
 
+    /**
+     * Fetch a single connector's campaigns for a day, tagging each snapshot
+     * with that connector's client_name. Public so the settings-page "Test
+     * connection" button and the connector-management controller can probe
+     * one connector directly, regardless of its enabled toggle.
+     *
+     * @return iterable<AdMetricsSnapshot>
+     */
+    public function fetchOne(AdPlatformSetting $settings, \DateTimeInterface $date): iterable
+    {
         $customerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleCustomerId());
         $loginCustomerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleLoginCustomerId());
         $developerToken = trim($settings->effectiveGoogleDeveloperToken());
@@ -97,14 +111,14 @@ class GoogleAdsSource implements AdMetricsSource
                 if (! is_array($row)) {
                     continue;
                 }
-                yield $this->toSnapshot($row, $dateStr);
+                yield $this->toSnapshot($row, $dateStr, $settings->client_name);
             }
 
             $pageToken = $json['nextPageToken'] ?? null;
         } while (! empty($pageToken));
     }
 
-    private function toSnapshot(array $row, string $dateStr): AdMetricsSnapshot
+    private function toSnapshot(array $row, string $dateStr, ?string $clientName): AdMetricsSnapshot
     {
         $campaign = is_array($row['campaign'] ?? null) ? $row['campaign'] : [];
         $metrics = is_array($row['metrics'] ?? null) ? $row['metrics'] : [];
@@ -126,6 +140,7 @@ class GoogleAdsSource implements AdMetricsSource
             platformLeads: (int) round((float) ($metrics['conversions'] ?? 0)),
             reach: null,
             rawPayload: $row,
+            clientName: $clientName,
         );
     }
 }

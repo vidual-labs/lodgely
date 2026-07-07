@@ -34,8 +34,14 @@ class GoogleCreativeSource implements CreativeMetricsSource
 
     public function fetch(int $tenantId, \DateTimeInterface $date): iterable
     {
-        $settings = AdPlatformSetting::resolveSafe($tenantId);
+        foreach (AdPlatformSetting::activeConnectorsForPlatform($tenantId, 'google') as $settings) {
+            yield from $this->fetchOne($settings, $date);
+        }
+    }
 
+    /** @return iterable<CreativeMetricsSnapshot> */
+    public function fetchOne(AdPlatformSetting $settings, \DateTimeInterface $date): iterable
+    {
         $customerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleCustomerId());
         $loginCustomerId = (string) preg_replace('/\D/', '', $settings->effectiveGoogleLoginCustomerId());
         $developerToken = trim($settings->effectiveGoogleDeveloperToken());
@@ -91,6 +97,7 @@ class GoogleCreativeSource implements CreativeMetricsSource
                 label: $text !== ''
                     ? $text.($matchType !== '' && $matchType !== 'unspecified' ? ' ('.$matchType.')' : '')
                     : 'Keyword #'.$criterionId,
+                clientName: $settings->client_name,
             );
         }
 
@@ -123,6 +130,7 @@ class GoogleCreativeSource implements CreativeMetricsSource
                 dimension: AdCreativeReport::DIMENSION_AD,
                 externalId: $adId,
                 label: $name,
+                clientName: $settings->client_name,
             );
         }
     }
@@ -171,6 +179,7 @@ class GoogleCreativeSource implements CreativeMetricsSource
         string $dimension,
         string $externalId,
         string $label,
+        ?string $clientName = null,
     ): CreativeMetricsSnapshot {
         $campaign = is_array($row['campaign'] ?? null) ? $row['campaign'] : [];
         $metrics = is_array($row['metrics'] ?? null) ? $row['metrics'] : [];
@@ -193,6 +202,7 @@ class GoogleCreativeSource implements CreativeMetricsSource
             currency: (string) ($customer['currencyCode'] ?? 'USD'),
             platformLeads: (int) round((float) ($metrics['conversions'] ?? 0)),
             rawPayload: $row,
+            clientName: $clientName,
         );
     }
 }

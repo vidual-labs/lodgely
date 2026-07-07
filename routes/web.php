@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdPlatformConnectorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Imports\GoogleSheetsImportController;
@@ -112,6 +113,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/ad-platforms', AdPlatformsPage::class)->name('settings.ad-platforms');
     Route::get('/settings/ad-platforms/google/connect',  [GoogleAdsOAuthController::class, 'connect'])->name('settings.ad-platforms.google.connect');
     Route::get('/settings/ad-platforms/google/callback', [GoogleAdsOAuthController::class, 'callback'])->name('settings.ad-platforms.google.callback');
+
+    // Per-client ad-platform connectors (a second Meta/Google account assigned
+    // to one client). Native form → controller → redirect, same reasoning as
+    // the backup page — see AdPlatformConnectorController.
+    Route::post('/settings/ad-platforms/connectors', [AdPlatformConnectorController::class, 'store'])->name('settings.ad-platforms.connectors.store');
+    Route::get('/settings/ad-platforms/connectors/{connector}', [AdPlatformConnectorController::class, 'edit'])->name('settings.ad-platforms.connectors.edit');
+    Route::post('/settings/ad-platforms/connectors/{connector}', [AdPlatformConnectorController::class, 'update'])->name('settings.ad-platforms.connectors.update');
+    Route::delete('/settings/ad-platforms/connectors/{connector}', [AdPlatformConnectorController::class, 'destroy'])->name('settings.ad-platforms.connectors.destroy');
+    Route::post('/settings/ad-platforms/connectors/{connector}/google/disconnect', [AdPlatformConnectorController::class, 'disconnectGoogle'])->name('settings.ad-platforms.connectors.google.disconnect');
+    Route::post('/settings/ad-platforms/connectors/{connector}/test/{platform}', [AdPlatformConnectorController::class, 'test'])->name('settings.ad-platforms.connectors.test');
 
     Route::get('/settings/demo-data', DemoDataPage::class)->name('settings.demo-data');
 
