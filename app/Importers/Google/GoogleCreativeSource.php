@@ -21,6 +21,7 @@ use RuntimeException;
 class GoogleCreativeSource implements CreativeMetricsSource
 {
     use RefreshesGoogleAccessToken;
+    use ResolvesGoogleBusinessNameFilter;
 
     public function platform(): string
     {
@@ -68,12 +69,20 @@ class GoogleCreativeSource implements CreativeMetricsSource
             $headers['login-customer-id'] = $loginCustomerId;
         }
 
+        // Scope to one brand's campaigns when this connector is filtered to a
+        // Business Name asset (two businesses sharing one account).
+        $campaignIds = $this->matchingCampaignIds($settings, $customerId, $accessToken, $headers, $apiVersion, $timeout);
+        if ($campaignIds !== null && $campaignIds === []) {
+            return; // Filter set, but not linked to any campaign yet.
+        }
+        $campaignFilter = $campaignIds !== null ? ' AND campaign.id IN ('.implode(',', $campaignIds).')' : '';
+
         // Pass 1: per-keyword performance.
         $keywordQuery = 'SELECT ad_group.id, ad_group_criterion.criterion_id, '
             .'ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, '
             .'campaign.id, campaign.name, customer.currency_code, '
             .'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions '
-            ."FROM keyword_view WHERE segments.date = '".$dateStr."'";
+            ."FROM keyword_view WHERE segments.date = '".$dateStr."'".$campaignFilter;
 
         foreach ($this->rows($url, $headers, $accessToken, $keywordQuery, $timeout) as $row) {
             $criterion = is_array($row['adGroupCriterion'] ?? null) ? $row['adGroupCriterion'] : [];
@@ -105,7 +114,7 @@ class GoogleCreativeSource implements CreativeMetricsSource
         $adQuery = 'SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group.name, '
             .'campaign.id, campaign.name, customer.currency_code, '
             .'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions '
-            ."FROM ad_group_ad WHERE segments.date = '".$dateStr."'";
+            ."FROM ad_group_ad WHERE segments.date = '".$dateStr."'".$campaignFilter;
 
         foreach ($this->rows($url, $headers, $accessToken, $adQuery, $timeout) as $row) {
             $ad = is_array($row['adGroupAd']['ad'] ?? null) ? $row['adGroupAd']['ad'] : [];

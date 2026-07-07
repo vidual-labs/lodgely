@@ -253,10 +253,15 @@
                 @foreach($connectors as $connector)
                     <li class="px-5 py-3 flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ $connector->client_name }}</p>
+                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                                {{ $connector->client_name }}
+                                @if($connector->internal_label)
+                                    <span class="font-normal text-slate-400 dark:text-slate-500">— {{ $connector->internal_label }}</span>
+                                @endif
+                            </p>
                             <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-3">
-                                <span class="{{ $connector->isMetaConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Meta:') }} {{ $connector->isMetaConnected() ? __('configured') : __('not configured') }}</span>
-                                <span class="{{ $connector->isGoogleConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Google:') }} {{ $connector->isGoogleConnected() ? __('connected') : __('not connected') }}</span>
+                                <span class="{{ $connector->isMetaConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Meta:') }} {{ $connector->isMetaConnected() ? __('configured') : __('not configured') }}{{ $connector->hasMetaPageFilter() ? ' · '.__('brand: :name', ['name' => $connector->meta_page_name]) : '' }}</span>
+                                <span class="{{ $connector->isGoogleConnected() ? 'text-emerald-700 dark:text-emerald-400' : '' }}">{{ __('Google:') }} {{ $connector->isGoogleConnected() ? __('connected') : __('not connected') }}{{ $connector->hasGoogleBusinessNameFilter() ? ' · '.__('brand: :name', ['name' => $connector->google_business_name_asset_name]) : '' }}</span>
                             </p>
                         </div>
                         <a href="{{ route('settings.ad-platforms.connectors.edit', $connector) }}"

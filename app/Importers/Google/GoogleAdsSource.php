@@ -21,6 +21,7 @@ use RuntimeException;
 class GoogleAdsSource implements AdMetricsSource
 {
     use RefreshesGoogleAccessToken;
+    use ResolvesGoogleBusinessNameFilter;
 
     public function platform(): string
     {
@@ -67,20 +68,30 @@ class GoogleAdsSource implements AdMetricsSource
         $accessToken = $this->accessToken($settings, $timeout);
         $dateStr = $date->format('Y-m-d');
 
+        $headers = ['developer-token' => $developerToken];
+        if ($loginCustomerId !== '') {
+            $headers['login-customer-id'] = $loginCustomerId;
+        }
+
+        // Scope to one brand's campaigns when this connector is filtered to a
+        // Business Name asset (two businesses sharing one account).
+        $campaignIds = $this->matchingCampaignIds($settings, $customerId, $accessToken, $headers, $apiVersion, $timeout);
+        if ($campaignIds !== null && $campaignIds === []) {
+            return; // Filter set, but not linked to any campaign yet.
+        }
+
         $query = 'SELECT campaign.id, campaign.name, customer.currency_code, '
             .'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions '
             ."FROM campaign WHERE segments.date = '".$dateStr."'";
+        if ($campaignIds !== null) {
+            $query .= ' AND campaign.id IN ('.implode(',', $campaignIds).')';
+        }
 
         $url = sprintf(
             'https://googleads.googleapis.com/%s/customers/%s/googleAds:search',
             $apiVersion,
             $customerId,
         );
-
-        $headers = ['developer-token' => $developerToken];
-        if ($loginCustomerId !== '') {
-            $headers['login-customer-id'] = $loginCustomerId;
-        }
 
         $pageToken = null;
         do {

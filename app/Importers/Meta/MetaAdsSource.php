@@ -22,6 +22,8 @@ use RuntimeException;
  */
 class MetaAdsSource implements AdMetricsSource
 {
+    use ResolvesMetaPageFilter;
+
     /**
      * Meta exposes many "lead-ish" action types. We sum across the ones that
      * are commonly used for lead generation and pixel/CAPI lead events, so
@@ -80,16 +82,31 @@ class MetaAdsSource implements AdMetricsSource
         $accountPath = str_starts_with($accountId, 'act_') ? $accountId : 'act_'.$accountId;
         $dateStr = $date->format('Y-m-d');
 
+        // Meta only exposes the publishing Page per *ad* (via its creative),
+        // not per campaign, so a page filter means fetching at ad level and
+        // aggregating back up to campaign_id ourselves — the campaign-level
+        // insights endpoint has no way to restrict by Page directly.
+        $adIds = $this->matchingAdIds($settings, $accountPath, $token, $apiVer, $timeout);
+        if ($adIds !== null && $adIds === []) {
+            return; // Filter set, but no ad in this account publishes as that Page.
+        }
+
         $url = sprintf('https://graph.facebook.com/%s/%s/insights', $apiVer, $accountPath);
 
         $params = [
-            'level' => 'campaign',
-            'fields' => 'campaign_id,campaign_name,impressions,clicks,spend,reach,actions',
+            'level' => $adIds !== null ? 'ad' : 'campaign',
+            'fields' => $adIds !== null
+                ? 'ad_id,campaign_id,campaign_name,impressions,clicks,spend,reach,actions'
+                : 'campaign_id,campaign_name,impressions,clicks,spend,reach,actions',
             'time_range' => json_encode(['since' => $dateStr, 'until' => $dateStr]),
             'time_increment' => 1,
             'access_token' => $token,
             'limit' => 500,
         ];
+
+        $matchingAdIds = $adIds !== null ? array_flip($adIds) : null;
+        /** @var array<string, array{campaignId: string, campaignName: ?string, impressions: int, clicks: int, spendCents: int, reach: ?int, leads: int}> $aggregated */
+        $aggregated = [];
 
         do {
             $response = Http::timeout($timeout)
@@ -111,12 +128,86 @@ class MetaAdsSource implements AdMetricsSource
                 if (! is_array($row)) {
                     continue;
                 }
+
+                if ($matchingAdIds !== null) {
+                    if (! isset($matchingAdIds[(string) ($row['ad_id'] ?? '')])) {
+                        continue;
+                    }
+                    $this->accumulate($aggregated, $row);
+
+                    continue;
+                }
+
                 yield $this->toSnapshot($row, $dateStr, $currency, $settings->client_name);
             }
 
             $url = $json['paging']['next'] ?? null;
             $params = [];
         } while ($url);
+
+        if ($matchingAdIds !== null) {
+            foreach ($aggregated as $row) {
+                yield $this->toSnapshotFromAggregate($row, $dateStr, $currency, $settings->client_name);
+            }
+        }
+    }
+
+    /**
+     * Roll an ad-level insights row into its campaign's running totals, so a
+     * page-filtered fetch still yields one campaign-level snapshot per
+     * campaign — matching the shape AdSpendReport expects.
+     *
+     * @param  array<string, array{campaignId: string, campaignName: ?string, impressions: int, clicks: int, spendCents: int, reach: ?int, leads: int}>  &$aggregated
+     */
+    private function accumulate(array &$aggregated, array $row): void
+    {
+        $campaignId = (string) ($row['campaign_id'] ?? '');
+        $leads = 0;
+        foreach (($row['actions'] ?? []) as $action) {
+            if (is_array($action) && in_array($action['action_type'] ?? null, self::LEAD_ACTION_TYPES, true)) {
+                $leads += (int) ($action['value'] ?? 0);
+            }
+        }
+
+        $aggregated[$campaignId] ??= [
+            'campaignId' => $campaignId,
+            'campaignName' => isset($row['campaign_name']) ? (string) $row['campaign_name'] : null,
+            'impressions' => 0,
+            'clicks' => 0,
+            'spendCents' => 0,
+            'reach' => null,
+            'leads' => 0,
+        ];
+
+        $aggregated[$campaignId]['impressions'] += (int) ($row['impressions'] ?? 0);
+        $aggregated[$campaignId]['clicks'] += (int) ($row['clicks'] ?? 0);
+        $aggregated[$campaignId]['spendCents'] += (int) round((float) ($row['spend'] ?? 0) * 100);
+        $aggregated[$campaignId]['leads'] += $leads;
+        // Reach isn't additive across ads (audience overlap) — Meta doesn't
+        // return a de-duplicated reach at this granularity either way, so we
+        // leave it null for page-filtered rows rather than publish a number
+        // that overstates unique audience size.
+    }
+
+    /**
+     * @param  array{campaignId: string, campaignName: ?string, impressions: int, clicks: int, spendCents: int, reach: ?int, leads: int}  $row
+     */
+    private function toSnapshotFromAggregate(array $row, string $dateStr, string $currency, ?string $clientName): AdMetricsSnapshot
+    {
+        return new AdMetricsSnapshot(
+            platform: 'meta',
+            date: $dateStr,
+            campaignId: $row['campaignId'],
+            campaignName: $row['campaignName'],
+            impressions: $row['impressions'],
+            clicks: $row['clicks'],
+            spendCents: $row['spendCents'],
+            currency: $currency,
+            platformLeads: $row['leads'],
+            reach: $row['reach'],
+            rawPayload: $row,
+            clientName: $clientName,
+        );
     }
 
     private function toSnapshot(array $row, string $dateStr, string $currency, ?string $clientName): AdMetricsSnapshot
