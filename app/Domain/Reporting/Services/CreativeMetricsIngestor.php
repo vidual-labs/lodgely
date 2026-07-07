@@ -35,7 +35,7 @@ class CreativeMetricsIngestor
 
             $existing = AdCreativeReport::where('tenant_id', $tenantId)
                 ->where('platform', $snap->platform)
-                ->where('date', $snap->date)
+                ->whereDate('date', $snap->date)
                 ->where('dimension', $snap->dimension)
                 ->where('external_id', $snap->externalId)
                 ->when(

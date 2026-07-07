@@ -21,7 +21,7 @@ class MetricsIngestor
         foreach ($snapshots as $snap) {
             $existing = AdSpendReport::where('tenant_id', $tenantId)
                 ->where('platform', $snap->platform)
-                ->where('date', $snap->date)
+                ->whereDate('date', $snap->date)
                 ->where('campaign_id', $snap->campaignId)
                 ->when(
                     $snap->clientName === null,
