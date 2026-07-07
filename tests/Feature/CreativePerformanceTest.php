@@ -123,6 +123,18 @@ class CreativePerformanceTest extends TestCase
         $createSql = \DB::selectOne("SELECT sql FROM sqlite_master WHERE type='table' AND name='ad_creative_reports'");
         $debug .= 'create_sql='.($createSql->sql ?? 'null')."\n";
 
+        // Minimal round-trip, bypassing the importer/ingestor pipeline entirely.
+        $fresh = AdCreativeReport::create([
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'platform' => 'meta',
+            'date' => '2026-07-07',
+            'dimension' => 'ad',
+            'external_id' => 'RAW_TEST',
+            'label' => 'raw test',
+        ]);
+        $debug .= 'fresh_raw_date='.var_export($fresh->getRawOriginal('date'), true)."\n";
+        $debug .= 'fresh_requery_exists='.(AdCreativeReport::where('external_id', 'RAW_TEST')->where('date', '2026-07-07')->exists() ? 'YES' : 'NO')."\n";
+
         $this->fail($debug);
     }
 
