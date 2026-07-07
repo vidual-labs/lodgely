@@ -62,6 +62,42 @@ class CreativePerformanceTest extends TestCase
         $this->assertSame($countAfterFirst, AdCreativeReport::count());
     }
 
+    public function test_debug_idempotency_diagnostics(): void
+    {
+        config()->set('lodgely.reporting.sources', ['meta_mock', 'google_mock']);
+
+        $importer = app(AdMetricsImporter::class);
+        $importer->run(Tenant::DEFAULT_ID, new \DateTimeImmutable('today'), 1);
+
+        $row = AdCreativeReport::where('external_id', 'META_AD_001')->first();
+
+        $debug = sprintf(
+            "driver=%s date_raw=%s date_cast=%s client_name=%s tenant_id_col_type=%s\n",
+            \DB::connection()->getDriverName(),
+            var_export($row?->getRawOriginal('date'), true),
+            var_export($row?->date?->toDateString(), true),
+            var_export($row?->client_name, true),
+            gettype($row?->tenant_id),
+        );
+
+        $matchQuery = AdCreativeReport::where('tenant_id', Tenant::DEFAULT_ID)
+            ->where('platform', 'meta')
+            ->where('date', (new \DateTimeImmutable('today'))->format('Y-m-d'))
+            ->where('dimension', 'ad')
+            ->where('external_id', 'META_AD_001')
+            ->when(
+                true,
+                fn ($q) => $q->whereNull('client_name'),
+                fn ($q) => $q->where('client_name', 'x'),
+            );
+
+        $debug .= 'sql='.$matchQuery->toSql()."\n";
+        $debug .= 'bindings='.json_encode($matchQuery->getBindings())."\n";
+        $debug .= 'found='.($matchQuery->exists() ? 'YES' : 'NO')."\n";
+
+        $this->fail($debug);
+    }
+
     public function test_reporting_page_shows_creative_performance_sections(): void
     {
         config()->set('lodgely.reporting.sources', ['meta_mock', 'google_mock']);
