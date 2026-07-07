@@ -95,6 +95,24 @@ class CreativePerformanceTest extends TestCase
         $debug .= 'bindings='.json_encode($matchQuery->getBindings())."\n";
         $debug .= 'found='.($matchQuery->exists() ? 'YES' : 'NO')."\n";
 
+        // No client_name clause at all — matches the pre-migration query shape.
+        $noClientFilter = AdCreativeReport::where('tenant_id', Tenant::DEFAULT_ID)
+            ->where('platform', 'meta')
+            ->where('date', (new \DateTimeImmutable('today'))->format('Y-m-d'))
+            ->where('dimension', 'ad')
+            ->where('external_id', 'META_AD_001');
+        $debug .= 'found_no_client_filter='.($noClientFilter->exists() ? 'YES' : 'NO')."\n";
+
+        // Original array-form where(), exactly as the pre-migration code called it.
+        $arrayForm = AdCreativeReport::where([
+            'tenant_id' => Tenant::DEFAULT_ID,
+            'platform' => 'meta',
+            'date' => (new \DateTimeImmutable('today'))->format('Y-m-d'),
+            'dimension' => 'ad',
+            'external_id' => 'META_AD_001',
+        ]);
+        $debug .= 'found_array_form='.($arrayForm->exists() ? 'YES' : 'NO')."\n";
+
         $this->fail($debug);
     }
 
