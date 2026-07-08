@@ -158,21 +158,26 @@ class ImapLeadSource implements LeadSource
                 $raw     = imap_fetchbody($conn, $msgNum, $partNum);
                 $decoded = $this->decodeBody($raw, $part->encoding ?? 0);
 
-                if ($subtype === 'plain') {
+                if ($subtype === 'plain' && $decoded !== '') {
                     return ['text' => $decoded, 'is_html' => false];
                 }
 
-                if ($subtype === 'html' && $htmlFallback === null) {
+                if ($subtype === 'html' && $decoded !== '' && $htmlFallback === null) {
                     $htmlFallback = ['text' => $decoded, 'is_html' => true];
                 }
             } elseif (isset($part->parts)) {
                 $nested = $this->findTextPart($conn, $msgNum, $part->parts, $partNum);
 
-                if (! $nested['is_html']) {
+                // Only short-circuit on an actual hit — a nested subtree with no
+                // text (e.g. multipart/related holding only images) must not
+                // shadow a text/plain sibling that comes after it.
+                if (! $nested['is_html'] && $nested['text'] !== '') {
                     return $nested;
                 }
 
-                $htmlFallback ??= $nested;
+                if ($nested['text'] !== '') {
+                    $htmlFallback ??= $nested;
+                }
             }
         }
 

@@ -98,7 +98,12 @@ below.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose
-  their own password without an operator ever seeing it.
+  their own password without an operator ever seeing it. Deactivating a
+  user takes effect immediately: their existing sessions (including
+  remember-me logins) are terminated on the next request, not just blocked
+  at the next login. Changing a user's password — from the profile page, an
+  admin edit or a reset link — likewise signs out every *other* session for
+  that account.
 - 🔐 **Multi-user logins, two roles**:
   - `operator` — agency or inhouse team. Sees every lead, can import.
   - `client` — scoped to one or more `client_name` values. Read-friendly,

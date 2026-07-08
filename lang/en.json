@@ -206,5 +206,9 @@
     "Language": "Language",
     "Theme": "Theme",
     "English": "English",
-    "German": "German"
+    "German": "German",
+
+    "This account has been deactivated.": "This account has been deactivated.",
+    "This account has been deactivated. Contact an operator if you think this is a mistake.": "This account has been deactivated. Contact an operator if you think this is a mistake.",
+    "Could not delete that backup: :error": "Could not delete that backup: :error"
 }

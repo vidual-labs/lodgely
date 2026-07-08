@@ -206,5 +206,9 @@
     "Language": "Sprache",
     "Theme": "Design",
     "English": "Englisch",
-    "German": "Deutsch"
+    "German": "Deutsch",
+
+    "This account has been deactivated.": "Dieses Konto wurde deaktiviert.",
+    "This account has been deactivated. Contact an operator if you think this is a mistake.": "Dieses Konto wurde deaktiviert. Wenden Sie sich an einen Operator, falls das ein Irrtum ist.",
+    "Could not delete that backup: :error": "Backup konnte nicht gelöscht werden: :error"
 }

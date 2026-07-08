@@ -71,7 +71,14 @@ class BackupController extends Controller
 
         $filename = (string) $request->input('filename');
 
-        $manager->delete($filename);
+        try {
+            $manager->delete($filename);
+        } catch (Throwable $e) {
+            return redirect()->route('settings.backups')->with(
+                'backups.error',
+                __('Could not delete that backup: :error', ['error' => $e->getMessage()]),
+            );
+        }
 
         Log::info('lodgely.backup.deleted', ['user_id' => $request->user()->id, 'filename' => $filename]);
 

@@ -102,15 +102,15 @@ class Lead extends Model
             return $query;
         }
 
-        $like = '%'.mb_strtolower($term).'%';
+        $like = '%'.\App\Support\Like::escape(mb_strtolower($term)).'%';
 
         return $query->where(function (Builder $q) use ($like) {
-            $q->whereRaw('LOWER(full_name) LIKE ?', [$like])
-              ->orWhereRaw('LOWER(email) LIKE ?', [$like])
-              ->orWhereRaw('LOWER(phone) LIKE ?', [$like])
-              ->orWhereRaw('LOWER(message) LIKE ?', [$like])
-              ->orWhereRaw('LOWER(client_name) LIKE ?', [$like])
-              ->orWhereRaw('LOWER(campaign_name) LIKE ?', [$like]);
+            $q->whereRaw("LOWER(full_name) LIKE ? ESCAPE '\\'", [$like])
+              ->orWhereRaw("LOWER(email) LIKE ? ESCAPE '\\'", [$like])
+              ->orWhereRaw("LOWER(phone) LIKE ? ESCAPE '\\'", [$like])
+              ->orWhereRaw("LOWER(message) LIKE ? ESCAPE '\\'", [$like])
+              ->orWhereRaw("LOWER(client_name) LIKE ? ESCAPE '\\'", [$like])
+              ->orWhereRaw("LOWER(campaign_name) LIKE ? ESCAPE '\\'", [$like]);
         });
     }
 }
