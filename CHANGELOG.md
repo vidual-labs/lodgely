@@ -39,6 +39,35 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Deactivating a user now terminates their existing sessions.** `is_active`
+  was only checked at login, so a deactivated user (or their remember-me
+  cookie) kept full access until they happened to log out. A new
+  `EnsureUserIsActive` middleware signs deactivated accounts out on their
+  next request and returns them to the login screen with an explanatory
+  message.
+
+- **Changing a password now signs out every other session for that account.**
+  Laravel's `AuthenticateSession` middleware is enabled for the web stack, so
+  a password change — self-service on `/profile`, an operator edit on
+  `/users`, or a reset link — invalidates all sessions still carrying the old
+  password hash (the session performing the change stays signed in). A
+  hijacked or forgotten session no longer survives a password rotation.
+
+- **Inbox and user search treat `%`, `_` and `\` literally.** Search terms
+  were interpolated into SQL `LIKE` patterns unescaped, so searching for
+  `100%` matched anything containing `100` and `_` matched any character.
+  Terms are now escaped (with an explicit `ESCAPE` clause so Postgres and
+  SQLite agree) and match what the user actually typed.
+
+- **IMAP importer no longer loses the message body on image-first
+  multipart emails.** A nested subtree with no text (e.g. a
+  `multipart/related` part holding only images) returned an empty result
+  and short-circuited the search before a `text/plain` sibling later in the
+  message was examined.
+
+- **Deleting a backup with a malformed filename shows an error flash instead
+  of a 500 page.**
+
 - **Client-facing `/my-reports` no longer shows every client the same ad
   spend.** `ClientViewDataBuilder` queried `ad_spend_reports` scoped only to
   the tenant, so every client assigned to a reporting view saw identical ad

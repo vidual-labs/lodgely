@@ -207,10 +207,10 @@ class UsersPage extends Component
     {
         $users = User::query()
             ->when($this->search, function ($q, $term) {
-                $like = '%'.mb_strtolower($term).'%';
+                $like = '%'.\App\Support\Like::escape(mb_strtolower($term)).'%';
                 $q->where(function ($qq) use ($like) {
-                    $qq->whereRaw('LOWER(name) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+                    $qq->whereRaw("LOWER(name) LIKE ? ESCAPE '\\'", [$like])
+                        ->orWhereRaw("LOWER(email) LIKE ? ESCAPE '\\'", [$like]);
                 });
             })
             ->when($this->roleFilter, fn ($q, $v) => $q->where('role', $v))
