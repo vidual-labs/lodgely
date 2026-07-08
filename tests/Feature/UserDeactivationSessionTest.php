@@ -12,6 +12,15 @@ class UserDeactivationSessionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // These tests render full pages over HTTP; CI runs without built
+        // frontend assets, so skip the Vite manifest lookup.
+        $this->withoutVite();
+    }
+
     private function makeUser(string $role = 'operator', array $overrides = []): User
     {
         Tenant::firstOrCreate(['id' => Tenant::DEFAULT_ID], ['slug' => 'default', 'name' => 'lodgely']);
