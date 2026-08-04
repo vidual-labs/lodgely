@@ -33,6 +33,40 @@ class AdPlatformConnectorsTest extends TestCase
         ]);
     }
 
+    public function test_client_connectors_do_not_inherit_the_env_ad_account(): void
+    {
+        config([
+            'lodgely.reporting.meta.ad_account_id'  => 'act_env_default',
+            'lodgely.reporting.meta.access_token'   => 'env-token',
+            'lodgely.reporting.google.customer_id'  => '1112223333',
+        ]);
+
+        $default = AdPlatformSetting::forTenant(Tenant::DEFAULT_ID);
+        $client = AdPlatformSetting::forClient(Tenant::DEFAULT_ID, 'Acme Roofing');
+
+        // The shared default connector still falls back to .env, so installs
+        // that configure credentials there keep working untouched.
+        $this->assertSame('act_env_default', $default->effectiveMetaAccountId());
+        $this->assertSame('1112223333', $default->effectiveGoogleCustomerId());
+
+        // A per-client connector must not: inheriting the tenant-wide account
+        // would fetch the *same* ad account a second time and tag it with the
+        // client's name, double-counting every campaign in the operator's
+        // tenant-wide rollups.
+        $this->assertSame('', $client->effectiveMetaAccountId());
+        $this->assertSame('', $client->effectiveGoogleCustomerId());
+        $this->assertFalse($client->isMetaConnected());
+
+        // Shared credentials (tokens, OAuth app) are still inherited — one
+        // business manager legitimately spans several ad accounts.
+        $this->assertSame('env-token', $client->effectiveMetaAccessToken());
+
+        // Once the connector carries its own account id, it is used as given.
+        $client->meta_ad_account_id = 'act_client_999';
+        $this->assertSame('act_client_999', $client->effectiveMetaAccountId());
+        $this->assertTrue($client->isMetaConnected());
+    }
+
     public function test_operator_can_create_and_configure_a_client_connector(): void
     {
         $op = $this->operator();

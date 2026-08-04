@@ -47,7 +47,7 @@ class CampaignRollup
         $leadCounts = Lead::where('tenant_id', $tenantId)
             ->whereNotNull('campaign_id')
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
+            ->when($client, fn ($q) => $q->forClientName($client))
             ->select('campaign_id', DB::raw('COUNT(*) as cnt'))
             ->groupBy('campaign_id')
             ->pluck('cnt', 'campaign_id');
@@ -83,7 +83,7 @@ class CampaignRollup
 
         $lodgelyLeads = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
+            ->when($client, fn ($q) => $q->forClientName($client))
             ->count();
 
         return [
@@ -128,7 +128,7 @@ class CampaignRollup
 
         $leadsByDay = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
+            ->when($client, fn ($q) => $q->forClientName($client))
             ->select(DB::raw('DATE(created_at) as d'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('d')
             ->pluck('cnt', 'd');
@@ -163,7 +163,7 @@ class CampaignRollup
     {
         return Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->when($client, fn ($q) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)]))
+            ->when($client, fn ($q) => $q->forClientName($client))
             ->select('source', DB::raw('COUNT(*) as lead_count'))
             ->groupBy('source')
             ->orderByDesc('lead_count')
@@ -187,11 +187,6 @@ class CampaignRollup
             return null;
         }
 
-        return Lead::where('tenant_id', $tenantId)
-            ->whereNotNull('campaign_id')
-            ->whereRaw('LOWER(client_name) = ?', [mb_strtolower($client)])
-            ->distinct()
-            ->pluck('campaign_id')
-            ->all();
+        return Lead::campaignIdsForClients($tenantId, [$client]);
     }
 }

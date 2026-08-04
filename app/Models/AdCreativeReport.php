@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\ScopesToClientConnectors;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 
 /**
  * One day of aggregate performance for a single ad, keyword or audience
@@ -14,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  */
 class AdCreativeReport extends Model
 {
+    use ScopesToClientConnectors;
+
     public const DIMENSION_AD = 'ad';
 
     public const DIMENSION_KEYWORD = 'keyword';
@@ -40,31 +41,4 @@ class AdCreativeReport extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    /**
-     * Scope to a client's creative rows — see
-     * {@see AdSpendReport::scopeForClients()} for the matching convention.
-     *
-     * @param  string[]  $clientNames
-     * @param  list<string>  $campaignIds
-     */
-    public function scopeForClients(Builder $query, array $clientNames, array $campaignIds = []): Builder
-    {
-        $lowerNames = array_map(static fn ($n) => mb_strtolower((string) $n), $clientNames);
-
-        return $query->where(function (Builder $q) use ($lowerNames, $campaignIds) {
-            if ($lowerNames !== []) {
-                $q->whereIn(DB::raw('LOWER(client_name)'), $lowerNames);
-            }
-
-            if ($campaignIds !== []) {
-                $q->orWhere(function (Builder $q2) use ($campaignIds) {
-                    $q2->whereNull('client_name')->whereIn('campaign_id', $campaignIds);
-                });
-            }
-
-            if ($lowerNames === [] && $campaignIds === []) {
-                $q->whereRaw('1 = 0');
-            }
-        });
-    }
 }

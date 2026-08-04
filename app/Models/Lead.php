@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Lead extends Model
 {
@@ -89,10 +90,65 @@ class Lead extends Model
             return $query->whereRaw('1 = 0');
         }
 
+        return $query->forClientNames($allowed);
+    }
+
+    /**
+     * Match a single client_name case-insensitively. client_name is free text
+     * typed by operators and echoed by importers, so it drifts in case ("Acme"
+     * vs "acme") and every comparison in the app has to be case-insensitive —
+     * this is the one place that decides how.
+     */
+    public function scopeForClientName(Builder $query, ?string $clientName): Builder
+    {
+        return $query->forClientNames($clientName === null ? [] : [$clientName]);
+    }
+
+    /**
+     * Match any of several client_names case-insensitively. An empty list
+     * matches nothing (not everything) — see scopeVisibleTo(), where a client
+     * with no assigned scopes must see zero leads.
+     *
+     * @param  string[]  $clientNames
+     */
+    public function scopeForClientNames(Builder $query, array $clientNames): Builder
+    {
+        if ($clientNames === []) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->whereIn(
-            \DB::raw('LOWER(client_name)'),
-            array_map(static fn ($v) => mb_strtolower((string) $v), $allowed)
+            DB::raw('LOWER(client_name)'),
+            array_map(static fn ($v) => mb_strtolower((string) $v), $clientNames),
         );
+    }
+
+    /**
+     * The campaign ids that a set of clients' leads carry — the bridge used to
+     * attribute the shared/default ad connector's tenant-wide spend down to one
+     * client. Reporting has three separate consumers of this
+     * ({@see \App\Domain\Reporting\Services\CampaignRollup},
+     * {@see \App\Domain\Reporting\Services\CreativeRollup},
+     * {@see \App\Domain\Reporting\Services\ClientViewDataBuilder}); they must
+     * all attribute identically or a client's KPI strip stops matching their
+     * own campaign table.
+     *
+     * @param  string[]  $clientNames
+     * @return list<string>
+     */
+    public static function campaignIdsForClients(int $tenantId, array $clientNames): array
+    {
+        if ($clientNames === []) {
+            return [];
+        }
+
+        return static::query()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('campaign_id')
+            ->forClientNames($clientNames)
+            ->distinct()
+            ->pluck('campaign_id')
+            ->all();
     }
 
     public function scopeSearch(Builder $query, ?string $term): Builder

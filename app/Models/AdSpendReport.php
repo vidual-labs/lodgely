@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\ScopesToClientConnectors;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
 class AdSpendReport extends Model
 {
+    use ScopesToClientConnectors;
+
     protected $fillable = [
         'tenant_id', 'client_name', 'platform', 'date', 'campaign_id', 'campaign_name',
         'impressions', 'clicks', 'spend_cents', 'currency', 'reach',
@@ -33,37 +35,6 @@ class AdSpendReport extends Model
     public function spendFormatted(): string
     {
         return sprintf('%s %.2f', strtoupper($this->currency), $this->spend_cents / 100);
-    }
-
-    /**
-     * Scope to a client's ad spend: rows tagged with a matching client_name
-     * (fetched via a connector assigned directly to them), OR untagged rows
-     * (the shared/default connector) whose campaign_id appears among that
-     * client's leads — the same campaign-attribution heuristic
-     * {@see \App\Domain\Reporting\Services\CampaignRollup} has always used.
-     *
-     * @param  string[]  $clientNames
-     * @param  list<string>  $campaignIds
-     */
-    public function scopeForClients(Builder $query, array $clientNames, array $campaignIds = []): Builder
-    {
-        $lowerNames = array_map(static fn ($n) => mb_strtolower((string) $n), $clientNames);
-
-        return $query->where(function (Builder $q) use ($lowerNames, $campaignIds) {
-            if ($lowerNames !== []) {
-                $q->whereIn(DB::raw('LOWER(client_name)'), $lowerNames);
-            }
-
-            if ($campaignIds !== []) {
-                $q->orWhere(function (Builder $q2) use ($campaignIds) {
-                    $q2->whereNull('client_name')->whereIn('campaign_id', $campaignIds);
-                });
-            }
-
-            if ($lowerNames === [] && $campaignIds === []) {
-                $q->whereRaw('1 = 0');
-            }
-        });
     }
 
     /**

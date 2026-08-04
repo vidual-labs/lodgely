@@ -9,7 +9,6 @@ use App\Models\ClientReportingView;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class ClientViewDataBuilder
 {
@@ -103,7 +102,7 @@ class ClientViewDataBuilder
             ->whereBetween('date', [$from, $to])
             ->when(
                 $allowed !== null,
-                fn ($q) => $q->forClients($allowed, $this->campaignIdsForAllowedClients($tenantId, $allowed ?? [])),
+                fn ($q) => $q->forClients($allowed, Lead::campaignIdsForClients($tenantId, $allowed ?? [])),
             )
             ->selectRaw("
                 TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
@@ -139,33 +138,9 @@ class ClientViewDataBuilder
             null,
             null,
             null,
-            $this->campaignIdsForAllowedClients($tenantId, $allowed),
+            Lead::campaignIdsForClients($tenantId, $allowed),
             $allowed,
         );
-    }
-
-    /**
-     * Resolve the set of campaign ids a client's leads carry, across every
-     * client_name scope assigned to them — used to attribute the shared/
-     * default connector's ad spend the same way {@see CampaignRollup} does.
-     *
-     * @param  string[]  $allowedNames
-     * @return list<string>
-     */
-    private function campaignIdsForAllowedClients(int $tenantId, array $allowedNames): array
-    {
-        if ($allowedNames === []) {
-            return [];
-        }
-
-        $lower = array_map(static fn ($n) => mb_strtolower((string) $n), $allowedNames);
-
-        return Lead::where('tenant_id', $tenantId)
-            ->whereNotNull('campaign_id')
-            ->whereIn(DB::raw('LOWER(client_name)'), $lower)
-            ->distinct()
-            ->pluck('campaign_id')
-            ->all();
     }
 
     private function leadMonthlyRows(User $user, int $tenantId, string $from, string $to): Collection
