@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasRecurringFetchSchedule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class GoogleSheetSource extends Model
 {
+    use HasRecurringFetchSchedule;
+
     protected $table = 'google_sheet_sources';
 
     protected $fillable = [
@@ -48,24 +50,6 @@ class GoogleSheetSource extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
-    }
-
-    public function scopeForTenant(Builder $query, int $tenantId): Builder
-    {
-        return $query->where('tenant_id', $tenantId);
-    }
-
-    public function isDue(): bool
-    {
-        if (! $this->is_active) {
-            return false;
-        }
-
-        if ($this->last_fetched_at === null) {
-            return true;
-        }
-
-        return $this->last_fetched_at->addHours($this->refresh_hours)->isPast();
     }
 
     /** Mappable lead field keys and their display labels. */

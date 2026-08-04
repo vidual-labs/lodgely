@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasRecurringFetchSchedule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MetaLeadSource extends Model
 {
+    use HasRecurringFetchSchedule;
+
     protected $table = 'meta_lead_sources';
 
     protected $fillable = [
@@ -49,21 +51,4 @@ class MetaLeadSource extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function scopeForTenant(Builder $query, int $tenantId): Builder
-    {
-        return $query->where('tenant_id', $tenantId);
-    }
-
-    public function isDue(): bool
-    {
-        if (! $this->is_active) {
-            return false;
-        }
-
-        if ($this->last_fetched_at === null) {
-            return true;
-        }
-
-        return $this->last_fetched_at->addHours($this->refresh_hours)->isPast();
-    }
 }

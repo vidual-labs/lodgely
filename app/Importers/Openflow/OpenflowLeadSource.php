@@ -30,8 +30,8 @@ use Throwable;
  * different OpenFlow installs, and silently drop one source's leads as
  * "already ingested" duplicates of the other's. Scoping keeps dedup correctly
  * partitioned per source while remaining stable across pulls, so re-pulling the
- * same form stays idempotent. last_fetched_at additionally bounds incremental
- * pulls so we don't walk the entire backlog on every scheduler tick.
+ * same form stays idempotent. last_successful_fetch_at additionally bounds
+ * incremental pulls so we don't walk the entire backlog on every scheduler tick.
  */
 class OpenflowLeadSource implements LeadSource
 {
@@ -88,10 +88,14 @@ class OpenflowLeadSource implements LeadSource
         );
 
         // High-water mark: on incremental pulls, stop once we reach submissions
-        // older than the last fetch (minus an overlap). Idempotency still makes
-        // re-reads safe; this only bounds the work.
-        $cutoff = $source->last_fetched_at
-            ? $source->last_fetched_at->copy()->subMinutes(self::OVERLAP_MINUTES)
+        // older than the last *successful* fetch (minus an overlap). Idempotency
+        // still makes re-reads safe; this only bounds the work.
+        //
+        // Deliberately not last_fetched_at — that one is the scheduler's
+        // throttle and advances on failed attempts too, which would move this
+        // cutoff past submissions no pull ever ingested.
+        $cutoff = $source->last_successful_fetch_at
+            ? $source->last_successful_fetch_at->copy()->subMinutes(self::OVERLAP_MINUTES)
             : null;
 
         $page = 1;

@@ -327,7 +327,7 @@ class OpenflowImportPage extends Component
 
         try {
             $result = $runner->run($import, $source);
-            $openflowSource->update(['last_fetched_at' => now()]);
+            $openflowSource->update(['last_fetched_at' => now(), 'last_successful_fetch_at' => now()]);
 
             $this->dispatch('toast', message: __(
                 'Fetched: :imported imported, :skipped skipped, :dup duplicates, :inv invalid.',

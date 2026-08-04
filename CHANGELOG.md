@@ -39,6 +39,22 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Report-email intros are markdown only — raw HTML in them is no longer
+  rendered.** The intro is composed into the client's email body unescaped, so
+  it is now rendered with raw-HTML input stripped and unsafe link schemes
+  dropped by the markdown parser itself, instead of being post-processed with a
+  regex. Operators who pasted raw HTML into an intro will see it disappear
+  rather than render; every tag that previously survived has a markdown
+  equivalent.
+
+- **Internal: recurring lead-source fetching shares one implementation.** The
+  three `lodgely:*:fetch` commands (Google Sheets, Meta Lead Ads, OpenFlow)
+  were structural copies of each other differing only in model, Import key and
+  a noun; they now share a `FetchesRecurringLeadSources` concern. The
+  byte-identical `isDue()` / `forTenant()` on the three source models likewise
+  moved to a `HasRecurringFetchSchedule` concern. This is what let the clock
+  handling drift apart between them in the first place.
+
 - **Internal: single home for the reporting client-scoping rules.** The
   identical `forClients()` scope on `AdSpendReport` and `AdCreativeReport` now
   comes from one shared concern; the campaign-attribution lookup that maps a
@@ -51,6 +67,27 @@ semantic-ish versioning once a 1.0 is tagged.
   counting shared by the campaign and creative adapters. No behaviour change.
 
 ### Fixed
+
+- **Report-email intros could smuggle scripts into the client's inbox.** The
+  intro is authored by an operator and rendered unescaped into the email body
+  and the in-app preview. The sanitizer that was meant to restrict link
+  schemes only matched *quoted* `href` values, so `<a href=javascript:…>`
+  passed through untouched, and for a link whose scheme did pass it re-emitted
+  the original tag verbatim — carrying any `onclick=` with it. Both survived
+  `strip_tags()`, which filters tags but never attributes. Rendering now goes
+  through the markdown parser's own `html_input`/`allow_unsafe_links`
+  handling, with the tag whitelist kept as defence in depth.
+
+- **A failed OpenFlow fetch silently dropped a window of leads.** OpenFlow's
+  `last_fetched_at` was doing two jobs: throttling the hourly scheduler, and
+  marking how far back the next pull should walk. The scheduler advances it on
+  every attempt — including failures, deliberately, so a broken source isn't
+  retried hourly — which moved the data cutoff past submissions nothing had
+  ingested. The next run then treated them as already-seen and skipped them
+  for good: on a source refreshing daily, one transient failure lost a day of
+  leads. The high-water mark now lives on its own `last_successful_fetch_at`
+  column that only a completed pull advances (backfilled on migrate, so
+  existing installs don't re-walk their backlog).
 
 - **GDPR purge no longer skips most of the leads it reports deleting.**
   `lodgely:leads:purge` walked expired leads with offset-based chunking while

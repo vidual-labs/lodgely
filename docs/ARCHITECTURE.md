@@ -10,6 +10,8 @@ app/
 ├── Console/Commands/        artisan commands (create-user, mock pull, purge,
 │                            ad-metrics pull, report-emails dispatch,
 │                            sheets fetch/dedupe, backup create/restore)
+│   └── Concerns/            FetchesRecurringLeadSources — the shared body of
+│                            the lodgely:*:fetch recurring-source commands
 ├── Domain/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
@@ -81,7 +83,9 @@ app/
 │                            GoogleSheetsSetting, GoogleSheetSource,
 │                            MetaLeadSource, OpenflowSource, AdPlatformSetting
 │   └── Concerns/            ScopesToClientConnectors — the shared
-│                            "which ad rows belong to this client" scope
+│                            "which ad rows belong to this client" scope;
+│                            HasRecurringFetchSchedule — isDue()/forTenant()
+│                            shared by the three recurring source models
 ├── Providers/AppServiceProvider
 ├── Support/Audit/           AuditLogger, AiAuditLogger
 └── Support/Backup/          BackupManager (pg_dump/pg_restore archive create/restore)

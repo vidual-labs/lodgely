@@ -93,7 +93,7 @@ class ReportEmailComposer
             'recipient' => $recipient,
             'period' => $period,
             'intro_html' => $email->intro_markdown
-                ? $this->sanitizeIntroHtml(Str::markdown($email->intro_markdown))
+                ? $this->renderIntroHtml($email->intro_markdown)
                 : null,
             'columns' => $columns,
             'rows' => $rows,
@@ -105,24 +105,37 @@ class ReportEmailComposer
     }
 
     /**
-     * Markdown link syntax lets an operator author an <a href="..."> with any
-     * scheme (e.g. javascript:), and strip_tags() only allows/denies tags, not
-     * attribute values, so a malicious href would survive into the client's
-     * inbox. Restrict surviving <a> tags to http(s)/mailto before whitelisting.
+     * Tags kept in the rendered intro. Everything CommonMark can emit that we
+     * don't want in an email body (images, tables, raw markup) is dropped.
      */
-    private function sanitizeIntroHtml(string $html): string
+    private const INTRO_ALLOWED_TAGS = '<p><br><strong><em><ul><ol><li><a><h1><h2><h3><h4><blockquote><code><pre>';
+
+    /**
+     * Render the operator-authored intro to the HTML that goes, unescaped, into
+     * the client's email and the in-app preview (see
+     * resources/views/mail/client-report.blade.php).
+     *
+     * The dangerous input is a link with a script-bearing scheme, or raw HTML
+     * carrying an event handler. CommonMark handles both properly and we let it:
+     * `allow_unsafe_links` drops javascript:/data:/vbscript: hrefs, and
+     * `html_input => strip` means raw HTML in the source never reaches the
+     * output at all. strip_tags() then bounds the tag set as defence in depth.
+     *
+     * This replaced a hand-rolled regex pass over the rendered HTML, which had
+     * two holes: it only matched *quoted* href values, so
+     * `<a href=javascript:…>` slipped through untouched, and for a link whose
+     * scheme did pass it re-emitted the original tag verbatim — carrying any
+     * `onclick=` along with it. Both survived strip_tags(), which filters tags
+     * but never attributes. Don't reintroduce regex sanitizing here.
+     */
+    private function renderIntroHtml(string $markdown): string
     {
-        $html = (string) preg_replace_callback(
-            '/<a\s+[^>]*href=(["\'])(.*?)\1[^>]*>/i',
-            function (array $m): string {
-                $href = trim($m[2]);
+        $html = Str::markdown($markdown, [
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ]);
 
-                return preg_match('#^(https?://|mailto:)#i', $href) ? $m[0] : '<a>';
-            },
-            $html
-        );
-
-        return strip_tags($html, '<p><br><strong><em><ul><ol><li><a><h1><h2><h3><h4><blockquote><code><pre>');
+        return strip_tags($html, self::INTRO_ALLOWED_TAGS);
     }
 
     private function renderSubject(ClientReportEmail $email, User $recipient, string $periodLabel): string
