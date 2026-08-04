@@ -73,6 +73,47 @@ class OpenflowLeadSourceTest extends TestCase
         return $client;
     }
 
+    public function test_numeric_field_ids_are_not_duplicated_into_custom_answers(): void
+    {
+        // OpenFlow installs that expose numeric field ids used to have every
+        // mapped field emitted twice: once into its core lead column and again
+        // as a custom answer, because PHP turns numeric-string array keys into
+        // ints and the "already consumed" check compared them strictly.
+        $source = $this->makeSource([
+            'field_map' => ['101' => 'email', '102' => 'full_name'],
+        ]);
+        $import = $this->makeImport($source->id);
+
+        $client = $this->mock(OpenflowClient::class);
+        $client->shouldReceive('login')->andReturn('TOKEN');
+        $client->shouldReceive('formFields')->andReturn([
+            'title'  => 'Contact',
+            'fields' => [
+                ['id' => '101', 'label' => 'Email', 'type' => 'email'],
+                ['id' => '102', 'label' => 'Your name', 'type' => 'short_text'],
+                ['id' => '103', 'label' => 'Budget', 'type' => 'number'],
+            ],
+        ]);
+        $client->shouldReceive('submissionsPage')->andReturn([
+            'submissions' => [[
+                'id'         => 'sub-1',
+                'created_at' => '2026-06-20T10:00:00Z',
+                'data'       => ['101' => 'alice@example.com', '102' => 'Alice Smith', '103' => '5000'],
+            ]],
+            'total' => 1, 'page' => 1, 'limit' => 100,
+        ]);
+
+        $leads = iterator_to_array((new OpenflowLeadSource($client))->pull($import));
+
+        $this->assertCount(1, $leads);
+        $this->assertSame('alice@example.com', $leads[0]->email);
+        $this->assertSame('Alice Smith', $leads[0]->fullName);
+
+        // Only the genuinely unmapped field survives as a custom answer.
+        $questions = array_column($leads[0]->customAnswers, 'question');
+        $this->assertSame(['Budget'], $questions);
+    }
+
     public function test_key_returns_openflow(): void
     {
         $client = $this->mock(OpenflowClient::class);

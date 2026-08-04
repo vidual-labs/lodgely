@@ -19,18 +19,27 @@ class PurgeExpiredLeads extends Command
             ->where('retention_until', '<', now())
             ->whereNull('deleted_at');
 
-        $count = (clone $query)->count();
-
         if ($this->option('dry-run')) {
+            $count = $query->count();
             $this->info("Would soft-delete {$count} expired lead(s).");
+
             return self::SUCCESS;
         }
 
-        $query->each(function (Lead $lead) {
-            $lead->delete();
+        // chunkById(), not each()/chunk(): soft-deleting a lead removes it from
+        // this query's own result set, so offset-based chunking would shift the
+        // remaining rows up a page and silently skip every second chunk —
+        // leaving expired leads on disk past their retention date. Keyset
+        // pagination on the primary key is immune to that.
+        $deleted = 0;
+        $query->chunkById(500, function ($leads) use (&$deleted) {
+            foreach ($leads as $lead) {
+                $lead->delete();
+                $deleted++;
+            }
         });
 
-        $this->info("Soft-deleted {$count} expired lead(s).");
+        $this->info("Soft-deleted {$deleted} expired lead(s).");
 
         return self::SUCCESS;
     }

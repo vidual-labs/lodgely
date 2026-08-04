@@ -2,7 +2,10 @@
 
 namespace App\Domain\Leads\Services;
 
+use App\Domain\Leads\Enums\LeadPriority;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Shared inbox filter / sort semantics.
@@ -22,16 +25,16 @@ class LeadFilter
             ->when($state['status'] ?? '', fn ($q, $v) => $q->where('status', $v))
             ->when($state['priority'] ?? '', fn ($q, $v) => $q->where('priority', $v))
             ->when($state['source'] ?? '', fn ($q, $v) => $q->where('source', $v))
-            ->when($state['client'] ?? '', fn ($q, $v) => $q->whereRaw('LOWER(client_name) = ?', [mb_strtolower((string) $v)]));
+            ->when($state['client'] ?? '', fn ($q, $v) => $q->forClientName((string) $v));
     }
 
-    /** @return array{0:string, 1:string} */
+    /** @return array{0:string|Expression, 1:string} */
     public function sortBy(string $sort): array
     {
         return match ($sort) {
             'created_asc' => ['created_at', 'asc'],
-            'priority_desc' => ['priority', 'desc'],
-            'priority_asc' => ['priority', 'asc'],
+            'priority_desc' => [$this->priorityRank(), 'desc'],
+            'priority_asc' => [$this->priorityRank(), 'asc'],
             'name_asc' => ['full_name', 'asc'],
             'name_desc' => ['full_name', 'desc'],
             'email_asc' => ['email', 'asc'],
@@ -48,6 +51,25 @@ class LeadFilter
             'status_desc' => ['status', 'desc'],
             default => ['created_at', 'desc'],
         };
+    }
+
+    /**
+     * Order priorities by their semantic weight, not by the enum's stored
+     * string. `ORDER BY priority DESC` sorts alphabetically — medium, low,
+     * high — so "highest priority first" put High last, which is exactly
+     * backwards. {@see LeadPriority::weight()} is the intended ordering, so
+     * build the same ranking in SQL.
+     *
+     * Safe to interpolate: every value comes from the enum, never from input.
+     */
+    private function priorityRank(): Expression
+    {
+        $cases = '';
+        foreach (LeadPriority::cases() as $priority) {
+            $cases .= sprintf(" WHEN '%s' THEN %d", $priority->value, $priority->weight());
+        }
+
+        return DB::raw('CASE priority'.$cases.' ELSE 0 END');
     }
 
     public static function sortableColumns(): array

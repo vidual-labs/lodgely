@@ -38,6 +38,30 @@ class MetaAdsSource implements AdMetricsSource
         'offsite_conversion.fb_pixel_lead',
     ];
 
+    /**
+     * Sum the lead-ish action counts on one insights row. Campaign-level rows
+     * and the ad-level rows a page filter forces us to aggregate must count
+     * leads identically, or a brand-filtered connector's numbers stop being
+     * comparable to an unfiltered one's.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    public static function countLeadActions(array $row): int
+    {
+        $leads = 0;
+
+        foreach (($row['actions'] ?? []) as $action) {
+            if (! is_array($action)) {
+                continue;
+            }
+            if (in_array($action['action_type'] ?? null, self::LEAD_ACTION_TYPES, true)) {
+                $leads += (int) ($action['value'] ?? 0);
+            }
+        }
+
+        return $leads;
+    }
+
     public function platform(): string
     {
         return 'meta';
@@ -162,12 +186,6 @@ class MetaAdsSource implements AdMetricsSource
     private function accumulate(array &$aggregated, array $row): void
     {
         $campaignId = (string) ($row['campaign_id'] ?? '');
-        $leads = 0;
-        foreach (($row['actions'] ?? []) as $action) {
-            if (is_array($action) && in_array($action['action_type'] ?? null, self::LEAD_ACTION_TYPES, true)) {
-                $leads += (int) ($action['value'] ?? 0);
-            }
-        }
 
         $aggregated[$campaignId] ??= [
             'campaignId' => $campaignId,
@@ -182,7 +200,7 @@ class MetaAdsSource implements AdMetricsSource
         $aggregated[$campaignId]['impressions'] += (int) ($row['impressions'] ?? 0);
         $aggregated[$campaignId]['clicks'] += (int) ($row['clicks'] ?? 0);
         $aggregated[$campaignId]['spendCents'] += (int) round((float) ($row['spend'] ?? 0) * 100);
-        $aggregated[$campaignId]['leads'] += $leads;
+        $aggregated[$campaignId]['leads'] += self::countLeadActions($row);
         // Reach isn't additive across ads (audience overlap) — Meta doesn't
         // return a de-duplicated reach at this granularity either way, so we
         // leave it null for page-filtered rows rather than publish a number
@@ -219,15 +237,7 @@ class MetaAdsSource implements AdMetricsSource
         // Marketing API returns spend as a decimal string in account currency.
         $spendCents = (int) round((float) ($row['spend'] ?? 0) * 100);
 
-        $leads = 0;
-        foreach (($row['actions'] ?? []) as $action) {
-            if (! is_array($action)) {
-                continue;
-            }
-            if (in_array($action['action_type'] ?? null, self::LEAD_ACTION_TYPES, true)) {
-                $leads += (int) ($action['value'] ?? 0);
-            }
-        }
+        $leads = self::countLeadActions($row);
 
         return new AdMetricsSnapshot(
             platform: 'meta',

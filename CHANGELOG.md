@@ -37,7 +37,48 @@ semantic-ish versioning once a 1.0 is tagged.
   add/remove lists. The daily scheduled pull and "Fetch data now" button
   automatically loop over every enabled connector per platform.
 
+### Changed
+
+- **Internal: single home for the reporting client-scoping rules.** The
+  identical `forClients()` scope on `AdSpendReport` and `AdCreativeReport` now
+  comes from one shared concern; the campaign-attribution lookup that maps a
+  client to their leads' campaign ids lives on `Lead` instead of being
+  reimplemented in `CampaignRollup` and `ClientViewDataBuilder`; and the
+  case-insensitive `client_name` comparison repeated across reporting and the
+  inbox filter is now a `Lead` scope. Also deduplicated adapter resolution in
+  `AdMetricsImporter` (which additionally asked the database for the active
+  source keys three times per run instead of once) and the Meta lead-action
+  counting shared by the campaign and creative adapters. No behaviour change.
+
 ### Fixed
+
+- **GDPR purge no longer skips most of the leads it reports deleting.**
+  `lodgely:leads:purge` walked expired leads with offset-based chunking while
+  soft-deleting them, so every delete shifted the remaining rows up a page and
+  the command silently jumped over roughly every second chunk. On a backlog of
+  1200 expired leads it deleted 1000 and left 200 on disk past their retention
+  date, while still reporting all 1200 as purged. It now pages by primary key,
+  and the reported count is the number actually deleted.
+
+- **Sorting the inbox by priority put High last.** "Priority" sorted on the
+  stored enum string, which is alphabetical — high, low, medium — so
+  descending order returned Medium, Low, High. Both directions now order by
+  the priority's semantic weight, matching `LeadPriority::weight()`.
+
+- **OpenFlow forms with numeric field ids no longer duplicate every mapped
+  answer.** PHP converts numeric-string array keys to ints, which defeated the
+  strict "already consumed" check, so a field mapped to Email or Name was
+  written to its lead column *and* repeated as a custom answer on every
+  imported lead. Only genuinely unmapped fields become custom answers now.
+
+- **A half-configured client connector no longer double-counts ad spend.** A
+  per-client Meta/Google connector inherited the ad account id / customer id
+  from `.env`, so enabling one before filling in its own account fetched the
+  default account a second time — once untagged, once tagged with the client —
+  and every campaign in it was counted twice in tenant-wide rollups. Account
+  identity is now the default connector's env fallback only; shared
+  credentials (tokens, OAuth app, MCC login customer id) still fall back as
+  before.
 
 - **Deactivating a user now terminates their existing sessions.** `is_active`
   was only checked at login, so a deactivated user (or their remember-me

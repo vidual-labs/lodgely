@@ -38,10 +38,15 @@ class AdMetricsImporter
         // deterministic demo campaigns (META_C_*/GOOG_C_*) keep showing up next
         // to the operator's real campaigns with fabricated numbers — they were
         // only suppressed from *future* imports, never deleted.
-        $this->purgeStaleMockRows($tenantId, AdPlatformSetting::activeSourceKeys($tenantId));
+        // Resolved once and threaded through: activeSourceKeys() is two DB
+        // round-trips, and this method used to ask for it three separate times
+        // per run (purge + campaign sources + creative sources).
+        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
 
-        $sources = $this->resolveSources($tenantId, $platform);
-        $creativeSources = $this->resolveCreativeSources($tenantId, $platform);
+        $this->purgeStaleMockRows($tenantId, $enabledKeys);
+
+        $sources = $this->sourcesFrom(AppServiceProvider::AD_METRICS_SOURCES, $enabledKeys, $platform);
+        $creativeSources = $this->sourcesFrom(AppServiceProvider::CREATIVE_METRICS_SOURCES, $enabledKeys, $platform);
 
         $anchor = \DateTimeImmutable::createFromInterface($anchorDate);
 
@@ -93,21 +98,11 @@ class AdMetricsImporter
      */
     public function resolveSources(int $tenantId, ?string $platform = null): array
     {
-        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
-
-        $sources = [];
-
-        foreach (AppServiceProvider::AD_METRICS_SOURCES as $key => $class) {
-            if ($enabledKeys && ! in_array($key, $enabledKeys, true)) {
-                continue;
-            }
-            $source = app($class);
-            if (! $platform || $source->platform() === $platform) {
-                $sources[] = $source;
-            }
-        }
-
-        return $sources;
+        return $this->sourcesFrom(
+            AppServiceProvider::AD_METRICS_SOURCES,
+            AdPlatformSetting::activeSourceKeys($tenantId),
+            $platform,
+        );
     }
 
     /**
@@ -119,15 +114,37 @@ class AdMetricsImporter
      */
     public function resolveCreativeSources(int $tenantId, ?string $platform = null): array
     {
-        $enabledKeys = AdPlatformSetting::activeSourceKeys($tenantId);
+        return $this->sourcesFrom(
+            AppServiceProvider::CREATIVE_METRICS_SOURCES,
+            AdPlatformSetting::activeSourceKeys($tenantId),
+            $platform,
+        );
+    }
 
+    /**
+     * Instantiate the adapters from one registry whose source key is enabled
+     * for this tenant, optionally narrowed to a single platform. The campaign
+     * and creative registries are keyed identically on purpose, so they share
+     * this one resolution rule rather than drifting apart.
+     *
+     * An empty $enabledKeys means "no opinion" and lets the whole registry run
+     * — that is the pre-multi-connector behaviour env-only installs rely on.
+     *
+     * @param  array<string, class-string>  $registry
+     * @param  string[]  $enabledKeys
+     * @return list<AdMetricsSource|CreativeMetricsSource>
+     */
+    private function sourcesFrom(array $registry, array $enabledKeys, ?string $platform): array
+    {
         $sources = [];
 
-        foreach (AppServiceProvider::CREATIVE_METRICS_SOURCES as $key => $class) {
+        foreach ($registry as $key => $class) {
             if ($enabledKeys && ! in_array($key, $enabledKeys, true)) {
                 continue;
             }
+
             $source = app($class);
+
             if (! $platform || $source->platform() === $platform) {
                 $sources[] = $source;
             }

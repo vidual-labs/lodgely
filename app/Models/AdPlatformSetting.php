@@ -204,7 +204,10 @@ class AdPlatformSetting extends Model
 
     public function effectiveMetaAccountId(): string
     {
-        return (string) ($this->meta_ad_account_id ?: config('lodgely.reporting.meta.ad_account_id', ''));
+        return $this->effectiveAccountIdentity(
+            $this->meta_ad_account_id,
+            'lodgely.reporting.meta.ad_account_id',
+        );
     }
 
     public function effectiveMetaApiVersion(): string
@@ -239,7 +242,35 @@ class AdPlatformSetting extends Model
 
     public function effectiveGoogleCustomerId(): string
     {
-        return (string) ($this->google_customer_id ?: config('lodgely.reporting.google.customer_id', ''));
+        return $this->effectiveAccountIdentity(
+            $this->google_customer_id,
+            'lodgely.reporting.google.customer_id',
+        );
+    }
+
+    /**
+     * Resolve an *account identity* (Meta ad account id / Google customer id)
+     * with the env fallback applied only to the shared default connector.
+     *
+     * Credentials — tokens, OAuth client id/secret, the MCC login customer id —
+     * are legitimately shared across connectors and keep their env fallback.
+     * The account id is not: if a per-client connector inherited it, enabling
+     * that connector before filling in its own account would silently fetch the
+     * *default* account a second time, once untagged and once tagged with the
+     * client's name. Both rows land in ad_spend_reports, and the operator's
+     * tenant-wide rollups then double-count every campaign in that account.
+     * Returning empty instead makes the adapter raise a clear "account id must
+     * be set" error, which is what a half-configured connector should do.
+     */
+    private function effectiveAccountIdentity(?string $stored, string $configKey): string
+    {
+        $stored = trim((string) $stored);
+
+        if ($stored !== '') {
+            return $stored;
+        }
+
+        return $this->client_name === null ? (string) config($configKey, '') : '';
     }
 
     public function effectiveGoogleLoginCustomerId(): string

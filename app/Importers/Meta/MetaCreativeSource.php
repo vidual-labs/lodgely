@@ -157,15 +157,7 @@ class MetaCreativeSource implements CreativeMetricsSource
         string $label,
         ?string $clientName = null,
     ): CreativeMetricsSnapshot {
-        $leads = 0;
-        foreach (($row['actions'] ?? []) as $action) {
-            if (! is_array($action)) {
-                continue;
-            }
-            if (in_array($action['action_type'] ?? null, MetaAdsSource::LEAD_ACTION_TYPES, true)) {
-                $leads += (int) ($action['value'] ?? 0);
-            }
-        }
+        $leads = MetaAdsSource::countLeadActions($row);
 
         return new CreativeMetricsSnapshot(
             platform: 'meta',

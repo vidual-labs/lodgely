@@ -252,7 +252,13 @@ class OpenflowLeadSource implements LeadSource
 
         // Build custom answers: explicitly-named mappings first, then any other
         // answered field that wasn't consumed by a core mapping.
-        $consumed = array_keys($coreMap);
+        //
+        // The keys are cast back to strings on the way out: PHP silently
+        // converts numeric-string array keys to ints, and OpenFlow field ids
+        // often *are* numeric — without the cast the strict in_array() below
+        // never matches, and every mapped field is emitted a second time as a
+        // custom answer alongside the core column it populated.
+        $consumed = array_map('strval', array_keys($coreMap));
         $customAnswers = [];
 
         foreach ($namedAnswerMap as $fieldId => $key) {
@@ -262,7 +268,7 @@ class OpenflowLeadSource implements LeadSource
             }
             $label = $labels[$fieldId] ?? $this->humanise($key);
             $customAnswers[] = ['question' => $label, 'answer' => $value];
-            $consumed[] = $fieldId;
+            $consumed[] = (string) $fieldId;
         }
 
         foreach ($data as $fieldId => $raw) {
