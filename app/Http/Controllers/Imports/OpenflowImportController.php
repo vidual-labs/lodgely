@@ -39,7 +39,7 @@ class OpenflowImportController extends Controller
 
         try {
             $result = $runner->run($import, $leadSource);
-            $source->update(['last_fetched_at' => now()]);
+            $source->update(['last_fetched_at' => now(), 'last_successful_fetch_at' => now()]);
 
             return redirect()
                 ->route('imports.openflow')

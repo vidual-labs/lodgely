@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\HasRecurringFetchSchedule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Crypt;
  */
 class OpenflowSource extends Model
 {
+    use HasRecurringFetchSchedule;
+
     protected $table = 'openflow_sources';
 
     protected $fillable = [
@@ -41,6 +43,7 @@ class OpenflowSource extends Model
         'default_campaign_name',
         'refresh_hours',
         'last_fetched_at',
+        'last_successful_fetch_at',
         'is_active',
     ];
 
@@ -50,6 +53,7 @@ class OpenflowSource extends Model
             'field_map'       => 'array',
             'refresh_hours'   => 'integer',
             'last_fetched_at' => 'datetime',
+            'last_successful_fetch_at' => 'datetime',
             'is_active'       => 'boolean',
         ];
     }
@@ -57,24 +61,6 @@ class OpenflowSource extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
-    }
-
-    public function scopeForTenant(Builder $query, int $tenantId): Builder
-    {
-        return $query->where('tenant_id', $tenantId);
-    }
-
-    public function isDue(): bool
-    {
-        if (! $this->is_active) {
-            return false;
-        }
-
-        if ($this->last_fetched_at === null) {
-            return true;
-        }
-
-        return $this->last_fetched_at->addHours($this->refresh_hours)->isPast();
     }
 
     /**

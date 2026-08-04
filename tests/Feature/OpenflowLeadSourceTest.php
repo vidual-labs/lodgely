@@ -240,10 +240,13 @@ class OpenflowLeadSourceTest extends TestCase
 
     public function test_pull_stops_at_high_water_mark(): void
     {
-        // last_fetched_at = now; cutoff = now-60min. Older submissions are skipped.
+        // last_successful_fetch_at = now; cutoff = now-60min. Older submissions
+        // are skipped. The mark deliberately comes from the *successful*-fetch
+        // column, not the scheduler's throttle — see OpenflowFetchClockTest.
         $source = $this->makeSource([
-            'field_map'       => ['fEmail' => 'email'],
-            'last_fetched_at' => now(),
+            'field_map'                => ['fEmail' => 'email'],
+            'last_fetched_at'          => now(),
+            'last_successful_fetch_at' => now(),
         ]);
         $import = $this->makeImport($source->id);
 
