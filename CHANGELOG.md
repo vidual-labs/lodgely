@@ -6,6 +6,25 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox filter-card panels (Custom columns, Filter options, Saved views)
+  stayed open forever once opened, on every future visit to `/inbox`.**
+  Reopening a panel after its "Apply"/"Save" form redirect was implemented
+  with a sticky `?columns=1` / `?filters=1` / `?saved-views=1` query
+  parameter. None of those are Livewire `#[Url]`-bound properties, so nothing
+  ever cleared them — once a user submitted the Columns picker once, that
+  parameter stayed in the URL bar (and any bookmarked/shared link) and the
+  panel rendered open on every subsequent load, reported as "column select
+  now seems open all the time." Replaced with a one-shot
+  `inbox.open-panel` session flash: the redirect after Apply/Reset/Save sets
+  it, the very next page render reads and consumes it, and every visit after
+  that starts with every panel collapsed by default. The Columns picker's
+  form also now carries the current search/status/priority/source/client/
+  outreach/sort state as hidden inputs on redirect, the same way the Filter
+  options form already did, so applying a column change no longer silently
+  drops the active filters.
+
 ### Added
 
 - **Per-user filter-dropdown picker for the inbox toolbar, plus a new

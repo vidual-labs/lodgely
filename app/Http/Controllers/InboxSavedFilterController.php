@@ -25,6 +25,13 @@ use Illuminate\Validation\Rule;
  *  - {@see action()}       POST /inbox/saved-filters/{filter}
  *      A single `action=load|default|delete` switch keeps the chip
  *      markup to one `<form>` per row.
+ *
+ * `store()` and the `default`/`delete` branches of `action()` reopen the
+ * "Saved views" panel via a one-shot `inbox.open-panel` session flash, not a
+ * `?saved-views=1` query param — a query param would stick in the address
+ * bar forever (nothing ever clears it), reopening the panel on every
+ * subsequent visit to that URL. `load` doesn't reopen the panel at all —
+ * it's navigating away to view the loaded filter results, not managing views.
  */
 class InboxSavedFilterController extends Controller
 {
@@ -69,7 +76,8 @@ class InboxSavedFilterController extends Controller
             ]);
         });
 
-        return $this->redirectToInbox($request, ['saved-views' => 1])
+        return $this->redirectToInbox($request)
+            ->with('inbox.open-panel', 'saved-views')
             ->with('inbox.saved-filter.stored', __('View saved.'));
     }
 
@@ -111,7 +119,8 @@ class InboxSavedFilterController extends Controller
                 }
             });
 
-            return $this->redirectToInbox($request, ['saved-views' => 1])
+            return $this->redirectToInbox($request)
+                ->with('inbox.open-panel', 'saved-views')
                 ->with('inbox.saved-filter.stored', $filter->is_default
                     ? __('Default view updated.')
                     : __('Default view cleared.'));
@@ -120,7 +129,8 @@ class InboxSavedFilterController extends Controller
         if ($action === 'delete') {
             $filter->delete();
 
-            return $this->redirectToInbox($request, ['saved-views' => 1])
+            return $this->redirectToInbox($request)
+                ->with('inbox.open-panel', 'saved-views')
                 ->with('inbox.saved-filter.stored', __('View deleted.'));
         }
 
@@ -128,16 +138,16 @@ class InboxSavedFilterController extends Controller
     }
 
     /**
-     * Return the user to /inbox preserving any current filter URL params,
-     * plus any extras (e.g. `saved-views=1` to reopen the chips panel).
-     *
-     * @param  array<string,mixed>  $extra
+     * Return the user to /inbox preserving any current filter URL params.
+     * Callers that need the "saved views" panel to reopen add the
+     * `inbox.open-panel` flash themselves — see the class docblock for why
+     * that isn't a query param.
      */
-    private function redirectToInbox(Request $request, array $extra = []): RedirectResponse
+    private function redirectToInbox(Request $request): RedirectResponse
     {
         $query = $request->only(['q', 'status', 'priority', 'source', 'client', 'outreach', 'sort']);
         $query = array_filter($query, fn ($v) => $v !== null && $v !== '');
 
-        return redirect()->to(route('inbox', array_merge($query, $extra)));
+        return redirect()->to(route('inbox', $query));
     }
 }

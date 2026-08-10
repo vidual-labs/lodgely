@@ -54,10 +54,14 @@ class InboxFilterPickerController extends Controller
     }
 
     /**
-     * Redirect to /inbox with `?filters=1` so the picker re-opens, carrying
-     * forward the hidden-input filter state — except the four picker-owned
-     * filters (status/priority/source/outreach), which only survive if still
-     * in $picked.
+     * Redirect to /inbox carrying forward the hidden-input filter state —
+     * except the four picker-owned filters (status/priority/source/outreach),
+     * which only survive if still in $picked. The picker re-opening on
+     * reload is a one-shot `inbox.open-panel` session flash, not a
+     * `?filters=1` query param: a query param would stick in the address bar
+     * forever (nothing ever clears it, and it isn't one of InboxPage's
+     * Livewire `#[Url]`-bound properties), reopening the panel on every
+     * subsequent visit to that URL — not just the one right after Apply.
      *
      * @param  list<string>  $picked
      */
@@ -77,8 +81,8 @@ class InboxFilterPickerController extends Controller
             }
         }
 
-        $query['filters'] = 1;
-
-        return redirect()->to(route('inbox', $query))->with('inbox.filters.saved', $message);
+        return redirect()->to(route('inbox', $query))
+            ->with('inbox.open-panel', 'filters')
+            ->with('inbox.filters.saved', $message);
     }
 }

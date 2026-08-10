@@ -18,9 +18,21 @@ use Illuminate\Validation\Rule;
  * looks correct on paper, but something in the bundle / browser combo
  * silently drops the click. A bare <form method="POST"> with checkboxes
  * cannot fail the same way: the browser submits, Laravel routes, this
- * controller writes the JSONB column, /inbox reloads with ?columns=1
- * so the picker re-opens, and InboxPage::mount() picks up the new picks
- * via WithColumnPicker::loadColumnPicker().
+ * controller writes the JSONB column, /inbox reloads with the picker
+ * re-opened, and InboxPage::mount() picks up the new picks via
+ * WithColumnPicker::loadColumnPicker().
+ *
+ * The form carries the current search/status/priority/source/client/
+ * outreach/sort state as hidden inputs so applying a column pick doesn't
+ * silently drop whatever the user was already looking at. The picker
+ * re-opening on reload is a one-shot `inbox.open-panel` session flash, not
+ * a `?columns=1` query param — a query param would stick in the address
+ * bar forever (nothing ever clears it, and it isn't one of InboxPage's
+ * Livewire `#[Url]`-bound properties), reopening the panel on every
+ * subsequent visit to that URL. Both bugs — filters dropped on apply, and
+ * the panel stuck permanently open — hit the same class of controllers;
+ * see the identical fix in InboxFilterPickerController /
+ * InboxSavedFilterController.
  *
  * Trade-off: one full page reload per Apply. Acceptable — the picker is
  * a low-frequency action, and the rest of the inbox (filters, sort,
@@ -79,13 +91,25 @@ class InboxColumnPickerController extends Controller
     }
 
     /**
-     * Redirect to /inbox with `?columns=1` so the picker re-opens, plus
-     * a one-shot flash so the user sees a "Saved." confirmation.
+     * Redirect to /inbox preserving the current filter state, with a
+     * one-shot flash that reopens the columns picker and shows a "Saved."
+     * confirmation on the very next request only.
      */
     private function redirectBackToInbox(Request $request, string $message): RedirectResponse
     {
+        $query = array_filter([
+            'q' => (string) $request->input('search', ''),
+            'status' => (string) $request->input('status', ''),
+            'priority' => (string) $request->input('priority', ''),
+            'source' => (string) $request->input('source', ''),
+            'client' => (string) $request->input('client', ''),
+            'outreach' => (string) $request->input('outreach', ''),
+            'sort' => (string) $request->input('sort', ''),
+        ], fn ($v) => $v !== '');
+
         return redirect()
-            ->to(route('inbox', ['columns' => 1]))
+            ->to(route('inbox', $query))
+            ->with('inbox.open-panel', 'columns')
             ->with('inbox.columns.saved', $message);
     }
 }

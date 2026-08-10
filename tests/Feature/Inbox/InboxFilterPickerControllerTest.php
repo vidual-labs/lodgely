@@ -11,8 +11,10 @@ use Tests\TestCase;
 /**
  * Native HTML form endpoint for the filter-dropdown picker. Livewire-level
  * behaviour (defaults, toggling, persistence) is covered in InboxPageTest;
- * this covers the HTTP surface specific to the controller — validation, and
- * the redirect carrying/dropping filter state.
+ * this covers the HTTP surface specific to the controller — validation, the
+ * redirect carrying/dropping filter state, and that the panel reopens via a
+ * one-shot session flash rather than a query param that would stick in the
+ * address bar forever (see CLAUDE.md).
  */
 class InboxFilterPickerControllerTest extends TestCase
 {
@@ -103,7 +105,7 @@ class InboxFilterPickerControllerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $expected = ['q' => 'acme', 'status' => 'new', 'priority' => 'high', 'sort' => 'priority_desc', 'filters' => '1'];
+        $expected = ['q' => 'acme', 'status' => 'new', 'priority' => 'high', 'sort' => 'priority_desc'];
         ksort($expected);
         $this->assertSame($expected, $this->redirectQuery($response));
     }
@@ -125,9 +127,33 @@ class InboxFilterPickerControllerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $expected = ['status' => 'new', 'filters' => '1'];
+        $expected = ['status' => 'new'];
         ksort($expected);
         $this->assertSame($expected, $this->redirectQuery($response));
+    }
+
+    public function test_apply_flashes_a_one_shot_open_panel_signal_not_a_sticky_query_param(): void
+    {
+        $user = $this->user();
+
+        $response = $this->actingAs($user)
+            ->post('/inbox/filters', ['action' => 'apply', 'filters' => ['status']]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('inbox.open-panel', 'filters');
+        $this->assertArrayNotHasKey('filters', $this->redirectQuery($response));
+    }
+
+    public function test_reset_flashes_the_open_panel_signal_too(): void
+    {
+        $user = $this->user();
+        $user->forceFill(['inbox_filters' => ['outreach']])->save();
+
+        $response = $this->actingAs($user)->post('/inbox/filters', ['action' => 'reset']);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('inbox.open-panel', 'filters');
+        $this->assertArrayNotHasKey('filters', $this->redirectQuery($response));
     }
 
     public function test_both_operators_and_clients_can_use_the_picker(): void
