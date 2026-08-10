@@ -35,14 +35,24 @@ class LeadExportController extends Controller
 
     private const FORMATS = ['csv', 'ndjson'];
 
+    /**
+     * Both operators and clients may export CSV — {@see Lead::scopeVisibleTo()}
+     * (via `visibleTo($user)` below) scopes a client's export to their own
+     * leads, the same as the inbox table itself. NDJSON stays operator-only:
+     * it's a raw-data/API-style format with no client-facing use case, unlike
+     * CSV which is the "download for Excel" request clients actually make.
+     */
     public function __invoke(Request $request, LeadFilter $filter): StreamedResponse
     {
         $user = $request->user();
-        abort_unless($user?->isOperator(), 403);
+        abort_unless($user !== null, 403);
 
         $format = $request->query('format', 'csv');
         if (! in_array($format, self::FORMATS, true)) {
             abort(422, 'Unsupported format. Use csv or ndjson.');
+        }
+        if ($format === 'ndjson' && ! $user->isOperator()) {
+            abort(403);
         }
 
         $state = [

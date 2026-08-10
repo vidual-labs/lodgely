@@ -8,6 +8,29 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Clients can now edit status/priority, bulk-edit, add notes, and export
+  CSV — all scoped to their own leads.** Previously a client's only
+  self-service action was the outreach toggles (qualified/called/mailed);
+  everything else routed through an operator. Clients can now:
+  - Change a lead's status and priority from the lead panel, and bulk-apply
+    both across a multi-select, the same way operators already could. Bulk
+    *delete* stays operator-only — it's destructive, and "editing" doesn't
+    extend to permanently removing data.
+  - Add notes to a lead (previously view-only for clients).
+  - Download their filtered inbox as CSV (`/inbox/export?format=csv`) —
+    Excel opens it directly. The raw NDJSON export stays operator-only.
+
+  Every action is scoped through the same `Lead::scopeVisibleTo()` a client's
+  inbox already uses, so this is additive self-service, not a visibility
+  change — a client still can never see or touch a lead outside their
+  assigned `client_name` scopes.
+
+  The lead panel also reorders the Outreach and Workflow (status/priority)
+  sections to sit directly under Contact, ahead of the read-only
+  attribution/message sections, so the actions a client can take are the
+  first thing they see on opening a lead rather than easy to miss further
+  down the panel.
+
 - **Per-connector brand filtering for shared Meta/Google Ads accounts.** A
   client connector can now be scoped to one brand within an ad account that
   actually serves several — e.g. two businesses sharing one Google Ads or

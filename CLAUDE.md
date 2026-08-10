@@ -14,8 +14,17 @@ it belongs in HubSpot, Pipedrive or Salesforce, it almost certainly does
 The two real personas:
 
 - **Operator** — agency person or inhouse marketer who needs the leads sorted.
-- **Client** — small business owner who just wants to *see* their leads
-  in a clean read-only-ish view.
+- **Client** — small business owner who mostly wants to *see* their leads,
+  plus enough light self-service to not have to ask an operator for every
+  small thing: status/priority, the qualified/called/mailed outreach toggles,
+  notes, bulk-editing status/priority, and CSV export are all available to
+  clients, always scoped to their own leads via `Lead::scopeVisibleTo()`.
+  What stays operator-only is anything destructive (bulk delete), anything
+  that creates/imports data (manual lead entry, all lead-source config), and
+  anything CRM-adjacent (AI evaluation, duplicate reconciliation, the raw
+  NDJSON export). When adding a new lead action, default to opening it to
+  both roles unless it's one of those three categories — that mirrors how
+  the existing actions are split and is what "light self-service" means here.
 
 ## Tech stack
 

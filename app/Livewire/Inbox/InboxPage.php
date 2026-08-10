@@ -88,9 +88,14 @@ class InboxPage extends Component
         $this->newNoteBody = null;
     }
 
+    /**
+     * Both operators and clients may change status/priority on a lead they
+     * can see — {@see guardedLead()} is what actually scopes this to leads
+     * visible to the caller, the same as {@see toggleOutreach()}.
+     */
     public function setStatus(int $leadId, string $status, AuditLogger $audit): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
         $status = LeadStatus::from($status);
         $lead = $this->guardedLead($leadId);
@@ -109,9 +114,10 @@ class InboxPage extends Component
         ]);
     }
 
+    /** Both operators and clients may call this — see {@see setStatus()}. */
     public function setPriority(int $leadId, string $priority, AuditLogger $audit): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
         $priority = LeadPriority::from($priority);
         $lead = $this->guardedLead($leadId);
@@ -178,9 +184,10 @@ class InboxPage extends Component
         }
     }
 
+    /** Both operators and clients may leave notes on a lead they can see. */
     public function addNote(AuditLogger $audit): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
         $this->validate();
         $body = trim((string) $this->newNoteBody);

@@ -27,25 +27,30 @@
                     </svg>
                 </button>
 
+                {{-- Export CSV is available to clients and operators alike (each scoped
+                     to their own visible leads); Export JSON and manual lead entry stay
+                     operator-only. --}}
                 @auth
-                    @if(auth()->user()->isOperator())
-                        <div class="flex items-center gap-2" wire:ignore.self>
-                            <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                                <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
-                                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                    {{ __('Export CSV') }}
-                                </a>
+                    <div class="flex items-center gap-2" wire:ignore.self>
+                        <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                {{ __('Export CSV') }}
+                            </a>
+                            @if(auth()->user()->isOperator())
                                 <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
                                     {{ __('Export JSON') }}
                                 </a>
-                            </div>
+                            @endif
+                        </div>
+                        @if(auth()->user()->isOperator())
                             <button type="button" wire:click="openManualForm"
                                     class="inline-flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
                                 + {{ __('New lead') }}
                             </button>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 @endauth
             </div>
         </div>
@@ -451,8 +456,10 @@
     </div>
 
     {{-- ────────────────── bulk action bar ───────────────── --}}
+    {{-- Status/priority bulk edit is available to clients and operators alike;
+         bulk delete (below) stays operator-only. --}}
     @auth
-        @if(auth()->user()->isOperator() && count($bulkSelected) > 0)
+        @if(count($bulkSelected) > 0)
             <div class="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/40 px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <span class="text-sm font-medium text-blue-800 dark:text-blue-300">
                     {{ trans_choice(':count lead selected|:count leads selected', count($bulkSelected), ['count' => count($bulkSelected)]) }}
@@ -488,12 +495,14 @@
                     </button>
                 </div>
 
-                <button type="button"
-                        wire:click="bulkDelete"
-                        wire:confirm="{{ trans_choice('Delete :count selected lead? This cannot be undone.|Delete :count selected leads? This cannot be undone.', count($bulkSelected), ['count' => count($bulkSelected)]) }}"
-                        class="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-rose-700 transition-colors">
-                    {{ __('Delete') }}
-                </button>
+                @if(auth()->user()->isOperator())
+                    <button type="button"
+                            wire:click="bulkDelete"
+                            wire:confirm="{{ trans_choice('Delete :count selected lead? This cannot be undone.|Delete :count selected leads? This cannot be undone.', count($bulkSelected), ['count' => count($bulkSelected)]) }}"
+                            class="rounded-lg bg-rose-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-rose-700 transition-colors">
+                        {{ __('Delete') }}
+                    </button>
+                @endif
 
                 <button type="button" wire:click="clearBulkSelection"
                         class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors ml-auto">
@@ -527,7 +536,7 @@
             'status' => 'w-[120px]', 'priority' => 'w-[110px]', 'outreach' => 'w-[140px]',
         ];
         $visibleCount = count($activeColumns) + count($activeQuestions)
-            + (auth()->user()?->isOperator() ? 1 : 0); /* bulk checkbox */
+            + (auth()->check() ? 1 : 0); /* bulk checkbox — clients and operators alike */
         $sortableColumns = \App\Domain\Leads\Services\LeadFilter::sortableColumns();
     @endphp
     <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
@@ -536,26 +545,24 @@
                 <thead class="bg-slate-50 dark:bg-slate-800/60">
                     <tr class="text-left text-xs font-semibold text-slate-500 dark:text-slate-400">
                         @auth
-                            @if(auth()->user()->isOperator())
-                                @php
-                                    $allOnPageSelected = count($bulkSelected) > 0 && count($bulkSelected) === $leads->count();
-                                    $someSelected = count($bulkSelected) > 0 && !$allOnPageSelected;
-                                @endphp
-                                <th class="px-3 py-2 w-8">
-                                    <button type="button" wire:click="bulkToggleAll"
-                                            class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
-                                                   {{ $allOnPageSelected || $someSelected
-                                                       ? 'bg-brand-500 border-brand-500 text-white'
-                                                       : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
-                                            aria-label="{{ __('Select all on this page') }}">
-                                        @if($allOnPageSelected)
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7l3 3 5-6"/></svg>
-                                        @elseif($someSelected)
-                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7h8"/></svg>
-                                        @endif
-                                    </button>
-                                </th>
-                            @endif
+                            @php
+                                $allOnPageSelected = count($bulkSelected) > 0 && count($bulkSelected) === $leads->count();
+                                $someSelected = count($bulkSelected) > 0 && !$allOnPageSelected;
+                            @endphp
+                            <th class="px-3 py-2 w-8">
+                                <button type="button" wire:click="bulkToggleAll"
+                                        class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
+                                               {{ $allOnPageSelected || $someSelected
+                                                   ? 'bg-brand-500 border-brand-500 text-white'
+                                                   : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
+                                        aria-label="{{ __('Select all on this page') }}">
+                                    @if($allOnPageSelected)
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7l3 3 5-6"/></svg>
+                                    @elseif($someSelected)
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7h8"/></svg>
+                                    @endif
+                                </button>
+                            </th>
                         @endauth
                         @foreach($activeColumns as $col)
                             <th class="px-3 py-2 {{ $colWidths[$col] ?? '' }} {{ $col === 'outreach' ? 'text-right' : '' }}">
@@ -601,21 +608,19 @@
                             wire:click="selectLead({{ $lead->id }})"
                             class="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 {{ $selected?->id === $lead->id ? 'bg-slate-100 dark:bg-slate-800' : '' }}">
                             @auth
-                                @if(auth()->user()->isOperator())
-                                    <td class="px-3 py-2" wire:click.stop>
-                                        @php $isRowSelected = in_array((string) $lead->id, $bulkSelected, true); @endphp
-                                        <button type="button" wire:click="toggleBulkItem('{{ $lead->id }}')"
-                                                class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
-                                                       {{ $isRowSelected
-                                                           ? 'bg-brand-500 border-brand-500 text-white'
-                                                           : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
-                                                aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
-                                            @if($isRowSelected)
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7l3 3 5-6"/></svg>
-                                            @endif
-                                        </button>
-                                    </td>
-                                @endif
+                                <td class="px-3 py-2" wire:click.stop>
+                                    @php $isRowSelected = in_array((string) $lead->id, $bulkSelected, true); @endphp
+                                    <button type="button" wire:click="toggleBulkItem('{{ $lead->id }}')"
+                                            class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
+                                                   {{ $isRowSelected
+                                                       ? 'bg-brand-500 border-brand-500 text-white'
+                                                       : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500' }}"
+                                            aria-label="{{ __('Select lead :id', ['id' => $lead->id]) }}">
+                                        @if($isRowSelected)
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2.5"><path d="M3 7l3 3 5-6"/></svg>
+                                        @endif
+                                    </button>
+                                </td>
                             @endauth
                             @foreach($activeColumns as $col)
                                 @switch($col)

@@ -59,12 +59,26 @@ class LeadExportTest extends TestCase
         $this->get('/inbox/export?format=csv')->assertRedirect('/login');
     }
 
-    public function test_client_is_forbidden(): void
+    public function test_client_can_export_csv_scoped_to_their_own_leads(): void
+    {
+        $client = $this->clientFor('Acme');
+        Lead::factory()->create(['client_name' => 'Acme', 'full_name' => 'Hers']);
+        Lead::factory()->create(['client_name' => 'Other', 'full_name' => 'Not hers']);
+
+        $response = $this->actingAs($client)->get('/inbox/export?format=csv');
+        $response->assertOk();
+
+        $body = $this->streamBody($response->baseResponse);
+        $this->assertStringContainsString('Hers', $body);
+        $this->assertStringNotContainsString('Not hers', $body);
+    }
+
+    public function test_client_cannot_export_ndjson(): void
     {
         $client = $this->clientFor('Acme');
 
         $this->actingAs($client)
-            ->get('/inbox/export?format=csv')
+            ->get('/inbox/export?format=ndjson')
             ->assertForbidden();
     }
 
