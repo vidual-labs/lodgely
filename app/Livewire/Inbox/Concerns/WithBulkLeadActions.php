@@ -11,7 +11,7 @@ use Livewire\Attributes\On;
 /**
  * Bulk selection and bulk status/priority application for the inbox table.
  *
- * Relies on {@see WithLeadFilters::applyFilters()} / {@see WithLeadFilters::sortBy()}
+ * Relies on {@see WithLeadFilters::applyFilters()} / {@see WithLeadFilters::applySort()}
  * for the "select all on page" query, and reacts to the
  * `inbox-filters-cleared` event so selections do not survive a filter reset.
  */
@@ -33,9 +33,11 @@ trait WithBulkLeadActions
     {
         abort_unless(auth()->user()?->isOperator(), 403);
 
+        // Must order exactly as render() does, tiebreakers included — otherwise
+        // "select all on page" selects a different set of rows than the page
+        // the operator is looking at.
         $base = Lead::query()->visibleTo(auth()->user());
-        $pageIds = $this->applyFilters($base)
-            ->orderBy(...$this->sortBy())
+        $pageIds = $this->applySort($this->applyFilters($base))
             ->paginate(config('lodgely.pagination.per_page'))
             ->pluck('id')
             ->map(fn ($id) => (string) $id)

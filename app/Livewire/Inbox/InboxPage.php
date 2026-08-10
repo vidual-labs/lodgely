@@ -204,8 +204,7 @@ class InboxPage extends Component
 
         $base = Lead::query()->visibleTo($user);
 
-        $leads = $this->applyFilters($base)
-            ->orderBy(...$this->sortBy())
+        $leads = $this->applySort($this->applyFilters($base))
             ->paginate(config('lodgely.pagination.per_page'));
 
         $clientOptions = (clone $base)

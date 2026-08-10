@@ -53,9 +53,10 @@ class LeadExportController extends Controller
             'client' => (string) $request->query('client', ''),
         ];
 
-        $query = $filter
-            ->apply(Lead::query()->visibleTo($user), $state)
-            ->orderBy(...$filter->sortBy((string) $request->query('sort', 'created_desc')));
+        $query = $filter->applySort(
+            $filter->apply(Lead::query()->visibleTo($user), $state),
+            (string) $request->query('sort', 'created_desc'),
+        );
 
         $timestamp = now()->format('Ymd-Hi');
         $filename = "lodgely-leads-{$timestamp}.".($format === 'csv' ? 'csv' : 'ndjson');

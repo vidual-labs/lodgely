@@ -28,7 +28,44 @@ class LeadFilter
             ->when($state['client'] ?? '', fn ($q, $v) => $q->forClientName((string) $v));
     }
 
-    /** @return array{0:string|Expression, 1:string} */
+    /**
+     * Apply a sort to a lead query, primary key plus tiebreakers.
+     *
+     * Prefer this over calling {@see sortBy()} and ordering yourself: every
+     * sort but the two `created_*` ones is low-cardinality — priority has three
+     * distinct values, status five, source a handful — so a single ORDER BY
+     * column leaves the order *within* a band entirely up to the database. In
+     * Postgres that is usually heap order, i.e. oldest first, which sinks the
+     * newest leads to the bottom of each band and makes pagination unstable:
+     * ties can be ordered differently per query, so the same lead shows up on
+     * two pages, or on none.
+     *
+     * `created_at DESC` breaks the band ("highest priority, newest first"), and
+     * `id` breaks created_at itself — a CSV or API import writes many rows in
+     * the same second, so created_at alone is not unique enough to paginate on.
+     */
+    public function applySort(Builder $query, string $sort): Builder
+    {
+        [$column, $direction] = $this->sortBy($sort);
+
+        $query->orderBy($column, $direction);
+
+        // The created_* sorts are already the recency ordering — they only need
+        // the id tiebreaker, in the same direction so the sequence reads
+        // consistently. Everything else gets recency first, then id.
+        if ($column === 'created_at') {
+            return $query->orderBy('id', $direction);
+        }
+
+        return $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+    }
+
+    /**
+     * The primary sort key only. Public for callers that need the raw pair
+     * (and for tests); {@see applySort()} is what surfaces should use.
+     *
+     * @return array{0:string|Expression, 1:string}
+     */
     public function sortBy(string $sort): array
     {
         return match ($sort) {

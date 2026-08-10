@@ -68,6 +68,20 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Inbox sorts now have a tiebreaker, so old leads stop floating to the top.**
+  Every sort applied a single ORDER BY column, and all of them except
+  "Received" are low-cardinality — priority has three distinct values, status
+  five. The order *within* a band was therefore left to the database, which in
+  Postgres means heap order: oldest first. Sorting by priority surfaced the
+  oldest leads in each band rather than the newest, and pagination was
+  unstable, since ties could be ordered differently between the query for page
+  one and the query for page two — the same lead could appear on both pages,
+  or on neither. Sorts now break ties on `created_at` (newest first), then on
+  `id`, which `created_at` alone cannot do because a CSV or API import writes
+  many rows in the same second. "Select all on page" orders identically to the
+  table, so it can no longer select a different set of rows than the operator
+  is looking at.
+
 - **Report-email intros could smuggle scripts into the client's inbox.** The
   intro is authored by an operator and rendered unescaped into the email body
   and the in-app preview. The sanitizer that was meant to restrict link
