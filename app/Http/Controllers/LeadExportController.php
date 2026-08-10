@@ -61,6 +61,7 @@ class LeadExportController extends Controller
             'priority' => (string) $request->query('priority', ''),
             'source' => (string) $request->query('source', ''),
             'client' => (string) $request->query('client', ''),
+            'outreach' => (string) $request->query('outreach', ''),
         ];
 
         $query = $filter->applySort(

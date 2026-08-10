@@ -146,9 +146,22 @@ below.
   re-enter and re-verify those credentials under Settings after such a
   restore.
 - 🔖 **Saved filters & default views** — any filter combination (search, status,
-  priority, source, client, sort) can be saved as a named view. Saved views appear
-  as chips in the filter bar; one can be starred as the user's default, loaded
-  automatically on each inbox visit.
+  priority, source, client, outreach, sort) can be saved as a named view. Saved
+  views appear as chips in the filter bar; one can be starred as the user's
+  default, loaded automatically on each inbox visit.
+- 🎚️ **Outreach filter** — filters the inbox by the qualified/called/mailed
+  toggles (Not contacted / Qualified / Called / Mailed), the same signal shown
+  as pills in the Outreach table column and lead panel.
+- 🧰 **Per-user filter-dropdown picker** — a "Filter options" toggle in the
+  filter bar lets each user choose which of Status / Priority / Source /
+  Outreach show up as toolbar dropdowns (Search and Sort aren't optional; the
+  operator-only Client dropdown is a role affordance, not a preference, so it
+  stays outside the picker). A client whose workflow lives in outreach status
+  rather than priority can drop one and add the other. Persists to
+  `users.inbox_filters`; defaults to Status/Priority/Source (today's fixed
+  set) so nobody's inbox rearranges itself on upgrade. Unchecking a dropdown
+  also clears any value it had applied, so a list can never stay invisibly
+  filtered by a dropdown that's no longer shown.
 - 🧱 **Per-user column picker** — a "Custom columns" toggle in the filter bar
   expands an inline chip row where each user picks which fields the inbox
   table renders (`received`, `name`, `email`, `phone`, `client`, `source`,

@@ -158,6 +158,19 @@ class LeadExportTest extends TestCase
         $this->assertStringNotContainsString('Bob B', $body);
     }
 
+    public function test_outreach_filter_is_honoured(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['full_name' => 'Not contacted']);
+        Lead::factory()->create(['full_name' => 'Called', 'called_at' => now()]);
+
+        $response = $this->actingAs($op)->get('/inbox/export?format=csv&outreach=called');
+        $body = $this->streamBody($response->baseResponse);
+
+        $this->assertStringContainsString('Called', $body);
+        $this->assertStringNotContainsString('Not contacted', $body);
+    }
+
     public function test_priority_filter_is_honoured(): void
     {
         $op = $this->operator();

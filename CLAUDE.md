@@ -159,31 +159,40 @@ Rule::in(WithColumnPicker::AVAILABLE_COLUMNS) // ❌ fatal
 
 ### Inbox filter-card forms: native HTML, not Livewire dialogs
 
-The four panels on the inbox filter card — **Sources, Saved views,
-Custom columns, Save current view** — all open as inline expansion rows
-under the toolbar, with open state on the parent `x-data` (one Alpine
-component for the whole card). All four use the **same** `mt-3 pt-3
-border-t border-slate-100 dark:border-slate-800` rhythm. Don't reach
-for `<div x-data="{ open: false }">` per-panel dropdowns or fixed
-bottom-sheets — we tried both and morph timing inside this subtree
-killed the click bindings repeatedly.
+The five panels on the inbox filter card — **Sources, Saved views,
+Custom columns, Filter options, Save current view** — all open as
+inline expansion rows under the toolbar, with open state on the parent
+`x-data` (one Alpine component for the whole card). All five use the
+**same** `mt-3 pt-3 border-t border-slate-100 dark:border-slate-800`
+rhythm. Don't reach for `<div x-data="{ open: false }">` per-panel
+dropdowns or fixed bottom-sheets — we tried both and morph timing
+inside this subtree killed the click bindings repeatedly.
 
-Both panels that *write* state (Custom columns, Save current view) are
-plain `<form method="POST">` posting to controllers in
-`app/Http/Controllers/Inbox{ColumnPicker,SavedFilter}Controller.php` —
-**not** `wire:click` / `wire:model.live` actions. We rebuilt the
+The three panels that *write* state (Custom columns, Filter options,
+Save current view) are plain `<form method="POST">` posting to
+controllers in
+`app/Http/Controllers/Inbox{ColumnPicker,FilterPicker,SavedFilter}Controller.php`
+— **not** `wire:click` / `wire:model.live` actions. We rebuilt the
 column picker four times with different Livewire approaches
 (`wire:click` on chips → `@click="$wire.…"` → `wire:model.live` with
 lifecycle hooks → checkbox-driven `has-[:checked]:` styling) and every
 single variant silently dropped clicks for the user in production. The
 form path always works.
 
-The controllers redirect to `/inbox?columns=1` or `/inbox?save=1` with
-the user's current filter URL params preserved, so the panel re-opens
-on reload with the new state visible. The trait methods
-(`togglePickedColumn`, `saveFilter`, etc.) stay around as public
-Livewire actions for tests and any future programmatic caller, but the
-UI doesn't drive them.
+The controllers redirect to `/inbox?columns=1`, `?filters=1` or
+`?save=1` so the panel re-opens on reload with the new state visible.
+**Only bother preserving the rest of the current filter URL params in
+that redirect if the panel's own form carries them as hidden inputs**
+— `InboxColumnPickerController` doesn't, so applying a column pick
+today silently resets every active filter as a side effect (a
+pre-existing gap, not fixed here); `InboxFilterPickerController` does
+carry them (see its hidden `search`/`status`/`priority`/`source`/
+`client`/`outreach`/`sort` inputs), and additionally drops the
+*value* of any filter dropdown just unchecked in the same submit, so a
+hidden dropdown can never stay invisibly active. The trait methods
+(`togglePickedColumn`, `togglePickedFilter`, `saveFilter`, etc.) stay
+around as public Livewire actions for tests and any future
+programmatic caller, but the UI doesn't drive them.
 
 All chip-level actions inside these panels are also native HTML — the
 Saved-views chips are tiny `<form method="POST">` posts to

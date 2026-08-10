@@ -393,6 +393,85 @@ class InboxPageTest extends TestCase
         );
     }
 
+    public function test_filter_picker_defaults_to_status_priority_source_for_both_roles(): void
+    {
+        $op = $this->operator();
+        $client = $this->clientFor('Acme');
+
+        $opPicks = Livewire::actingAs($op)->test(InboxPage::class)->get('pickedFilters');
+        $clientPicks = Livewire::actingAs($client)->test(InboxPage::class)->get('pickedFilters');
+
+        // The pre-picker fixed toolbar — unchanged unless a user opts in to
+        // customising it, so nobody's inbox rearranges itself on upgrade.
+        $this->assertSame(['status', 'priority', 'source'], $opPicks);
+        $this->assertSame(['status', 'priority', 'source'], $clientPicks);
+    }
+
+    public function test_client_can_swap_priority_for_outreach_in_the_filter_picker(): void
+    {
+        $client = $this->clientFor('Acme');
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('togglePickedFilter', 'priority')
+            ->call('togglePickedFilter', 'outreach')
+            ->call('saveFilterPicker');
+
+        $stored = $client->fresh()->inbox_filters;
+        $this->assertIsArray($stored);
+        $this->assertNotContains('priority', $stored);
+        $this->assertContains('outreach', $stored);
+        $this->assertContains('status', $stored);
+        $this->assertContains('source', $stored);
+    }
+
+    public function test_unpicked_filter_dropdown_does_not_render(): void
+    {
+        $client = $this->clientFor('Acme');
+
+        $cmp = Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('togglePickedFilter', 'priority');
+
+        $cmp->assertDontSee('wire:model.live="priority"', false);
+        $cmp->assertSee('wire:model.live="status"', false);
+    }
+
+    public function test_picking_outreach_renders_the_outreach_dropdown(): void
+    {
+        $client = $this->clientFor('Acme');
+
+        $cmp = Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('togglePickedFilter', 'outreach');
+
+        $cmp->assertSee('wire:model.live="outreach"', false);
+    }
+
+    public function test_reset_filter_picker_restores_defaults(): void
+    {
+        $client = $this->clientFor('Acme');
+        $client->forceFill(['inbox_filters' => ['outreach']])->save();
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->assertSet('pickedFilters', ['outreach'])
+            ->call('resetFilterPicker')
+            ->assertSet('pickedFilters', ['status', 'priority', 'source']);
+
+        $this->assertNull($client->fresh()->inbox_filters);
+    }
+
+    public function test_toggling_an_unknown_filter_key_is_a_no_op(): void
+    {
+        $client = $this->clientFor('Acme');
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('togglePickedFilter', 'client')
+            ->assertSet('pickedFilters', ['status', 'priority', 'source']);
+    }
+
     public function test_custom_question_columns_render_answers_from_leads_in_scope(): void
     {
         $client = $this->clientFor('Acme');

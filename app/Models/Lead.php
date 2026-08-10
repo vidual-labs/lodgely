@@ -151,6 +151,25 @@ class Lead extends Model
             ->all();
     }
 
+    /**
+     * The Outreach inbox filter — matches the qualified/called/mailed columns
+     * shown as pills on the Outreach table/panel section. `not_contacted`
+     * means all three are still unset. Unrecognized values are a no-op rather
+     * than an error, matching {@see LeadIngestor::coerceStatus()}'s
+     * never-throw-on-bad-input convention for anything ultimately sourced
+     * from a URL query param.
+     */
+    public function scopeOutreachStatus(Builder $query, string $value): Builder
+    {
+        return match ($value) {
+            'qualified' => $query->whereNotNull('qualified_at'),
+            'called' => $query->whereNotNull('called_at'),
+            'mailed' => $query->whereNotNull('mailed_at'),
+            'not_contacted' => $query->whereNull('qualified_at')->whereNull('called_at')->whereNull('mailed_at'),
+            default => $query,
+        };
+    }
+
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
         $term = trim((string) $term);

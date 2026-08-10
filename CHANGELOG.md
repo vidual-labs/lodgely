@@ -8,6 +8,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Per-user filter-dropdown picker for the inbox toolbar, plus a new
+  Outreach filter.** A "Filter options" toggle in the filter bar lets each
+  user — client or operator — choose which of Status / Priority / Source /
+  Outreach show up as toolbar dropdowns, the same "Custom columns" pattern
+  already used for table columns. Prompted by a client who never filters by
+  priority but does filter by outreach status. The new Outreach filter
+  (Not contacted / Qualified / Called / Mailed) matches the qualified/called/
+  mailed pills already shown on every lead. Persists to `users.inbox_filters`;
+  defaults to Status/Priority/Source (today's fixed set), so nobody's inbox
+  rearranges itself on upgrade. Unchecking a dropdown also clears any value it
+  had applied, so a list can never stay invisibly filtered by a dropdown
+  that's no longer shown. Saved views now capture the outreach filter too.
+
 - **Clients can now edit status/priority, bulk-edit, add notes, and export
   CSV — all scoped to their own leads.** Previously a client's only
   self-service action was the outreach toggles (qualified/called/mailed);
@@ -90,6 +103,21 @@ semantic-ish versioning once a 1.0 is tagged.
   counting shared by the campaign and creative adapters. No behaviour change.
 
 ### Fixed
+
+- **German translations added for the Outreach section and 86 other
+  client-facing strings that were silently falling back to English.**
+  `lang/en.json` and `lang/de.json` are maintained as an exact matched pair —
+  every user-facing string needs an entry in both — but "Outreach",
+  "Qualified", "Called", "Mailed" and its helper caption had never been added
+  to either file, so a German user saw raw English text with no visual cue
+  it was untranslated (reported as "did not find it"). Audited every
+  `__()` call reachable from the pages a client can actually open (inbox,
+  lead panel, My reports, profile, nav) and found 82 more with the same gap
+  — mostly report-view/saved-filter/column-picker strings introduced by
+  earlier features — all added to both files now. A much larger set (~620)
+  remains missing across operator-only settings/import pages; translating
+  those accurately needs native-speaker review and is out of scope here, but
+  is worth a dedicated pass.
 
 - **Inbox sorts now have a tiebreaker, so old leads stop floating to the top.**
   Every sort applied a single ORDER BY column, and all of them except

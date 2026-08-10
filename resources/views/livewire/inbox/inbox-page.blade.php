@@ -73,27 +73,30 @@
 
     {{-- ────────────────── filter bar + sources ───────────────── --}}
     @php
-        $savedFilterErrors = $errors->hasAny(['name', 'is_default', 'search', 'status', 'priority', 'source', 'client', 'sort']);
+        $savedFilterErrors = $errors->hasAny(['name', 'is_default', 'search', 'status', 'priority', 'source', 'client', 'outreach', 'sort']);
         $savedFilterFlash = session('inbox.saved-filter.stored');
+        $filterPickerFlash = session('inbox.filters.saved');
         $initialSourcesOpen = false;
         $initialSavedOpen = $savedFilters->isNotEmpty() && request()->boolean('saved-views');
         $initialColumnsOpen = request()->boolean('columns');
+        $initialFiltersOpen = request()->boolean('filters');
         $initialSaveOpen = request()->boolean('save') || $savedFilterErrors || (bool) $savedFilterFlash;
     @endphp
-    {{-- Filter card. The four expandable panels — Sources, Saved views, --}}
-    {{-- Custom columns, Save current view — all open inline below the --}}
-    {{-- toolbar with the same border-t / mt-3 / pt-3 rhythm. Open state --}}
-    {{-- lives on the parent x-data so Livewire morphs don't reset it. --}}
-    {{-- Server-side writes (Apply columns / Save view) go through plain --}}
-    {{-- HTML forms to their own controllers — Livewire dropdowns dropped --}}
-    {{-- clicks in this subtree in production; see CLAUDE.md. --}}
-    <div x-data="{ sourcesOpen: @json($initialSourcesOpen), savedOpen: @json($initialSavedOpen), columnsOpen: @json($initialColumnsOpen), saveOpen: @json($initialSaveOpen) }"
+    {{-- Filter card. The five expandable panels — Sources, Saved views, --}}
+    {{-- Custom columns, Filter options, Save current view — all open --}}
+    {{-- inline below the toolbar with the same border-t / mt-3 / pt-3 --}}
+    {{-- rhythm. Open state lives on the parent x-data so Livewire morphs --}}
+    {{-- don't reset it. Server-side writes (Apply columns / Apply filters / --}}
+    {{-- Save view) go through plain HTML forms to their own controllers — --}}
+    {{-- Livewire dropdowns dropped clicks in this subtree in production; --}}
+    {{-- see CLAUDE.md. --}}
+    <div x-data="{ sourcesOpen: @json($initialSourcesOpen), savedOpen: @json($initialSavedOpen), columnsOpen: @json($initialColumnsOpen), filtersOpen: @json($initialFiltersOpen), saveOpen: @json($initialSaveOpen) }"
          class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-3 shadow-sm">
 
         {{-- ── toolbar row ── --}}
         @php
             $activeFilterCount = (int)($search !== '') + (int)($status !== '')
-                + (int)($priority !== '') + (int)($source !== '') + (int)($client !== '');
+                + (int)($priority !== '') + (int)($source !== '') + (int)($client !== '') + (int)($outreach !== '');
         @endphp
         <div class="flex flex-wrap items-center gap-2">
 
@@ -101,29 +104,46 @@
                    placeholder="{{ __('Search name, email, phone, message…') }}"
                    class="min-w-[160px] grow rounded-lg border-slate-300 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 px-2.5">
 
-            <select wire:model.live="status"
-                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
-                <option value="">{{ __('Status') }}</option>
-                @foreach($statusOptions as $o)
-                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                @endforeach
-            </select>
+            @if(in_array('status', $pickedFilters, true))
+                <select wire:model.live="status"
+                        class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                    <option value="">{{ __('Status') }}</option>
+                    @foreach($statusOptions as $o)
+                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                    @endforeach
+                </select>
+            @endif
 
-            <select wire:model.live="priority"
-                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
-                <option value="">{{ __('Priority') }}</option>
-                @foreach($priorityOptions as $o)
-                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                @endforeach
-            </select>
+            @if(in_array('priority', $pickedFilters, true))
+                <select wire:model.live="priority"
+                        class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                    <option value="">{{ __('Priority') }}</option>
+                    @foreach($priorityOptions as $o)
+                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                    @endforeach
+                </select>
+            @endif
 
-            <select wire:model.live="source"
-                    class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
-                <option value="">{{ __('Source') }}</option>
-                @foreach($sourceOptions as $o)
-                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
-                @endforeach
-            </select>
+            @if(in_array('source', $pickedFilters, true))
+                <select wire:model.live="source"
+                        class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                    <option value="">{{ __('Source') }}</option>
+                    @foreach($sourceOptions as $o)
+                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                    @endforeach
+                </select>
+            @endif
+
+            @if(in_array('outreach', $pickedFilters, true))
+                <select wire:model.live="outreach"
+                        class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
+                    <option value="">{{ __('Outreach') }}</option>
+                    <option value="not_contacted">{{ __('Not contacted') }}</option>
+                    <option value="qualified">{{ __('Qualified') }}</option>
+                    <option value="called">{{ __('Called') }}</option>
+                    <option value="mailed">{{ __('Mailed') }}</option>
+                </select>
+            @endif
 
             @auth
                 @if(auth()->user()->isOperator())
@@ -178,6 +198,10 @@
                 <button type="button" @click="columnsOpen = !columnsOpen"
                         :class="columnsOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
                         class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Columns') }}</button>
+
+                <button type="button" @click="filtersOpen = !filtersOpen"
+                        :class="filtersOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
+                        class="px-1.5 py-0.5 rounded hover:text-slate-900 dark:hover:text-slate-100 transition-colors">{{ __('Filter options') }}</button>
 
                 <button type="button" @click="saveOpen = !saveOpen"
                         :class="saveOpen ? 'text-slate-800 dark:text-slate-100 font-medium' : ''"
@@ -350,6 +374,72 @@
             </form>
         </div>
 
+        {{-- ── filter-dropdown picker ── --}}
+        {{-- Which of Status/Priority/Source/Outreach show up as toolbar --}}
+        {{-- dropdowns — separate from *values* of those filters. Same --}}
+        {{-- native-form pattern as the columns picker just above, and the --}}
+        {{-- same reason: see CLAUDE.md. Hidden inputs carry the current --}}
+        {{-- filter state so applying a picker change doesn't drop whatever --}}
+        {{-- the user was already looking at; InboxFilterPickerController --}}
+        {{-- additionally drops the *value* of any filter just unchecked --}}
+        {{-- here, so a hidden dropdown can never stay invisibly active. --}}
+        <div x-show="filtersOpen" x-cloak
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            @php
+                $filterLabelsPicker = [
+                    'status' => __('Status'), 'priority' => __('Priority'),
+                    'source' => __('Source'), 'outreach' => __('Outreach'),
+                ];
+            @endphp
+            <form method="POST" action="{{ route('inbox.filters.update') }}" class="space-y-3">
+                @csrf
+                <input type="hidden" name="search"   value="{{ $search }}">
+                <input type="hidden" name="status"   value="{{ $status }}">
+                <input type="hidden" name="priority" value="{{ $priority }}">
+                <input type="hidden" name="source"   value="{{ $source }}">
+                <input type="hidden" name="client"   value="{{ $client }}">
+                <input type="hidden" name="outreach" value="{{ $outreach }}">
+                <input type="hidden" name="sort"     value="{{ $sort }}">
+
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-xs text-slate-600 dark:text-slate-400">{{ __('Visible filters') }}</span>
+                    <button type="button" @click="filtersOpen = false"
+                            class="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-1.5 py-0.5"
+                            aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach(\App\Livewire\Inbox\InboxPage::AVAILABLE_FILTERS as $key)
+                        @php $isOn = in_array($key, $pickedFilters, true); @endphp
+                        <label class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer select-none
+                                      border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700
+                                      has-[:checked]:border-slate-900 has-[:checked]:bg-slate-900 has-[:checked]:text-white
+                                      dark:has-[:checked]:border-slate-200 dark:has-[:checked]:bg-slate-200 dark:has-[:checked]:text-slate-900">
+                            <input type="checkbox" name="filters[]" value="{{ $key }}" @checked($isOn)
+                                   class="peer sr-only">
+                            <span aria-hidden="true" class="peer-checked:hidden">+</span>
+                            <span aria-hidden="true" class="hidden peer-checked:inline">✓</span>
+                            <span>{{ $filterLabelsPicker[$key] ?? $key }}</span>
+                        </label>
+                    @endforeach
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1">
+                    <button type="submit" name="action" value="reset"
+                            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors px-1.5 py-0.5">{{ __('Reset to defaults') }}</button>
+                    <button type="submit" name="action" value="apply"
+                            class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Apply') }}</button>
+                </div>
+
+                @if($filterPickerFlash)
+                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400">{{ __('Saved.') }}</p>
+                @endif
+            </form>
+        </div>
+
         {{-- ── saved filter chips ── --}}
         {{-- Each chip is a tiny three-button HTML form posting to --}}
         {{-- InboxSavedFilterController@action — load / star / delete. Same --}}
@@ -421,6 +511,7 @@
                 <input type="hidden" name="priority" value="{{ $priority }}">
                 <input type="hidden" name="source"   value="{{ $source }}">
                 <input type="hidden" name="client"   value="{{ $client }}">
+                <input type="hidden" name="outreach" value="{{ $outreach }}">
                 <input type="hidden" name="sort"     value="{{ $sort }}">
 
                 <div class="space-y-1.5">
