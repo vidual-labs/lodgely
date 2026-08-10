@@ -327,4 +327,35 @@ class OpenflowLeadSourceTest extends TestCase
         $this->assertTrue($this->makeSource(['refresh_hours' => 24, 'last_fetched_at' => now()->subHours(25)])->isDue());
         $this->assertFalse($this->makeSource(['is_active' => false, 'last_fetched_at' => null])->isDue());
     }
+
+    public function test_deleted_lead_is_not_recreated_on_next_fetch(): void
+    {
+        // A submission stays inside the 60-minute high-water-mark overlap
+        // window for a while after it's first pulled, so an hourly fetch
+        // walks over it again well after the operator has deleted the lead.
+        // Idempotency must recognize the (now soft-deleted) lead and skip it
+        // rather than re-creating it as a fresh one.
+        $source = $this->makeSource();
+        $submissions = [
+            'submissions' => [[
+                'id'         => 'sub-1',
+                'created_at' => now()->toIso8601String(),
+                'data'       => ['fEmail' => 'alice@example.com', 'fName' => 'Alice Smith'],
+            ]],
+            'total' => 1, 'page' => 1, 'limit' => 100,
+        ];
+
+        $runner = app(\App\Domain\Leads\Services\ImportRunner::class);
+
+        $first = $runner->run($this->makeImport($source->id), new OpenflowLeadSource($this->mockClient($submissions)));
+        $this->assertSame(1, $first->rows_imported);
+        $lead = \App\Models\Lead::sole();
+        $lead->delete();
+
+        $second = $runner->run($this->makeImport($source->id), new OpenflowLeadSource($this->mockClient($submissions)));
+        $this->assertSame(0, $second->rows_imported);
+        $this->assertSame(1, $second->rows_skipped);
+        $this->assertSame(0, \App\Models\Lead::count(), 'Deleted lead must stay deleted, not resurrected.');
+        $this->assertSame(1, \App\Models\Lead::onlyTrashed()->count());
+    }
 }

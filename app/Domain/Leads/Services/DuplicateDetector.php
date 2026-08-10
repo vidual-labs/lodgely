@@ -20,9 +20,16 @@ class DuplicateDetector
 {
     /**
      * Idempotency lookup for recurring sources: returns the id of an existing
-     * non-deleted lead carrying the same stable external_id within this tenant
-     * and source, or null. Used so re-reading a source (e.g. a Google Sheet)
-     * recognizes rows it has already ingested instead of creating duplicates.
+     * lead carrying the same stable external_id within this tenant and
+     * source, or null. Used so re-reading a source (e.g. a Google Sheet, or an
+     * OpenFlow form) recognizes rows it has already ingested instead of
+     * creating duplicates.
+     *
+     * Deliberately includes soft-deleted leads: an operator deleting a lead
+     * in the inbox is not "this row was never ingested" — it's a decision to
+     * remove it, and the next recurring pull (which re-walks a window of
+     * recent submissions, not just ones newer than the last fetch) must not
+     * silently resurrect it as a fresh lead.
      */
     public function findByExternalId(int $tenantId, string $source, string $externalId): ?int
     {
@@ -30,11 +37,10 @@ class DuplicateDetector
             return null;
         }
 
-        return Lead::query()
+        return Lead::withTrashed()
             ->where('tenant_id', $tenantId)
             ->where('source', $source)
             ->where('external_id', $externalId)
-            ->whereNull('deleted_at')
             ->orderBy('id')
             ->value('id');
     }

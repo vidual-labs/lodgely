@@ -64,11 +64,14 @@ class LeadIngestor
         // Idempotency for recurring sources: if this exact row has already been
         // ingested (same tenant + source + external_id) return the existing lead
         // unchanged. The caller detects this via $lead->wasRecentlyCreated.
+        // findByExternalId also matches soft-deleted leads (an operator
+        // deletion must not be undone by the next pull), so look it up
+        // withTrashed() too rather than 404ing on a deleted row.
         $externalId = isset($payload['external_id']) ? (string) $payload['external_id'] : '';
         if ($externalId !== '') {
             $existingId = $this->duplicates->findByExternalId($tenantId, $payload['source'], $externalId);
             if ($existingId !== null) {
-                return Lead::findOrFail($existingId);
+                return Lead::withTrashed()->findOrFail($existingId);
             }
         }
 
