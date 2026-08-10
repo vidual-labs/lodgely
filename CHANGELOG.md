@@ -8,6 +8,20 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Deleted leads from recurring sources (OpenFlow, Google Sheets, Meta Lead
+  Ads) reappeared on the next scheduled fetch.** Idempotency on re-pulls is
+  keyed on `external_id`, but the lookup excluded soft-deleted leads —
+  intended to only dedupe against currently-visible leads, it also meant a
+  lead an operator had deleted was invisible to that check. Every recurring
+  source re-walks a window of recent submissions on each run (OpenFlow's is
+  60 minutes past its last successful fetch), so within that window the
+  "already ingested" check silently missed the deleted row and
+  `LeadIngestor` recreated it as a brand-new lead — reported as OpenFlow test
+  leads "constantly loading in again" after being bulk-deleted. The
+  idempotency lookup (`DuplicateDetector::findByExternalId`) now matches
+  soft-deleted leads too, so a deleted lead is recognized as already-ingested
+  and skipped rather than resurrected.
+
 - **Inbox filter-card panels (Custom columns, Filter options, Saved views)
   stayed open forever once opened, on every future visit to `/inbox`.**
   Reopening a panel after its "Apply"/"Save" form redirect was implemented
