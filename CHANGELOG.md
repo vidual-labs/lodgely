@@ -8,6 +8,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **German "Called"/"Mailed" outreach labels no longer match the inbox
+  overview's badge letters.** The inbox lead-list badges for outreach state
+  are hardcoded single letters ("Q"/"C"/"M", not translated), but the German
+  translations for "Called" and "Mailed" ("Angerufen"/"Angeschrieben") no
+  longer start with those letters, so a German user couldn't visually
+  connect a badge to its label/tooltip. Both now deliberately stay in
+  English ("Called"/"Mailed") in `lang/de.json` so "Called" → "C" and
+  "Mailed" → "M" still line up; "Qualified" already matched its "Q" badge in
+  both languages and is unaffected.
+
 - **Deleted leads from recurring sources (OpenFlow, Google Sheets, Meta Lead
   Ads) reappeared on the next scheduled fetch.** Idempotency on re-pulls is
   keyed on `external_id`, but the lookup excluded soft-deleted leads —

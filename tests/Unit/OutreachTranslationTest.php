@@ -18,8 +18,6 @@ class OutreachTranslationTest extends TestCase
         return [
             'Outreach' => ['Outreach'],
             'Qualified' => ['Qualified'],
-            'Called' => ['Called'],
-            'Mailed' => ['Mailed'],
             'Not contacted' => ['Not contacted'],
             'Click a pill to toggle.' => ['Click a pill to toggle.'],
             'Mark as :label' => ['Mark as :label'],
@@ -40,6 +38,23 @@ class OutreachTranslationTest extends TestCase
             $translated,
             "'{$key}' has no lang/de.json entry — it renders as raw English for German users.",
         );
+    }
+
+    /**
+     * "Called"/"Mailed" are a deliberate exception to the rule above: the
+     * inbox overview badges next to a lead are hardcoded single letters ("C"
+     * / "M", not translated — see inbox-page.blade.php), so a German
+     * translation like "Angerufen"/"Angeschrieben" broke the visual link
+     * between the badge and its label/tooltip text. Keeping the English
+     * words here lets a German user connect "Called" → "C" and "Mailed" →
+     * "M" at a glance.
+     */
+    public function test_called_and_mailed_deliberately_stay_english_in_german_to_match_the_inbox_badge_letters(): void
+    {
+        app()->setLocale('de');
+
+        $this->assertSame('Called', __('Called'));
+        $this->assertSame('Mailed', __('Mailed'));
     }
 
     public function test_en_and_de_lang_files_carry_the_exact_same_key_set(): void
