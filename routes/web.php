@@ -7,6 +7,7 @@ use App\Http\Controllers\Imports\GoogleSheetsImportController;
 use App\Http\Controllers\Imports\MetaLeadsImportController;
 use App\Http\Controllers\Imports\OpenflowImportController;
 use App\Http\Controllers\InboxColumnPickerController;
+use App\Http\Controllers\InboxFilterPickerController;
 use App\Http\Controllers\InboxSavedFilterController;
 use App\Http\Controllers\LeadExportController;
 use App\Http\Controllers\OAuth\GoogleAdsOAuthController;
@@ -76,6 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/inbox',                       InboxPage::class)->name('inbox');
     Route::get('/inbox/export',                LeadExportController::class)->name('inbox.export');
     Route::post('/inbox/columns',              [InboxColumnPickerController::class, 'update'])->name('inbox.columns.update');
+    Route::post('/inbox/filters',              [InboxFilterPickerController::class, 'update'])->name('inbox.filters.update');
     Route::post('/inbox/saved-filters',        [InboxSavedFilterController::class, 'store'])->name('inbox.saved-filters.store');
     Route::post('/inbox/saved-filters/{filter}', [InboxSavedFilterController::class, 'action'])->name('inbox.saved-filters.action');
     Route::get('/imports/csv',        CsvImportPage::class)->name('imports.csv');

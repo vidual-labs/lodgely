@@ -12,6 +12,7 @@ use App\Domain\Leads\Services\DuplicateDetector;
 use App\Domain\Leads\Services\LeadKpis;
 use App\Livewire\Inbox\Concerns\WithBulkLeadActions;
 use App\Livewire\Inbox\Concerns\WithColumnPicker;
+use App\Livewire\Inbox\Concerns\WithFilterPicker;
 use App\Livewire\Inbox\Concerns\WithLeadFilters;
 use App\Livewire\Inbox\Concerns\WithManualLeadForm;
 use App\Livewire\Inbox\Concerns\WithSavedFilters;
@@ -29,6 +30,7 @@ class InboxPage extends Component
 {
     use WithBulkLeadActions;
     use WithColumnPicker;
+    use WithFilterPicker;
     use WithLeadFilters;
     use WithManualLeadForm;
     use WithPagination;
@@ -66,6 +68,7 @@ class InboxPage extends Component
         }
 
         $this->loadColumnPicker();
+        $this->loadFilterPicker();
     }
 
     public function updating($name): void

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'locale',
         'ui_theme',
         'inbox_columns',
+        'inbox_filters',
     ];
 
     protected $hidden = [
@@ -38,6 +39,7 @@ class User extends Authenticatable
             'is_active'         => 'boolean',
             'role'              => UserRole::class,
             'inbox_columns'     => 'array',
+            'inbox_filters'     => 'array',
         ];
     }
 

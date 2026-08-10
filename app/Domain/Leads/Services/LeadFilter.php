@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 class LeadFilter
 {
     /**
-     * @param  array{search?: string|null, status?: string|null, priority?: string|null, source?: string|null, client?: string|null}  $state
+     * @param  array{search?: string|null, status?: string|null, priority?: string|null, source?: string|null, client?: string|null, outreach?: string|null}  $state
      */
     public function apply(Builder $base, array $state): Builder
     {
@@ -25,7 +25,8 @@ class LeadFilter
             ->when($state['status'] ?? '', fn ($q, $v) => $q->where('status', $v))
             ->when($state['priority'] ?? '', fn ($q, $v) => $q->where('priority', $v))
             ->when($state['source'] ?? '', fn ($q, $v) => $q->where('source', $v))
-            ->when($state['client'] ?? '', fn ($q, $v) => $q->forClientName((string) $v));
+            ->when($state['client'] ?? '', fn ($q, $v) => $q->forClientName((string) $v))
+            ->when($state['outreach'] ?? '', fn ($q, $v) => $q->outreachStatus((string) $v));
     }
 
     /**

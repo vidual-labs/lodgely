@@ -29,14 +29,17 @@ trait WithLeadFilters
     #[Url(except: '')]
     public string $client = '';
 
+    #[Url(except: '')]
+    public string $outreach = '';
+
     #[Url(except: 'created_desc')]
     public string $sort = 'created_desc';
 
     /** @var list<string> Livewire property names that hold filter state. */
-    protected const FILTER_PROPERTIES = ['search', 'status', 'priority', 'source', 'client', 'sort'];
+    protected const FILTER_PROPERTIES = ['search', 'status', 'priority', 'source', 'client', 'outreach', 'sort'];
 
     /** @var list<string> Query-string keys that map to those filter properties. */
-    protected const FILTER_URL_KEYS = ['q', 'status', 'priority', 'source', 'client', 'sort'];
+    protected const FILTER_URL_KEYS = ['q', 'status', 'priority', 'source', 'client', 'outreach', 'sort'];
 
     public function clearFilters(): void
     {
@@ -45,6 +48,7 @@ trait WithLeadFilters
         $this->priority = '';
         $this->source = '';
         $this->client = '';
+        $this->outreach = '';
         $this->resetPage();
         $this->dispatch('inbox-filters-cleared')->self();
     }
@@ -56,6 +60,7 @@ trait WithLeadFilters
         $this->priority = $filters['priority'] ?? '';
         $this->source = $filters['source'] ?? '';
         $this->client = $filters['client'] ?? '';
+        $this->outreach = $filters['outreach'] ?? '';
         $this->sort = $filters['sort'] ?? 'created_desc';
     }
 
@@ -84,6 +89,7 @@ trait WithLeadFilters
             'priority' => $this->priority,
             'source' => $this->source,
             'client' => $this->client,
+            'outreach' => $this->outreach,
             'sort' => $this->sort,
         ];
     }

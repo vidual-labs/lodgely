@@ -41,6 +41,7 @@ class InboxSavedFilterController extends Controller
             'priority'    => ['nullable', 'string', 'max:32'],
             'source'      => ['nullable', 'string', 'max:64'],
             'client'      => ['nullable', 'string', 'max:255'],
+            'outreach'    => ['nullable', 'string', 'max:32'],
             'sort'        => ['nullable', Rule::in(['created_desc', 'created_asc', 'priority_desc'])],
         ]);
 
@@ -61,6 +62,7 @@ class InboxSavedFilterController extends Controller
                     'priority' => $validated['priority'] ?? '',
                     'source'   => $validated['source']   ?? '',
                     'client'   => $validated['client']   ?? '',
+                    'outreach' => $validated['outreach'] ?? '',
                     'sort'     => $validated['sort']     ?? 'created_desc',
                 ],
                 'is_default' => $isDefault,
@@ -91,6 +93,7 @@ class InboxSavedFilterController extends Controller
             if (! empty($filters['priority'])) { $query['priority'] = $filters['priority']; }
             if (! empty($filters['source']))   { $query['source'] = $filters['source']; }
             if (! empty($filters['client']))   { $query['client'] = $filters['client']; }
+            if (! empty($filters['outreach'])) { $query['outreach'] = $filters['outreach']; }
             if (! empty($filters['sort']) && $filters['sort'] !== 'created_desc') {
                 $query['sort'] = $filters['sort'];
             }
@@ -132,7 +135,7 @@ class InboxSavedFilterController extends Controller
      */
     private function redirectToInbox(Request $request, array $extra = []): RedirectResponse
     {
-        $query = $request->only(['q', 'status', 'priority', 'source', 'client', 'sort']);
+        $query = $request->only(['q', 'status', 'priority', 'source', 'client', 'outreach', 'sort']);
         $query = array_filter($query, fn ($v) => $v !== null && $v !== '');
 
         return redirect()->to(route('inbox', array_merge($query, $extra)));
