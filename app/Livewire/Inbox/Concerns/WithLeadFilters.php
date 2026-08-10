@@ -64,7 +64,13 @@ trait WithLeadFilters
         return app(LeadFilter::class)->apply($base, $this->currentFilterState());
     }
 
-    /** @return array{0:string, 1:string} */
+    /** Apply the current sort — primary key plus tiebreakers — to a lead query. */
+    protected function applySort($query)
+    {
+        return app(LeadFilter::class)->applySort($query, $this->sort);
+    }
+
+    /** @return array{0:string|\Illuminate\Contracts\Database\Query\Expression, 1:string} */
     protected function sortBy(): array
     {
         return app(LeadFilter::class)->sortBy($this->sort);

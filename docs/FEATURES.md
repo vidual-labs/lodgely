@@ -121,15 +121,17 @@ below.
 - 🗑️ **Retention awareness** — every lead carries a `retention_until`
   field, with an opt-in `php artisan lodgely:leads:purge` command.
 - 📊 **Inbox KPIs** — new, duplicates, incomplete, total, leads by source.
-- ☑️ **Bulk actions** — operators select multiple leads via checkboxes (with
-  select-all toggle) and apply a status change, priority change, or bulk delete
-  to all in one step. Audit events recorded per lead.
-- ⬇️ **Inbox export** — operators can download the currently filtered inbox as
-  CSV or newline-delimited JSON (`/inbox/export?format=csv|ndjson`). Streams in
-  chunks so it stays memory-safe at any size; honours the same `q / status /
-  priority / source / client / sort` filters as the inbox URL. Excludes
-  `raw_payload` and internal dedupe keys. Each export writes a `lead.exported`
-  log line for auditability.
+- ☑️ **Bulk actions** — both operators and clients select multiple leads via
+  checkboxes (with select-all toggle) and apply a status or priority change to
+  all in one step, each scoped to the leads they can already see. Bulk delete
+  stays operator-only, since it's destructive. Audit events recorded per lead.
+- ⬇️ **Inbox export** — both operators and clients can download the currently
+  filtered inbox as CSV (`/inbox/export?format=csv`), scoped to the leads they
+  can see — Excel opens it directly. Newline-delimited JSON
+  (`?format=ndjson`) stays operator-only. Streams in chunks so it stays
+  memory-safe at any size; honours the same `q / status / priority / source /
+  client / sort` filters as the inbox URL. Excludes `raw_payload` and internal
+  dedupe keys. Each export writes a `lead.exported` log line for auditability.
 - 💾 **Backup & recovery** (`/settings/backups`, operator-only) — create a
   full-database backup as a single downloadable `.zip` (a `pg_dump` archive
   plus a manifest), download it to a local machine, prune old ones, or

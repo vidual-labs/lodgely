@@ -51,7 +51,11 @@
                 </dl>
             </section>
 
-            {{-- outreach (client-driven) — qualified / called / mailed toggles --}}
+            {{-- outreach (client-driven) — qualified / called / mailed toggles.
+                 Kept directly under Contact, alongside Workflow below, so the
+                 two editable sections are the first thing anyone — client or
+                 operator — sees on opening a lead, rather than buried under
+                 the read-only attribution/message sections. --}}
             @php
                 $outreach = [
                     ['field' => 'qualified_at', 'label' => __('Qualified'), 'value' => $lead->qualified_at,
@@ -65,7 +69,7 @@
                      'off' => 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 ring-slate-300/40 dark:ring-slate-600/40'],
                 ];
             @endphp
-            <section>
+            <section class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/60 dark:bg-slate-800/30 p-3">
                 <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Outreach') }}</h3>
                 <div class="flex flex-wrap gap-2">
                     @foreach($outreach as $o)
@@ -82,8 +86,35 @@
                     @endforeach
                 </div>
                 <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
-                    {{ __('Tracked in lodgely — click a pill to toggle.') }}
+                    {{ __('Click a pill to toggle.') }}
                 </p>
+            </section>
+
+            {{-- workflow (status / priority) — both operators and clients may
+                 change these on a lead they can see; {@see setStatus()} /
+                 {@see setPriority()} on InboxPage do the actual scoping. --}}
+            <section class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/60 dark:bg-slate-800/30 p-3">
+                <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
+                        <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
+                                class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            @foreach($statusOptions as $o)
+                                <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
+                        <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
+                                class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            @foreach($priorityOptions as $o)
+                                <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
             </section>
 
             {{-- ad source (Meta Lead Ads attribution) --}}
@@ -141,33 +172,6 @@
                 </section>
             @endif
 
-            {{-- workflow --}}
-            @if(auth()->user()?->isOperator())
-                <section>
-                    <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
-                            <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                @foreach($statusOptions as $o)
-                                    <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
-                            <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
-                                    class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                @foreach($priorityOptions as $o)
-                                    <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </section>
-            @endif
-
             {{-- message --}}
             @if($lead->message)
                 <section>
@@ -210,7 +214,9 @@
                     @endforelse
                 </div>
 
-                @if(auth()->user()?->isOperator())
+                {{-- Both operators and clients may add notes — addNote() on InboxPage
+                     scopes the target lead the same way every other action here does. --}}
+                @auth
                     <form wire:submit.prevent="addNote" class="mt-3">
                         <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
                                   class="block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
@@ -221,7 +227,7 @@
                                 class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">{{ __('Add note') }}</button>
                         </div>
                     </form>
-                @endif
+                @endauth
             </section>
 
             {{-- audit trail --}}

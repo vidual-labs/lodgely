@@ -164,7 +164,7 @@ class InboxPageTest extends TestCase
         );
     }
 
-    public function test_client_cannot_invoke_bulk_actions(): void
+    public function test_client_can_bulk_set_status_on_their_own_visible_leads(): void
     {
         $client = $this->clientFor('Acme');
         $lead = Lead::factory()->create(['client_name' => 'Acme', 'status' => LeadStatus::New->value]);
@@ -174,9 +174,40 @@ class InboxPageTest extends TestCase
             ->set('bulkSelected', [$lead->id])
             ->set('bulkStatusValue', LeadStatus::Reviewed->value)
             ->call('bulkSetStatus')
+            ->assertOk();
+
+        $this->assertSame(LeadStatus::Reviewed, $lead->fresh()->status);
+    }
+
+    public function test_client_bulk_actions_are_scoped_to_leads_they_can_see(): void
+    {
+        $client = $this->clientFor('Acme');
+        $hers = Lead::factory()->create(['client_name' => 'Acme', 'status' => LeadStatus::New->value]);
+        $someoneElses = Lead::factory()->create(['client_name' => 'Other', 'status' => LeadStatus::New->value]);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->set('bulkSelected', [$hers->id, $someoneElses->id])
+            ->set('bulkStatusValue', LeadStatus::Reviewed->value)
+            ->call('bulkSetStatus')
+            ->assertOk();
+
+        $this->assertSame(LeadStatus::Reviewed, $hers->fresh()->status, 'Client should be able to bulk-update their own lead');
+        $this->assertSame(LeadStatus::New, $someoneElses->fresh()->status, 'Client must not be able to touch a lead outside their scope');
+    }
+
+    public function test_client_cannot_invoke_bulk_delete(): void
+    {
+        $client = $this->clientFor('Acme');
+        $lead = Lead::factory()->create(['client_name' => 'Acme']);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->set('bulkSelected', [$lead->id])
+            ->call('bulkDelete')
             ->assertStatus(403);
 
-        $this->assertSame(LeadStatus::New, $lead->fresh()->status);
+        $this->assertNotNull($lead->fresh(), 'Client must not be able to bulk-delete leads — bulk delete stays operator-only');
     }
 
     public function test_operator_can_open_manual_form_but_client_cannot(): void
@@ -232,6 +263,37 @@ class InboxPageTest extends TestCase
         $this->assertSame('Jane Doe', $lead->full_name);
         $this->assertSame(LeadPriority::High, $lead->priority);
         $this->assertNotNull($lead->retention_until, 'LeadIngestor must set retention_until');
+    }
+
+    public function test_client_can_set_status_and_priority_on_a_visible_lead(): void
+    {
+        $client = $this->clientFor('Acme');
+        $lead = Lead::factory()->create([
+            'client_name' => 'Acme',
+            'status' => LeadStatus::New->value,
+            'priority' => LeadPriority::Medium->value,
+        ]);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('setStatus', $lead->id, LeadStatus::Reviewed->value)
+            ->call('setPriority', $lead->id, LeadPriority::High->value);
+
+        $lead->refresh();
+        $this->assertSame(LeadStatus::Reviewed, $lead->status);
+        $this->assertSame(LeadPriority::High, $lead->priority);
+    }
+
+    public function test_client_cannot_set_status_on_a_lead_outside_their_scope(): void
+    {
+        $client = $this->clientFor('Acme');
+        $someoneElses = Lead::factory()->create(['client_name' => 'Other', 'status' => LeadStatus::New->value]);
+
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('setStatus', $someoneElses->id, LeadStatus::Reviewed->value);
     }
 
     public function test_client_can_toggle_outreach_fields_on_visible_lead(): void
@@ -374,5 +436,35 @@ class InboxPageTest extends TestCase
             1,
             LeadEvent::where('lead_id', $lead->id)->where('type', 'lead.note_added')->count()
         );
+    }
+
+    public function test_client_can_add_a_note_to_a_visible_lead(): void
+    {
+        $client = $this->clientFor('Acme');
+        $lead = Lead::factory()->create(['client_name' => 'Acme']);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('selectLead', $lead->id)
+            ->set('newNoteBody', 'Called back, will follow up next week.')
+            ->call('addNote')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, $lead->notes()->count());
+        $this->assertSame($client->id, $lead->notes()->first()->user_id);
+    }
+
+    public function test_client_cannot_add_a_note_to_a_lead_outside_their_scope(): void
+    {
+        $client = $this->clientFor('Acme');
+        $someoneElses = Lead::factory()->create(['client_name' => 'Other']);
+
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('selectLead', $someoneElses->id)
+            ->set('newNoteBody', 'Should not be allowed.')
+            ->call('addNote');
     }
 }

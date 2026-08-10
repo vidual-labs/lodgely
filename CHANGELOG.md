@@ -8,6 +8,29 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Clients can now edit status/priority, bulk-edit, add notes, and export
+  CSV — all scoped to their own leads.** Previously a client's only
+  self-service action was the outreach toggles (qualified/called/mailed);
+  everything else routed through an operator. Clients can now:
+  - Change a lead's status and priority from the lead panel, and bulk-apply
+    both across a multi-select, the same way operators already could. Bulk
+    *delete* stays operator-only — it's destructive, and "editing" doesn't
+    extend to permanently removing data.
+  - Add notes to a lead (previously view-only for clients).
+  - Download their filtered inbox as CSV (`/inbox/export?format=csv`) —
+    Excel opens it directly. The raw NDJSON export stays operator-only.
+
+  Every action is scoped through the same `Lead::scopeVisibleTo()` a client's
+  inbox already uses, so this is additive self-service, not a visibility
+  change — a client still can never see or touch a lead outside their
+  assigned `client_name` scopes.
+
+  The lead panel also reorders the Outreach and Workflow (status/priority)
+  sections to sit directly under Contact, ahead of the read-only
+  attribution/message sections, so the actions a client can take are the
+  first thing they see on opening a lead rather than easy to miss further
+  down the panel.
+
 - **Per-connector brand filtering for shared Meta/Google Ads accounts.** A
   client connector can now be scoped to one brand within an ad account that
   actually serves several — e.g. two businesses sharing one Google Ads or
@@ -67,6 +90,20 @@ semantic-ish versioning once a 1.0 is tagged.
   counting shared by the campaign and creative adapters. No behaviour change.
 
 ### Fixed
+
+- **Inbox sorts now have a tiebreaker, so old leads stop floating to the top.**
+  Every sort applied a single ORDER BY column, and all of them except
+  "Received" are low-cardinality — priority has three distinct values, status
+  five. The order *within* a band was therefore left to the database, which in
+  Postgres means heap order: oldest first. Sorting by priority surfaced the
+  oldest leads in each band rather than the newest, and pagination was
+  unstable, since ties could be ordered differently between the query for page
+  one and the query for page two — the same lead could appear on both pages,
+  or on neither. Sorts now break ties on `created_at` (newest first), then on
+  `id`, which `created_at` alone cannot do because a CSV or API import writes
+  many rows in the same second. "Select all on page" orders identically to the
+  table, so it can no longer select a different set of rows than the operator
+  is looking at.
 
 - **Report-email intros could smuggle scripts into the client's inbox.** The
   intro is authored by an operator and rendered unescaped into the email body

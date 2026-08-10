@@ -11,7 +11,13 @@ use Livewire\Attributes\On;
 /**
  * Bulk selection and bulk status/priority application for the inbox table.
  *
- * Relies on {@see WithLeadFilters::applyFilters()} / {@see WithLeadFilters::sortBy()}
+ * Both operators and clients may select leads and bulk-apply status/priority
+ * — {@see Lead::scopeVisibleTo()} (via `visibleTo(auth()->user())` in every
+ * query here) scopes a client to their own leads exactly as the single-lead
+ * editors do. Bulk delete stays operator-only: it's destructive, and
+ * "editing" doesn't extend to permanently removing another party's data.
+ *
+ * Relies on {@see WithLeadFilters::applyFilters()} / {@see WithLeadFilters::applySort()}
  * for the "select all on page" query, and reacts to the
  * `inbox-filters-cleared` event so selections do not survive a filter reset.
  */
@@ -31,11 +37,13 @@ trait WithBulkLeadActions
 
     public function bulkToggleAll(): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
+        // Must order exactly as render() does, tiebreakers included — otherwise
+        // "select all on page" selects a different set of rows than the page
+        // the operator is looking at.
         $base = Lead::query()->visibleTo(auth()->user());
-        $pageIds = $this->applyFilters($base)
-            ->orderBy(...$this->sortBy())
+        $pageIds = $this->applySort($this->applyFilters($base))
             ->paginate(config('lodgely.pagination.per_page'))
             ->pluck('id')
             ->map(fn ($id) => (string) $id)
@@ -62,7 +70,7 @@ trait WithBulkLeadActions
 
     public function bulkSetStatus(AuditLogger $audit): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
         if ($this->bulkStatusValue === '' || empty($this->bulkSelected)) {
             return;
@@ -90,7 +98,7 @@ trait WithBulkLeadActions
 
     public function bulkSetPriority(AuditLogger $audit): void
     {
-        abort_unless(auth()->user()?->isOperator(), 403);
+        abort_unless(auth()->check(), 403);
 
         if ($this->bulkPriorityValue === '' || empty($this->bulkSelected)) {
             return;
@@ -116,6 +124,7 @@ trait WithBulkLeadActions
         $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' updated.');
     }
 
+    /** Destructive — stays operator-only, unlike the other bulk actions above. */
     public function bulkDelete(AuditLogger $audit): void
     {
         abort_unless(auth()->user()?->isOperator(), 403);
