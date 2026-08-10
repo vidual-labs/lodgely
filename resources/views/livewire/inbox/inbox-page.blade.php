@@ -76,10 +76,18 @@
         $savedFilterErrors = $errors->hasAny(['name', 'is_default', 'search', 'status', 'priority', 'source', 'client', 'outreach', 'sort']);
         $savedFilterFlash = session('inbox.saved-filter.stored');
         $filterPickerFlash = session('inbox.filters.saved');
+        // Which panel (if any) should reopen on this load — a one-shot session
+        // flash set by the controller that just handled the form submit, NOT a
+        // query param. A query param would stick in the address bar forever
+        // (nothing ever clears it, and none of columns/filters/saved-views are
+        // Livewire #[Url]-bound properties Livewire itself would manage), so
+        // the panel would keep reopening on every future visit to that URL —
+        // that was the "columns picker stays open forever" bug.
+        $openPanel = session('inbox.open-panel');
         $initialSourcesOpen = false;
-        $initialSavedOpen = $savedFilters->isNotEmpty() && request()->boolean('saved-views');
-        $initialColumnsOpen = request()->boolean('columns');
-        $initialFiltersOpen = request()->boolean('filters');
+        $initialSavedOpen = $savedFilters->isNotEmpty() && $openPanel === 'saved-views';
+        $initialColumnsOpen = $openPanel === 'columns';
+        $initialFiltersOpen = $openPanel === 'filters';
         $initialSaveOpen = request()->boolean('save') || $savedFilterErrors || (bool) $savedFilterFlash;
     @endphp
     {{-- Filter card. The five expandable panels — Sources, Saved views, --}}
@@ -290,6 +298,16 @@
                   x-data="{ picked: {{ $total }}, qs: {{ count($pickedQs) }}, max: {{ \App\Livewire\Inbox\InboxPage::MAX_TOTAL_COLUMNS }}, maxQs: {{ \App\Livewire\Inbox\InboxPage::MAX_QUESTION_COLUMNS }} }"
                   @change="picked = $el.querySelectorAll('input:checked').length; qs = $el.querySelectorAll(`input[name='questions[]']:checked`).length">
                 @csrf
+                {{-- Preserve the current filter state across the redirect — see
+                     InboxColumnPickerController; without these, applying a
+                     column pick silently reset every active filter. --}}
+                <input type="hidden" name="search"   value="{{ $search }}">
+                <input type="hidden" name="status"   value="{{ $status }}">
+                <input type="hidden" name="priority" value="{{ $priority }}">
+                <input type="hidden" name="source"   value="{{ $source }}">
+                <input type="hidden" name="client"   value="{{ $client }}">
+                <input type="hidden" name="outreach" value="{{ $outreach }}">
+                <input type="hidden" name="sort"     value="{{ $sort }}">
 
                 <div class="flex items-center justify-between gap-2 flex-wrap">
                     <div class="text-xs text-slate-600 dark:text-slate-400">

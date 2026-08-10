@@ -179,17 +179,31 @@ lifecycle hooks → checkbox-driven `has-[:checked]:` styling) and every
 single variant silently dropped clicks for the user in production. The
 form path always works.
 
-The controllers redirect to `/inbox?columns=1`, `?filters=1` or
-`?save=1` so the panel re-opens on reload with the new state visible.
-**Only bother preserving the rest of the current filter URL params in
-that redirect if the panel's own form carries them as hidden inputs**
-— `InboxColumnPickerController` doesn't, so applying a column pick
-today silently resets every active filter as a side effect (a
-pre-existing gap, not fixed here); `InboxFilterPickerController` does
-carry them (see its hidden `search`/`status`/`priority`/`source`/
-`client`/`outreach`/`sort` inputs), and additionally drops the
-*value* of any filter dropdown just unchecked in the same submit, so a
-hidden dropdown can never stay invisibly active. The trait methods
+The controller reopens the panel that just handled the submit via a
+**one-shot `inbox.open-panel` session flash** (`'columns'` /
+`'filters'` / `'saved-views'`), read once in the `@php` block at the
+top of the filter card (`$openPanel = session('inbox.open-panel')`) —
+**never a `?columns=1` / `?filters=1` / `?saved-views=1` query param.**
+We shipped it as a query param first and it was wrong: nothing ever
+clears that param (none of `columns`/`filters`/`saved-views` are
+Livewire `#[Url]`-bound properties, so Livewire's own URL management
+never touches them), so it sticks in the address bar forever and the
+panel reopens on *every* future visit to that URL, not just the one
+right after Apply — reported as "the columns picker is always open
+now." If you add a sixth panel, reopen it the same way: flash
+`inbox.open-panel`, redirect to a *plain* `/inbox` URL (or one built
+from hidden-input filter state — see below), never a query flag the
+panel itself checks.
+
+Each write-panel's form also carries the current
+search/status/priority/source/client/outreach/sort state as hidden
+inputs, and the controller rebuilds the redirect query from those —
+**every** write-controller needs this, not just the new ones: skip it
+and applying that panel silently resets every active filter as a side
+effect, since the redirect would otherwise land on a bare `/inbox`.
+`InboxFilterPickerController` additionally drops the *value* of any
+filter dropdown just unchecked in the same submit, so a hidden
+dropdown can never stay invisibly active. The trait methods
 (`togglePickedColumn`, `togglePickedFilter`, `saveFilter`, etc.) stay
 around as public Livewire actions for tests and any future
 programmatic caller, but the UI doesn't drive them.
