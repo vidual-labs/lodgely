@@ -6,6 +6,18 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Security
+
+- **Updated `laravel/framework`, `symfony/http-kernel`, `symfony/http-foundation`,
+  `symfony/mailer`, `symfony/mime` and `guzzlehttp/guzzle` to patched
+  versions** in response to automated dependency-vulnerability scans
+  (CVE-2026-45075, CVE-2026-48736, CVE-2026-45068, CVE-2026-45067,
+  CVE-2026-69246, GHSA-5vg9-5847-vvmq). None of these were direct
+  `composer.json` requirements — they came in transitively via
+  `laravel/framework` — so the existing version constraints already allowed
+  the fixes; only `composer.lock` changed. Full test suite passes on the
+  updated versions.
+
 ### Fixed
 
 - **German "Called"/"Mailed" outreach labels no longer match the inbox
