@@ -1,6 +1,8 @@
 @props(['lead', 'statusOptions' => [], 'priorityOptions' => [], 'aiSummary' => null])
 
-<div class="fixed inset-0 z-40 flex" x-data x-trap.noscroll="true" x-on:keydown.escape.window="$wire.closePanel()">
+<div class="fixed inset-0 z-40 flex"
+     x-data="{ calledNudge: false, mailedNudge: false }"
+     x-trap.noscroll="true" x-on:keydown.escape.window="$wire.closePanel()">
     <div class="flex-1 bg-slate-900/40 dark:bg-black/50" wire:click="closePanel"></div>
 
     <aside role="dialog" aria-modal="true" aria-labelledby="lead-panel-title"
@@ -41,9 +43,29 @@
                 <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Contact') }}</h3>
                 <dl class="grid grid-cols-3 gap-y-2 text-sm">
                     <dt class="text-slate-500 dark:text-slate-400">{{ __('Email') }}</dt>
-                    <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ $lead->email ?? '—' }}</dd>
+                    <dd class="col-span-2 text-slate-800 dark:text-slate-200">
+                        @if($lead->email)
+                            <a href="mailto:{{ $lead->email }}"
+                               x-on:click="mailedNudge = true; setTimeout(() => mailedNudge = false, 15000)"
+                               class="inline-flex items-center gap-1.5 text-brand-700 dark:text-brand-400 hover:underline">
+                                <span aria-hidden="true">✉️</span>{{ $lead->email }}
+                            </a>
+                        @else
+                            —
+                        @endif
+                    </dd>
                     <dt class="text-slate-500 dark:text-slate-400">{{ __('Phone') }}</dt>
-                    <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ $lead->phone ?? '—' }}</dd>
+                    <dd class="col-span-2 text-slate-800 dark:text-slate-200">
+                        @if($lead->phone)
+                            <a href="tel:{{ $lead->phone }}"
+                               x-on:click="calledNudge = true; setTimeout(() => calledNudge = false, 15000)"
+                               class="inline-flex items-center gap-1.5 text-brand-700 dark:text-brand-400 hover:underline">
+                                <span aria-hidden="true">📞</span>{{ $lead->phone }}
+                            </a>
+                        @else
+                            —
+                        @endif
+                    </dd>
                     <dt class="text-slate-500 dark:text-slate-400">{{ __('Source') }}</dt>
                     <dd class="col-span-2 text-slate-800 dark:text-slate-200">{{ str_replace('_', ' ', $lead->source) }}</dd>
                     <dt class="text-slate-500 dark:text-slate-400">{{ __('Received') }}</dt>
@@ -73,8 +95,10 @@
                 <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Outreach') }}</h3>
                 <div class="flex flex-wrap gap-2">
                     @foreach($outreach as $o)
+                        @php $nudgeVar = $o['field'] === 'called_at' ? 'calledNudge' : ($o['field'] === 'mailed_at' ? 'mailedNudge' : null); @endphp
                         <button type="button"
                                 wire:click="toggleOutreach({{ $lead->id }}, '{{ $o['field'] }}')"
+                                @if($nudgeVar) x-bind:class="{ 'ring-2 ring-offset-1 dark:ring-offset-slate-900 animate-pulse': {{ $nudgeVar }} }" @endif
                                 class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-colors {{ $o['value'] ? $o['on'] : $o['off'] }}"
                                 title="{{ $o['value'] ? __(':label · :when', ['label' => $o['label'], 'when' => $o['value']->format('Y-m-d H:i')]) : __('Mark as :label', ['label' => mb_strtolower($o['label'])]) }}">
                             <span aria-hidden="true">{{ $o['value'] ? '✓' : '○' }}</span>
@@ -85,7 +109,10 @@
                         </button>
                     @endforeach
                 </div>
-                <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+                <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500" x-show="calledNudge || mailedNudge" x-cloak>
+                    {{ __('Reached them? Confirm by tapping the highlighted pill — a dial or compose window opening doesn\'t mean the call connected or the email was actually sent.') }}
+                </p>
+                <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500" x-show="!(calledNudge || mailedNudge)">
                     {{ __('Click a pill to toggle.') }}
                 </p>
             </section>
