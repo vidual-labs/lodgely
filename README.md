@@ -73,8 +73,8 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 📥 Unified lead inbox — filters, saved views, column picker, sortable columns, pagination.
 - 🧹 Automatic duplicate detection on normalized email/phone.
 - 📝 Side-panel review — status, priority, notes, audit trail, Meta ad attribution.
-- 📞 One-click `tel:` / `mailto:` links on every phone/email, in the inbox
-  table and the side panel — no copy-pasting a number to reach out.
+- 📞 One-click `tel:` / `mailto:` links on the phone/email in the lead side
+  panel — no copy-pasting a number to reach out.
 - ✅ Outreach state (Qualified / Called / Mailed) toggles with audit trail;
   clicking a call/email link nudges (highlights) the matching pill as a
   reminder to confirm the outcome yourself, since opening a dialer or mail
