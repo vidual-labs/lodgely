@@ -203,8 +203,6 @@
     "Not contacted": "Nicht kontaktiert",
     "Click a pill to toggle.": "Zum Umschalten auf ein Label klicken.",
     "Reached them? Confirm by tapping the highlighted pill — a dial or compose window opening doesn't mean the call connected or the email was actually sent.": "Erreicht? Mit einem Klick auf das hervorgehobene Label bestätigen — dass sich ein Anruf- oder Mail-Fenster öffnet, heißt nicht, dass der Anruf zustande kam oder die E-Mail wirklich verschickt wurde.",
-    "Email :name": "E-Mail an :name",
-    "Call :name": ":name anrufen",
     "Mark as :label": "Als :label markieren",
     ":label · :when": ":label · :when",
     "Qualified · :when": "Qualifiziert · :when",

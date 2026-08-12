@@ -8,11 +8,13 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
-- **Click-to-call and click-to-email links** on every phone/email shown in
-  the inbox (table cells and the side panel's Contact section) — phone
-  numbers are now `tel:` links and email addresses `mailto:` links, so
-  reaching out no longer requires copying the number/address elsewhere
-  first. In the side panel, clicking one highlights (pulses) the matching
+- **Click-to-call and click-to-email links** on the phone/email shown in the
+  lead side panel's Contact section — phone numbers are now `tel:` links and
+  email addresses `mailto:` links, so reaching out no longer requires
+  copying the number/address elsewhere first. Deliberately scoped to the
+  side panel only, not the inbox table, to keep the dense table row's click
+  target unambiguous (row click opens the panel; it doesn't compete with a
+  dial/mail-app launch). Clicking one highlights (pulses) the matching
   "Called"/"Mailed" outreach pill for a few seconds as a nudge to confirm
   the outcome yourself once you know it — deliberately **not** an automatic
   status change, since the browser has no way to know whether a `tel:`
