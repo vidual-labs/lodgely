@@ -745,17 +745,31 @@
                                                 {{ $lead->full_name ?? '—' }}
                                             </div>
                                             @if(! in_array('email', $activeColumns, true) && ! in_array('phone', $activeColumns, true))
-                                                <div class="text-xs text-slate-500 dark:text-slate-500 truncate max-w-[280px]">
-                                                    {{ $lead->email ?? '' }} @if($lead->email && $lead->phone) · @endif {{ $lead->phone }}
+                                                <div class="text-xs text-slate-500 dark:text-slate-500 truncate max-w-[280px]" wire:click.stop>
+                                                    @if($lead->email)<a href="mailto:{{ $lead->email }}" class="hover:text-brand-600 dark:hover:text-brand-400 hover:underline">{{ $lead->email }}</a>@endif
+                                                    @if($lead->email && $lead->phone) · @endif
+                                                    @if($lead->phone)<a href="tel:{{ $lead->phone }}" class="hover:text-brand-600 dark:hover:text-brand-400 hover:underline">{{ $lead->phone }}</a>@endif
                                                 </div>
                                             @endif
                                         </td>
                                         @break
                                     @case('email')
-                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[220px]">{{ $lead->email ?? '—' }}</td>
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[220px]" wire:click.stop>
+                                            @if($lead->email)
+                                                <a href="mailto:{{ $lead->email }}" class="hover:text-brand-600 dark:hover:text-brand-400 hover:underline" title="{{ __('Email :name', ['name' => $lead->full_name ?? $lead->email]) }}">{{ $lead->email }}</a>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
                                         @break
                                     @case('phone')
-                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ $lead->phone ?? '—' }}</td>
+                                        <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap" wire:click.stop>
+                                            @if($lead->phone)
+                                                <a href="tel:{{ $lead->phone }}" class="hover:text-brand-600 dark:hover:text-brand-400 hover:underline" title="{{ __('Call :name', ['name' => $lead->full_name ?? $lead->phone]) }}">{{ $lead->phone }}</a>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
                                         @break
                                     @case('client')
                                         <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{{ $lead->client_name ?? '—' }}</td>

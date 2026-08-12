@@ -6,6 +6,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Click-to-call and click-to-email links** on every phone/email shown in
+  the inbox (table cells and the side panel's Contact section) — phone
+  numbers are now `tel:` links and email addresses `mailto:` links, so
+  reaching out no longer requires copying the number/address elsewhere
+  first. In the side panel, clicking one highlights (pulses) the matching
+  "Called"/"Mailed" outreach pill for a few seconds as a nudge to confirm
+  the outcome yourself once you know it — deliberately **not** an automatic
+  status change, since the browser has no way to know whether a `tel:`
+  click actually connected a call or a `mailto:` click resulted in a sent
+  email, only that the dialer/mail app was opened.
+
 ### Security
 
 - **Updated `laravel/framework`, `symfony/http-kernel`, `symfony/http-foundation`,
