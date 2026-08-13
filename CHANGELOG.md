@@ -6,7 +6,33 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **The lead side panel is laid out around what a client actually does.** Everything
+  editable is now at the top: Contact, then a single **Status** card that merges the
+  Outreach toggles and the status pills (they are the same gesture — tap a pill to
+  record where this stands), then the lead's own words (Message, Custom questions),
+  then Notes. The read-only material moved below and collapses into native
+  `<details>`: ad attribution, AI evaluation, and everything past the five most recent
+  activity entries. The header now carries the current status badge, so the lead's
+  state stays on screen however far you scroll.
+- **Fewer pills on screen and less standing prose.** The four intake statuses
+  (New / Reviewed / Incomplete / Duplicate) collapse behind an "Intake" disclosure —
+  Reviewed is set automatically and the other two are operator hygiene — while the
+  outcome statuses stay visible; if the lead currently *is* on an intake status, that
+  pill stays out where you can see it. "Click a pill to toggle." is gone (the ✓/○ and
+  the tooltips already said it) and the automation explainer moved into the Status
+  heading's tooltip. Of the eight quick note phrases, the four outcome ones stay
+  visible and the rest sit behind "More phrases". Source and received time moved from
+  two table rows to one muted line under Contact.
+
 ### Added
+
+- **Exact dates in the lead activity log.** An entry older than a day now shows its
+  timestamp (`2026-08-10 12:00`) instead of "3 days ago", which is no answer to "when
+  did we call them?". Anything newer stays relative, and the full timestamp is on
+  hover either way. The rule lives in the new `App\Support\Dates::relativeOrExact()`
+  helper next to `App\Support\Money`.
 
 - **Outcome statuses.** `LeadStatus` gained a second half — **Pending**,
   **Offer sent**, **Successful**, **Declined** and **No reply** — alongside the
