@@ -20,6 +20,9 @@ headless / scripted installs.
 | `LODGELY_IMAP_MAILBOX` | Folder to poll | `INBOX` |
 | `LODGELY_IMAP_MAX_MESSAGES` | Max unseen messages per pull | `50` |
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention, empty = retain | `365` |
+| `TRUSTED_PROXIES` | Proxy address/CIDR (comma-separated) trusted for `X-Forwarded-*` headers. The default trusts every proxy, which makes the reported client IP whatever the caller sends — set it to your reverse proxy's range on an internet-facing install. Login and password-reset throttling is keyed on the submitted email as well as the IP, so it does not depend on this being correct. | `*` |
+| `LODGELY_BACKUP_PASSPHRASE` | Encrypts the database dump inside **new** backup archives (AES-256-GCM, PBKDF2-SHA256). A backup otherwise holds every lead's name, email, phone and message body in cleartext. Archives created before this was set still restore normally — the manifest records which shape each archive is. Store the passphrase off this server; an encrypted archive cannot be restored without it. | — (off) |
+| `LODGELY_BACKUP_KEEP` | How many backup archives to keep on disk after each new one. Empty keeps every archive forever. The archive just created is never pruned. | — (keep all) |
 | `LODGELY_AI_ENABLED` | Master kill-switch for the AI module. When `false`, all AI routes 404, buttons are hidden, and jobs no-op. Per-tenant config at `/settings/ai` only matters when this is true. | `false` |
 | `LODGELY_AI_MAX_CALLS_PER_DAY` | Maximum completed AI generations per tenant per day. `0` disables the cap. | `100` |
 | `LODGELY_AI_TIMEOUT` | HTTP timeout (seconds) for a single LLM provider call. | `60` |

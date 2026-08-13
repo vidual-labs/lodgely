@@ -15,6 +15,18 @@ use ZipArchive;
  * manifest.json (app version, created_at, db driver) so a restore can
  * sanity-check the file before handing it to pg_restore. Files live on
  * the `local` disk under backups/ — same private root as imports.
+ *
+ * Two things about that dump are worth stating plainly, because the name
+ * "backup" hides them: it contains every lead's name, email, phone and
+ * message body in cleartext, and it outlives `retention_until` (the purge
+ * command deletes rows from the database, not from archives taken earlier).
+ *
+ * So the dump can optionally be encrypted with a passphrase — see
+ * {@see ArchiveCipher}. This is opt-in via LODGELY_BACKUP_PASSPHRASE and
+ * off by default, because turning it on silently would hand operators
+ * archives they cannot restore without a setting they never chose. The
+ * manifest records which shape an archive is, and restore() reads it, so
+ * archives written before this existed still restore unchanged.
  */
 class BackupManager
 {
@@ -23,6 +35,11 @@ class BackupManager
     private const MANIFEST_ENTRY = 'manifest.json';
 
     private const DUMP_ENTRY = 'database.dump';
+
+    /** Encrypted archives carry the dump under this name instead of DUMP_ENTRY. */
+    private const ENCRYPTED_DUMP_ENTRY = 'database.dump.enc';
+
+    public function __construct(private readonly ArchiveCipher $cipher = new ArchiveCipher()) {}
 
     /** @return array{filename: string, path: string, size: int, created_at: string} */
     public function create(): array
@@ -52,23 +69,105 @@ class BackupManager
                 'created_at' => now()->toIso8601String(),
             ];
 
+            $passphrase = $this->passphrase();
+            $encryptedPath = null;
+
+            if ($passphrase !== null) {
+                $encryptedPath = $dumpPath.'.enc';
+                $manifest['encrypted'] = true;
+                $manifest['encryption'] = $this->cipher->encryptFile($dumpPath, $encryptedPath, $passphrase);
+            }
+
             $zip = new ZipArchive();
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new RuntimeException("Could not create backup archive at {$zipPath}.");
             }
             $zip->addFromString(self::MANIFEST_ENTRY, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-            $zip->addFile($dumpPath, self::DUMP_ENTRY);
+
+            if ($encryptedPath !== null) {
+                $zip->addFile($encryptedPath, self::ENCRYPTED_DUMP_ENTRY);
+            } else {
+                $zip->addFile($dumpPath, self::DUMP_ENTRY);
+            }
+
             $zip->close();
+
+            // addFile() only reads the source when close() streams the entry
+            // out, so the encrypted temp file has to survive until here.
+            if ($encryptedPath !== null) {
+                @unlink($encryptedPath);
+            }
         } finally {
             @unlink($dumpPath);
         }
 
+        // Read the size before pruning: on a filesystem with second-resolution
+        // mtimes several archives can tie, and stat()ing a file prune() just
+        // removed is an avoidable warning.
+        $size = filesize($zipPath) ?: 0;
+
+        $this->prune(keepAlways: $filename);
+
+
         return [
             'filename' => $filename,
             'path' => $zipPath,
-            'size' => filesize($zipPath) ?: 0,
+            'size' => $size,
             'created_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * Trim the archive directory to the $keep most recent files, returning the
+     * filenames removed.
+     *
+     * $keep defaults to `lodgely.backups.keep`, which is itself null — keep
+     * everything. Pruning is opt-in on purpose: an upgrade that silently
+     * started deleting an operator's backups would be a far worse bug than a
+     * full disk.
+     *
+     * $keepAlways is the archive that was just written. Sorting by mtime is
+     * ambiguous when two archives land in the same second, and "the backup you
+     * just took gets deleted by its own prune" is the one outcome this must
+     * never produce — so it is excluded from the candidates outright rather
+     * than trusted to sort first.
+     *
+     * @return list<string> filenames that were deleted
+     */
+    public function prune(?int $keep = null, ?string $keepAlways = null): array
+    {
+        $keep ??= config('lodgely.backups.keep');
+
+        if ($keep === null) {
+            return [];
+        }
+
+        $keep = max(1, (int) $keep);
+
+        $candidates = array_values(array_filter(
+            $this->list(),
+            static fn (array $archive) => $archive['filename'] !== $keepAlways,
+        ));
+
+        // The just-created archive occupies one of the slots.
+        $budget = max(0, $keep - ($keepAlways === null ? 0 : 1));
+
+        $pruned = [];
+
+        foreach (array_slice($candidates, $budget) as $stale) {
+            File::delete($stale['path']);
+            $pruned[] = $stale['filename'];
+        }
+
+        return $pruned;
+    }
+
+    /** The configured backup passphrase, or null when encryption is switched off. */
+    private function passphrase(): ?string
+    {
+        $passphrase = (string) (config('lodgely.backups.passphrase') ?? '');
+
+        return $passphrase !== '' ? $passphrase : null;
     }
 
     /** @return list<array{filename: string, path: string, size: int, created_at: string}> */
@@ -84,7 +183,10 @@ class BackupManager
                 'size' => $file->getSize(),
                 'created_at' => date('c', $file->getMTime()),
             ])
-            ->sortByDesc('created_at')
+            // mtime first, filename as tiebreaker: filenames embed the
+            // creation timestamp, so this stays stable when several archives
+            // share an mtime second (which sortByDesc alone does not).
+            ->sortByDesc(fn (array $archive) => [$archive['created_at'], $archive['filename']])
             ->values();
 
         return $files->all();
@@ -130,12 +232,18 @@ class BackupManager
                 throw new RuntimeException('Could not open the uploaded file as a backup archive.');
             }
 
-            if ($zip->locateName(self::MANIFEST_ENTRY) === false || $zip->locateName(self::DUMP_ENTRY) === false) {
+            // Which entry holds the dump tells us the archive's shape: plain
+            // archives (everything written before encryption existed) carry
+            // DUMP_ENTRY, encrypted ones ENCRYPTED_DUMP_ENTRY.
+            $isEncrypted = $zip->locateName(self::ENCRYPTED_DUMP_ENTRY) !== false;
+            $dumpEntry = $isEncrypted ? self::ENCRYPTED_DUMP_ENTRY : self::DUMP_ENTRY;
+
+            if ($zip->locateName(self::MANIFEST_ENTRY) === false || $zip->locateName($dumpEntry) === false) {
                 $zip->close();
                 throw new RuntimeException('This file does not look like a lodgely backup archive (missing manifest or database dump).');
             }
 
-            $zip->extractTo($extractDir, [self::MANIFEST_ENTRY, self::DUMP_ENTRY]);
+            $zip->extractTo($extractDir, [self::MANIFEST_ENTRY, $dumpEntry]);
             $zip->close();
 
             $manifestJson = File::get($extractDir.DIRECTORY_SEPARATOR.self::MANIFEST_ENTRY);
@@ -145,7 +253,22 @@ class BackupManager
                 throw new RuntimeException('This archive does not carry a valid lodgely backup manifest.');
             }
 
-            $dumpPath = $extractDir.DIRECTORY_SEPARATOR.self::DUMP_ENTRY;
+            $dumpPath = $extractDir.DIRECTORY_SEPARATOR.$dumpEntry;
+
+            if ($isEncrypted) {
+                $passphrase = $this->passphrase();
+
+                if ($passphrase === null) {
+                    throw new RuntimeException(
+                        'This backup is encrypted, but no LODGELY_BACKUP_PASSPHRASE is configured on this server. '
+                        .'Set it to the passphrase used when the archive was created and try again.'
+                    );
+                }
+
+                $decryptedPath = $extractDir.DIRECTORY_SEPARATOR.self::DUMP_ENTRY;
+                $this->cipher->decryptFile($dumpPath, $decryptedPath, $passphrase, $manifest['encryption'] ?? []);
+                $dumpPath = $decryptedPath;
+            }
 
             $result = $this->runPg('pg_restore', ['--clean', '--if-exists', '--no-owner', '--role='.config('database.connections.pgsql.username'), $dumpPath]);
 

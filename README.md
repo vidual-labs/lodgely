@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.50.0-6366F1" alt="Version 0.50.0">
+  <img src="https://img.shields.io/badge/version-0.51.0-6366F1" alt="Version 0.51.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -120,7 +120,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 - 🧾 Full audit log of lead lifecycle changes.
 - 🗑️ Retention-aware (`retention_until`) with an opt-in GDPR purge command.
-- 💾 Backup & recovery — one-click `.zip` backups, UI restore, and matching artisan commands.
+- 💾 Backup & recovery — one-click `.zip` backups, UI restore, and matching artisan commands. Optional passphrase encryption of the database dump inside the archive, plus optional retention pruning.
 - 🌙 Dark/Light mode, persisted per user.
 - 🌍 i18n — English and German, persisted per user.
 - 🧪 One-click demo data load/unload for a scoped, reversible demo dataset.
@@ -224,7 +224,31 @@ If lodgely sits behind Cloudflare, nginx, or any other reverse proxy:
 - Set `APP_URL` to the **public** HTTPS URL (e.g. `https://lodgely.example.com`), not the internal address.
 - Set `SESSION_SECURE_COOKIE=true` (the browser is on HTTPS even if the internal hop is HTTP).
 - Set `SESSION_DRIVER=file` or ensure `SESSION_DRIVER=database` is working before testing login.
-- The app already calls `trustProxies(at: '*')` in `bootstrap/app.php`, so `X-Forwarded-Proto` and other forwarded headers are trusted automatically — no extra config needed.
+- Forwarded headers (`X-Forwarded-Proto` and friends) are trusted out of the box, so the app works behind a proxy with no extra config.
+- Once it works, **set `TRUSTED_PROXIES` to your proxy's address or CIDR** — `172.16.0.0/12` for the bundled Docker stack. The default trusts every proxy, which means the "client IP" is whatever the caller puts in `X-Forwarded-For`. Narrowing it makes your access logs and IP-based limits meaningful. (Login and password-reset throttling does not depend on this: it is keyed on the submitted email address as well as the IP, precisely so a forged header cannot buy extra attempts.)
+
+---
+
+### Hardening a production install
+
+The defaults are tuned so a fresh `docker compose up` works on a laptop over
+plain HTTP. An install holding real leads and live integration credentials
+wants a few of them changed:
+
+| Setting | Why |
+|---|---|
+| `APP_DEBUG=false` | Debug error pages render request and configuration detail. This is the default; make sure nothing in your shell or compose overrides it. |
+| `APP_ENV=production` | Enables production behaviour, including forcing `https://` in generated URLs. Set this **after** TLS works, or links will point at a scheme you do not serve. |
+| `SESSION_SECURE_COOKIE=true` | Without it the session cookie is sent over plain HTTP too. Requires HTTPS. |
+| `SESSION_ENCRYPT=true` | Already the default in `.env.example`; keep it. |
+| `TRUSTED_PROXIES=<your proxy CIDR>` | See above. |
+| `LODGELY_BACKUP_PASSPHRASE` | **A backup archive contains every lead's name, email, phone and message body in cleartext.** Setting a passphrase encrypts the database dump inside new archives. Existing unencrypted archives keep restoring normally. Store the passphrase somewhere other than the server it protects — an encrypted archive cannot be recovered without it. |
+| `LODGELY_BACKUP_KEEP` | Archives otherwise accumulate forever, and each one is a full copy of your data that outlives `retention_until`. Set it to the number of archives to keep. |
+| `LODGELY_DEFAULT_RETENTION_DAYS` | Empty means leads are kept until deleted by hand. Set a window and run the scheduler so `lodgely:leads:purge` can act on it. |
+
+The app logs a warning at boot when it is running in production with debug
+mode on or without a secure session cookie, so a misconfiguration shows up in
+`docker compose logs app` rather than staying silent.
 
 ---
 
@@ -326,6 +350,9 @@ The handful of variables you're most likely to touch on a first install:
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention, empty = retain | `365` |
 | `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
 | `LODGELY_AI_ENABLED` | Master kill-switch for the AI module | `false` |
+| `TRUSTED_PROXIES` | Proxy address/CIDR to trust for `X-Forwarded-*` | `*` (all) |
+| `LODGELY_BACKUP_PASSPHRASE` | Encrypts the dump inside new backup archives | empty (off) |
+| `LODGELY_BACKUP_KEEP` | Backup archives to retain on disk | empty (keep all) |
 | `MAIL_MAILER` | Outbound mail transport (`log`, `smtp`) — prefer Settings → Email instead | `log` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 

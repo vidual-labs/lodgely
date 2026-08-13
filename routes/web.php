@@ -61,12 +61,15 @@ Route::post('/user/theme', function (Request $request) {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:5,1')->name('login.attempt');
+    // The named limiters key on the submitted email as well as the IP, so a
+    // spoofed X-Forwarded-For cannot buy extra attempts against one account.
+    // See AppServiceProvider::bootRateLimiters().
+    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:login')->name('login.attempt');
 
     Route::get('/forgot-password',          [PasswordResetController::class, 'requestForm'])->name('password.request');
-    Route::post('/forgot-password',         [PasswordResetController::class, 'sendLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::post('/forgot-password',         [PasswordResetController::class, 'sendLink'])->middleware('throttle:password-reset')->name('password.email');
     Route::get('/reset-password/{token}',   [PasswordResetController::class, 'resetForm'])->name('password.reset');
-    Route::post('/reset-password',          [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
+    Route::post('/reset-password',          [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset')->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {

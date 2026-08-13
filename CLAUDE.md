@@ -74,7 +74,10 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
 - **AI** (`app/Domain/Ai/`, opt-in via `ai.enabled`) — report-view summaries
   and pseudonymized lead qualification via OpenAI-compatible or Ollama
   providers, behind an operator approve-then-share workflow.
-- **Ops** — encrypted DB backups (`/settings/backups`), demo data load/unload
+- **Ops** — DB backups (`/settings/backups`; the dump inside the archive is
+  cleartext unless `LODGELY_BACKUP_PASSPHRASE` is set — the *columns* are
+  encrypted, the dump is not, so treat an archive as a full PII copy),
+  demo data load/unload
   (`/settings/demo-data`), webhook endpoints (`/webhooks`), users (`/users`),
   EN/DE i18n, dark/light mode.
 

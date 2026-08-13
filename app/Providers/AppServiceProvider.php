@@ -25,9 +25,13 @@ use App\Importers\MetaMock\MetaMockAdMetricsSource;
 use App\Importers\MetaMock\MetaMockCreativeSource;
 use App\Importers\Openflow\OpenflowLeadSource;
 use App\Models\MailSetting;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -129,5 +133,91 @@ class AppServiceProvider extends ServiceProvider
         Queue::before(static function (): void {
             MailSetting::applyForDefaultTenant();
         });
+
+        $this->bootRateLimiters();
+        $this->warnAboutInsecureProductionConfig();
+    }
+
+    /**
+     * Named rate limiters for the unauthenticated endpoints.
+     *
+     * Why these exist instead of the inline `throttle:5,1` they replace: the
+     * inline limiter keys on the client IP, and the client IP is only as
+     * trustworthy as `TRUSTED_PROXIES` (see bootstrap/app.php), which defaults
+     * to trusting every proxy. That means `$request->ip()` is really "whatever the
+     * caller wrote in X-Forwarded-For", and an attacker who rotates that header
+     * gets an unlimited number of password guesses against a real account.
+     *
+     * Every limiter below therefore keys on something the caller cannot rotate
+     * — the email they are trying to log in as, or the webhook token they are
+     * posting to — with an IP-keyed bucket kept alongside as a second, wider
+     * net. Returning several Limits from one callback makes Laravel require
+     * *all* of them to pass.
+     */
+    private function bootRateLimiters(): void
+    {
+        RateLimiter::for('login', static fn (Request $request) => [
+            // The bucket that actually matters: spoofing X-Forwarded-For does
+            // not change which account is being attacked.
+            Limit::perMinute(5)->by('login:'.self::normalizedEmail($request)),
+            Limit::perMinute(20)->by('login-ip:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('password-reset', static fn (Request $request) => [
+            Limit::perMinute(5)->by('pwreset:'.self::normalizedEmail($request)),
+            Limit::perMinute(20)->by('pwreset-ip:'.$request->ip()),
+        ]);
+
+        // Keyed on the endpoint token from the route, so one noisy integration
+        // cannot exhaust another's budget and a caller cannot widen its own by
+        // changing its apparent IP. Unknown tokens fall back to the IP so
+        // scanning for valid tokens is still bounded.
+        RateLimiter::for('webhook', static function (Request $request) {
+            $token = (string) $request->route('token');
+
+            return Limit::perMinute(60)->by(
+                $token !== '' ? 'webhook:'.sha1($token) : 'webhook-ip:'.$request->ip()
+            );
+        });
+    }
+
+    /**
+     * The reset form and the login form both submit `email`; normalizing here
+     * keeps "Bob@Example.com " and "bob@example.com" in the same bucket rather
+     * than handing an attacker a fresh allowance per casing.
+     */
+    private static function normalizedEmail(Request $request): string
+    {
+        $email = mb_strtolower(trim((string) $request->input('email')));
+
+        return $email !== '' ? $email : 'unknown';
+    }
+
+    /**
+     * Log a loud warning for the two production misconfigurations that leak
+     * the most: debug mode (renders request/config context on any 500, and
+     * this install holds live ad-platform, SMTP and AI credentials) and a
+     * session cookie without the Secure flag.
+     *
+     * Warning rather than throwing on purpose — refusing to boot would turn a
+     * misconfiguration into an outage.
+     */
+    private function warnAboutInsecureProductionConfig(): void
+    {
+        if (! $this->app->environment('production') || $this->app->runningInConsole()) {
+            return;
+        }
+
+        if (config('app.debug')) {
+            Log::warning('lodgely.security.debug_enabled_in_production', [
+                'hint' => 'Set APP_DEBUG=false. Debug mode renders configuration and request details on error pages.',
+            ]);
+        }
+
+        if (! config('session.secure')) {
+            Log::warning('lodgely.security.insecure_session_cookie', [
+                'hint' => 'Set SESSION_SECURE_COOKIE=true when serving over HTTPS so session cookies are not sent over plain HTTP.',
+            ]);
+        }
     }
 }

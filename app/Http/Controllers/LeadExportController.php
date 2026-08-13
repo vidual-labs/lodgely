@@ -96,11 +96,23 @@ class LeadExportController extends Controller
 
         $response = new StreamedResponse(function () use ($stream, $request, $user, $format, $state, &$count) {
             $stream();
+            // The search term is deliberately reduced to a boolean: operators
+            // routinely search by a lead's email or phone to find one record,
+            // so logging it verbatim copies that person's contact details into
+            // the log stream on every export. The remaining filters are
+            // closed-vocabulary and safe to keep, and knowing *whether* a
+            // search was active is what makes the audit line useful.
+            $loggableFilters = array_filter(
+                array_diff_key($state, ['search' => null]) + ['sort' => (string) $request->query('sort', 'created_desc')],
+                fn ($v) => $v !== '',
+            );
+            $loggableFilters['search_present'] = $state['search'] !== '';
+
             Log::info('lead.exported', [
                 'user_id' => $user->id,
                 'format' => $format,
                 'count' => $count,
-                'filters' => array_filter($state + ['sort' => (string) $request->query('sort', 'created_desc')], fn ($v) => $v !== ''),
+                'filters' => $loggableFilters,
             ]);
         }, 200, [
             'Content-Type' => $mime,

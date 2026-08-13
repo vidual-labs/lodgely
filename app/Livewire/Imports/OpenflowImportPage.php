@@ -7,6 +7,7 @@ use App\Importers\Openflow\OpenflowLeadSource;
 use App\Models\Import;
 use App\Models\OpenflowSource;
 use App\Models\Tenant;
+use App\Rules\HttpUrl;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -231,7 +232,9 @@ class OpenflowImportPage extends Component
 
         $data = $this->validate([
             'form.label'                 => ['required', 'string', 'max:120'],
-            'form.base_url'              => ['required', 'url', 'max:255'],
+            // http/https only: this URL receives the source's stored login
+            // email and password on every scheduled pull.
+            'form.base_url'              => ['required', 'max:255', new HttpUrl()],
             'form.api_token'             => ['nullable', 'string', 'max:255'],
             'form.email'                 => ['nullable', 'email', 'max:255'],
             'form.password'              => ['nullable', 'string', 'max:255'],

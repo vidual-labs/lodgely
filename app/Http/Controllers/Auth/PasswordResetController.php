@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Ai\Support\Pseudonymizer;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
@@ -29,18 +30,24 @@ class PasswordResetController extends Controller
 
         $email = mb_strtolower(trim((string) $request->input('email')));
 
+        // Masked, not raw: these lines go to stdout → the Docker log driver →
+        // wherever the host ships logs, which is outside the retention regime
+        // that governs the rest of our personal data. The masked form is still
+        // enough to correlate a support report with a log line.
+        $maskedEmail = (new Pseudonymizer())->maskEmail($email);
+
         $user = User::where('email', $email)->first();
         if ($user && ! $user->is_active) {
             // Don't issue tokens for disabled accounts. Behave like "we sent it"
             // so the form doesn't double as an account-status oracle.
-            Log::info('lodgely.password.reset_request.skipped_inactive', ['email' => $email]);
+            Log::info('lodgely.password.reset_request.skipped_inactive', ['email' => $maskedEmail]);
             return back()->with('status', __('If that email matches an active account, a reset link is on its way.'));
         }
 
         $status = Password::sendResetLink(['email' => $email]);
 
         Log::info('lodgely.password.reset_request', [
-            'email'  => $email,
+            'email'  => $maskedEmail,
             'status' => $status,
         ]);
 
