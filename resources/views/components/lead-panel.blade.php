@@ -1,7 +1,17 @@
-@props(['lead', 'statusOptions' => [], 'priorityOptions' => [], 'aiSummary' => null])
+@props([
+    'lead',
+    'statusOptions' => [],
+    'statusGroups' => [],
+    'priorityOptions' => [],
+    'noteSnippets' => [],
+    'aiSummary' => null,
+])
 
+{{-- `statusNudge` holds the status value a just-inserted note snippet implies;
+     the matching status pill pulses while it is set. Same nudge idea as
+     calledNudge/mailedNudge above it — suggest, never write. --}}
 <div class="fixed inset-0 z-40 flex"
-     x-data="{ calledNudge: false, mailedNudge: false }"
+     x-data="{ calledNudge: false, mailedNudge: false, statusNudge: null }"
      x-trap.noscroll="true" x-on:keydown.escape.window="$wire.closePanel()">
     <div class="flex-1 bg-slate-900/40 dark:bg-black/50" wire:click="closePanel"></div>
 
@@ -119,28 +129,57 @@
 
             {{-- workflow (status / priority) — both operators and clients may
                  change these on a lead they can see; {@see setStatus()} /
-                 {@see setPriority()} on InboxPage do the actual scoping. --}}
+                 {@see setPriority()} on InboxPage do the actual scoping.
+
+                 Status is a pill row rather than a dropdown: clients use the
+                 Outreach pills above constantly and left the old status
+                 <select> almost untouched, so the two sections now read and
+                 behave the same way. Grouped intake / outcome so nine states
+                 stay scannable. --}}
+            @php
+                // Events are eager-loaded latest-first, so the first status
+                // event is the most recent one — "how long has this offer been
+                // sitting?" without another query or a new column.
+                $lastStatusChange = $lead->events->firstWhere('type', 'lead.status_changed');
+            @endphp
             <section class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/60 dark:bg-slate-800/30 p-3">
                 <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">{{ __('Workflow') }}</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</label>
-                        <select wire:change="setStatus({{ $lead->id }}, $event.target.value)"
-                                class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            @foreach($statusOptions as $o)
-                                <option value="{{ $o['value'] }}" @selected($lead->status->value === $o['value'])>{{ $o['label'] }}</option>
+
+                <div class="text-xs text-slate-500 dark:text-slate-400">{{ __('Status') }}</div>
+                <div class="mt-1 space-y-1">
+                    @foreach($statusGroups as $group)
+                        <div class="flex flex-wrap items-center gap-1">
+                            <span class="px-1 py-0.5 text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 w-16 shrink-0">{{ $group['label'] }}</span>
+                            @foreach($group['options'] as $o)
+                                @php $isCurrent = $lead->status->value === $o['value']; @endphp
+                                <button type="button"
+                                        wire:click="setStatus({{ $lead->id }}, '{{ $o['value'] }}')"
+                                        aria-pressed="{{ $isCurrent ? 'true' : 'false' }}"
+                                        x-bind:class="{ 'ring-2 ring-offset-1 dark:ring-offset-slate-900 animate-pulse': statusNudge === @js($o['value']) }"
+                                        class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ring-1 ring-inset transition-colors {{ $isCurrent ? $o['badge'].' font-semibold' : 'bg-white dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 ring-slate-300/60 dark:ring-slate-600/40 hover:text-slate-800 dark:hover:text-slate-200' }}"
+                                        title="{{ $isCurrent ? $o['label'] : __('Set status to :label', ['label' => $o['label']]) }}">
+                                    @if($isCurrent)<span aria-hidden="true">✓</span>@endif
+                                    <span>{{ $o['label'] }}</span>
+                                </button>
                             @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
-                        <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
-                                class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            @foreach($priorityOptions as $o)
-                                <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        </div>
+                    @endforeach
+                </div>
+                <p class="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                    @if($lastStatusChange)
+                        {{ __('Status set :when', ['when' => $lastStatusChange->created_at?->diffForHumans()]) }} ·
+                    @endif
+                    {{ __('Opening a lead marks it Reviewed; the first outreach pill marks it Pending. Set the rest yourself.') }}
+                </p>
+
+                <div class="mt-3 max-w-[220px]">
+                    <label class="text-xs text-slate-500 dark:text-slate-400">{{ __('Priority') }}</label>
+                    <select wire:change="setPriority({{ $lead->id }}, $event.target.value)"
+                            class="mt-1 block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500">
+                        @foreach($priorityOptions as $o)
+                            <option value="{{ $o['value'] }}" @selected($lead->priority->value === $o['value'])>{{ $o['label'] }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </section>
 
@@ -245,7 +284,36 @@
                      scopes the target lead the same way every other action here does. --}}
                 @auth
                     <form wire:submit.prevent="addNote" class="mt-3">
-                        <textarea wire:model="newNoteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
+                        {{-- Quick phrases. Alpine writes the textarea directly and
+                             pushes the value to Livewire deferred ($wire.set(…, false)) —
+                             a wire:click round-trip here is exactly the morph-layer
+                             drop documented in CLAUDE.md, and a deferred set also
+                             avoids clobbering whatever the user is mid-way through
+                             typing. Snippets that imply an outcome light up the
+                             matching status pill instead of writing it. --}}
+                        <div class="mb-2 flex flex-wrap gap-1" role="group" aria-label="{{ __('Quick notes') }}">
+                            @foreach($noteSnippets as $s)
+                                <button type="button"
+                                        x-on:click="
+                                            const ta = $refs.noteBody;
+                                            const phrase = @js($s['text']);
+                                            const current = ta.value.replace(/\s+$/, '');
+                                            ta.value = current === '' ? phrase : current + '\n' + phrase;
+                                            $wire.set('newNoteBody', ta.value, false);
+                                            ta.focus();
+                                            ta.setSelectionRange(ta.value.length, ta.value.length);
+                                            statusNudge = @js($s['status']);
+                                            if (statusNudge) { setTimeout(() => statusNudge = null, 15000) }
+                                        "
+                                        class="rounded-full px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800/50 ring-1 ring-inset ring-slate-300/60 dark:ring-slate-600/40 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                    <span aria-hidden="true">+</span> {{ $s['text'] }}
+                                </button>
+                            @endforeach
+                        </div>
+                        <p class="mb-2 text-[11px] text-slate-400 dark:text-slate-500" x-show="statusNudge" x-cloak>
+                            {{ __('Note ready — the matching status pill above is highlighted if you want to set it too.') }}
+                        </p>
+                        <textarea wire:model="newNoteBody" x-ref="noteBody" rows="2" maxlength="5000" placeholder="{{ __('Add a short note…') }}"
                                   class="block w-full rounded-lg border-slate-300 py-3 px-4 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
                         @error('newNoteBody') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                         <div class="mt-2 flex justify-end">

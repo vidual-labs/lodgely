@@ -6,10 +6,12 @@ use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Exceptions\AiDisabledException;
 use App\Domain\Ai\Services\AiSummarizer;
+use App\Domain\Leads\Enums\LeadNoteSnippet;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Domain\Leads\Services\DuplicateDetector;
 use App\Domain\Leads\Services\LeadKpis;
+use App\Domain\Leads\Services\LeadStatusAutomation;
 use App\Livewire\Inbox\Concerns\WithBulkLeadActions;
 use App\Livewire\Inbox\Concerns\WithColumnPicker;
 use App\Livewire\Inbox\Concerns\WithFilterPicker;
@@ -79,10 +81,23 @@ class InboxPage extends Component
         }
     }
 
-    public function selectLead(int $id): void
+    /**
+     * Opening a lead is the moment it stops being unread, so the panel marks a
+     * New lead Reviewed on the way in — see {@see LeadStatusAutomation} for why
+     * that can only ever move New → Reviewed. Deliberately tolerant of an id the
+     * caller can't see: that already rendered as an empty panel rather than an
+     * error, and it stays that way.
+     */
+    public function selectLead(int $id, LeadStatusAutomation $automation): void
     {
         $this->selectedLeadId = $id;
         $this->newNoteBody = null;
+
+        $lead = Lead::query()->visibleTo(auth()->user())->find($id);
+
+        if ($lead !== null) {
+            $automation->markReviewed($lead);
+        }
     }
 
     public function closePanel(): void
@@ -144,7 +159,7 @@ class InboxPage extends Component
      * mailed). Both operators and clients may call this — these fields
      * represent in-tool activity, not data from the upstream source.
      */
-    public function toggleOutreach(int $leadId, string $field, AuditLogger $audit): void
+    public function toggleOutreach(int $leadId, string $field, AuditLogger $audit, LeadStatusAutomation $automation): void
     {
         abort_unless(in_array($field, self::OUTREACH_FIELDS, true), 422);
 
@@ -158,6 +173,14 @@ class InboxPage extends Component
             'field' => $field,
             'set'   => $previous === null,
         ]);
+
+        // Recording a first contact means this lead is now waiting on the other
+        // side — only when switching a toggle *on*, and only from New/Reviewed.
+        // Clearing a toggle never walks the status back: the contact still
+        // happened, the client just corrected the pill.
+        if ($previous === null) {
+            $automation->markPending($lead);
+        }
     }
 
     public function reconcileDuplicate(int $leadId, DuplicateDetector $detector, AuditLogger $audit): void
@@ -265,6 +288,8 @@ class InboxPage extends Component
             'sourceOptions' => $sourceOptions,
             'selected' => $selected,
             'statusOptions' => LeadStatus::options(),
+            'statusGroups' => LeadStatus::grouped(),
+            'noteSnippets' => LeadNoteSnippet::options(),
             'priorityOptions' => LeadPriority::options(),
             'savedFilters' => $this->userSavedFilters(),
             'leadAiSummary' => $leadAiSummary,

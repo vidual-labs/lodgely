@@ -34,7 +34,7 @@ class LeadFilter
      *
      * Prefer this over calling {@see sortBy()} and ordering yourself: every
      * sort but the two `created_*` ones is low-cardinality — priority has three
-     * distinct values, status five, source a handful — so a single ORDER BY
+     * distinct values, status nine, source a handful — so a single ORDER BY
      * column leaves the order *within* a band entirely up to the database. In
      * Postgres that is usually heap order, i.e. oldest first, which sinks the
      * newest leads to the bottom of each band and makes pagination unstable:

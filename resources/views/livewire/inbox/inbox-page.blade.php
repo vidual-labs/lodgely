@@ -63,11 +63,12 @@
              x-transition:leave="transition ease-in duration-100"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-1"
-             class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <x-kpi-card :label="__('New')"        :value="$kpis['new']"        tone="blue"  />
-            <x-kpi-card :label="__('Duplicates')" :value="$kpis['duplicates']" tone="rose"  />
-            <x-kpi-card :label="__('Incomplete')" :value="$kpis['incomplete']" tone="amber" />
-            <x-kpi-card :label="__('Total')"      :value="$kpis['total']"      tone="slate" />
+             class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+            <x-kpi-card :label="__('New')"        :value="$kpis['new']"        tone="blue"   />
+            <x-kpi-card :label="__('Offer sent')" :value="$kpis['offer_sent']" tone="violet" />
+            <x-kpi-card :label="__('Duplicates')" :value="$kpis['duplicates']" tone="rose"   />
+            <x-kpi-card :label="__('Incomplete')" :value="$kpis['incomplete']" tone="amber"  />
+            <x-kpi-card :label="__('Total')"      :value="$kpis['total']"      tone="slate"  />
         </div>
     </div>
 
@@ -116,8 +117,12 @@
                 <select wire:model.live="status"
                         class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500 h-8 py-0 pl-2.5 pr-7">
                     <option value="">{{ __('Status') }}</option>
-                    @foreach($statusOptions as $o)
-                        <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                    @foreach($statusGroups as $group)
+                        <optgroup label="{{ $group['label'] }}">
+                            @foreach($group['options'] as $o)
+                                <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
             @endif
@@ -578,8 +583,12 @@
                     <select wire:model="bulkStatusValue"
                             class="rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">{{ __('Set status…') }}</option>
-                        @foreach($statusOptions as $o)
-                            <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                        @foreach($statusGroups as $group)
+                            <optgroup label="{{ $group['label'] }}">
+                                @foreach($group['options'] as $o)
+                                    <option value="{{ $o['value'] }}">{{ $o['label'] }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
                     <button type="button" wire:click="bulkSetStatus"
@@ -835,7 +844,8 @@
 
     {{-- ────────────────── detail side panel ───────────────── --}}
     @if($selected)
-        <x-lead-panel :lead="$selected" :statusOptions="$statusOptions" :priorityOptions="$priorityOptions" :aiSummary="$leadAiSummary" />
+        <x-lead-panel :lead="$selected" :statusOptions="$statusOptions" :statusGroups="$statusGroups"
+                      :priorityOptions="$priorityOptions" :noteSnippets="$noteSnippets" :aiSummary="$leadAiSummary" />
     @endif
 
     {{-- ────────────────── new lead modal ───────────────── --}}

@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.51.0-6366F1" alt="Version 0.51.0">
+  <img src="https://img.shields.io/badge/version-0.52.0-6366F1" alt="Version 0.52.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -73,6 +73,15 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 📥 Unified lead inbox — filters, saved views, column picker, sortable columns, pagination.
 - 🧹 Automatic duplicate detection on normalized email/phone.
 - 📝 Side-panel review — status, priority, notes, audit trail, Meta ad attribution.
+- 🎯 Outcome tracking — beyond the intake states (New / Reviewed / Incomplete /
+  Duplicate), leads carry what came back: **Pending**, **Offer sent**,
+  **Successful**, **Declined**, **No reply**, **Forwarded**. Status is a pill
+  row in the side panel (not a dropdown) and fills itself in for the first two
+  steps: opening a lead marks it Reviewed, the first outreach toggle marks it
+  Pending. Everything after that stays a deliberate click.
+- 💬 One-click note phrases — "Mailed them", "Sent offer", "Declined offer" and
+  friends drop into the note box; the outcome ones highlight the matching status
+  pill as a nudge.
 - 📞 One-click `tel:` / `mailto:` links on the phone/email in the lead side
   panel — no copy-pasting a number to reach out.
 - ✅ Outreach state (Qualified / Called / Mailed) toggles with audit trail;

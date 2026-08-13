@@ -150,7 +150,7 @@ class OpenflowSource extends Model
             'client_name'   => 'Client name',
             'campaign_name' => 'Campaign name',
             // Status & priority
-            'status'        => 'Status (new/reviewed/incomplete/forwarded)',
+            'status'        => 'Status (new/reviewed/offer_sent/declined/…)',
             'priority'      => 'Priority (low/medium/high)',
             // Named custom answer — operator supplies the key
             'custom_answer' => 'Custom answer (named key)…',
