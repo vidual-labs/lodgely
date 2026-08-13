@@ -7,6 +7,7 @@ use App\Domain\Ai\Services\AiSummarizer;
 use App\Models\AiSetting;
 use App\Models\Tenant;
 use App\Providers\AppServiceProvider;
+use App\Rules\HttpUrl;
 use App\Support\Audit\AiAuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -69,7 +70,9 @@ class AiSettingsPage extends Component
         $data = $this->validate([
             'form.enabled'           => ['boolean'],
             'form.provider'          => ['nullable', 'string', Rule::in(array_keys(AppServiceProvider::LLM_PROVIDERS))],
-            'form.base_url'          => ['nullable', 'string', 'max:255'],
+            // http/https only: the API key travels to this URL as a Bearer
+            // token. Blank is allowed and means "use the provider default".
+            'form.base_url'          => ['nullable', 'string', 'max:255', new HttpUrl()],
             'form.api_key'           => ['nullable', 'string', 'max:500'],
             'form.model'             => ['nullable', 'string', 'max:120'],
             'form.house_style'       => ['nullable', 'string', 'max:2000'],

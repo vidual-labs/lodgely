@@ -139,7 +139,13 @@ below.
   the UI (typed "RESTORE" confirmation, since it overwrites every table and
   signs the operator out). The same flows ship as artisan commands —
   `lodgely:backup:create [--keep=N]` and `lodgely:backup:restore <path>` —
-  for cron jobs and scripted server migrations. **Note:** integration
+  for cron jobs and scripted server migrations. **The dump inside the archive
+  is cleartext by default** — treat a backup as a full copy of every lead's
+  name, email, phone and message body, and note that it outlives the
+  `retention_until` window. Set `LODGELY_BACKUP_PASSPHRASE` to encrypt the dump
+  inside new archives (AES-256-GCM); archives taken before you set it keep
+  restoring normally, since the manifest records which shape each archive is.
+  `LODGELY_BACKUP_KEEP` prunes old archives automatically. **Note:** integration
   secrets (Google Sheets, Google Ads, Meta, AI keys) are encrypted with the
   install's `APP_KEY`, so a backup restored onto a *different* server — or
   after `APP_KEY` rotation — can't decrypt them; you'll be prompted to

@@ -23,6 +23,74 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Security
 
+- **Login and password-reset throttling can no longer be bypassed with a
+  forged `X-Forwarded-For` header.** lodgely trusts every proxy by default, so
+  the "client IP" was whatever the caller sent — and the old `throttle:5,1`
+  keyed on exactly that, meaning anyone willing to increment a header got
+  unlimited password guesses against a real account. The routes now use named
+  limiters keyed on the **submitted email address** as well as the IP, which a
+  header cannot rotate. The inbound webhook limiter is likewise keyed on the
+  endpoint token rather than the caller's IP, so one noisy integration cannot
+  exhaust another's budget.
+- **`TRUSTED_PROXIES` is now configurable** (`bootstrap/app.php`). The default
+  is unchanged — every proxy trusted — so no existing install behaves
+  differently; set it to your reverse proxy's address or CIDR to make client
+  IPs (and therefore access logs) trustworthy. Documented in the new README
+  hardening section.
+- **Optional encryption for database backup archives.** A backup contains every
+  lead's name, email, phone and message body in cleartext, and outlives the
+  `retention_until` window, which matters as soon as an archive leaves the
+  server. Setting `LODGELY_BACKUP_PASSPHRASE` encrypts the dump inside new
+  archives with AES-256-GCM (PBKDF2-SHA256 key derivation, framed so memory use
+  stays flat on large databases, with truncation detected on restore).
+  **Off by default and fully backwards compatible**: the archive manifest
+  records which shape it is, so archives created before this change still
+  restore, including on a server that now has a passphrase configured.
+- **Optional backup retention** via `LODGELY_BACKUP_KEEP`. Archives previously
+  accumulated forever. Off by default so an upgrade never deletes an operator's
+  backups; the archive just created is never a pruning candidate.
+
+### Fixed
+
+- **`lodgely:backup:create --keep=N` could delete the backup it had just
+  taken.** The command walked the archive list itself and trimmed by position,
+  but archive filenames are second-resolution, so two backups created in the
+  same second sorted ambiguously and the fresh one could land in the pruned
+  tail. Pruning now lives in `BackupManager::prune()`, which excludes the
+  just-written archive outright, and the command delegates to it.
+- **`APP_DEBUG` now defaults to `false` in `docker-compose.yml`** instead of
+  `true`. A debug error page renders request and configuration detail, and a
+  live install holds Meta, Google Ads, SMTP and AI credentials. `APP_ENV` is
+  deliberately left as-is, because defaulting it to `production` would switch on
+  HTTPS URL forcing and break plain-HTTP installs — the README hardening
+  checklist covers setting it once TLS is in place.
+- **The app warns at boot** when running in production with debug mode on or
+  without a secure session cookie, so those show up in the logs instead of
+  staying silent.
+- **Stopped writing personal data to the log stream.** Password-reset requests
+  logged the submitted email address verbatim, and lead exports logged the
+  free-text search term — which operators routinely use to look up a single
+  person by email or phone. The email is now masked (reusing the existing
+  `Pseudonymizer`) and the search term is recorded only as `search_present`.
+  Logs go to stdout and off the box, outside the retention regime that governs
+  everything else.
+- **The webhook endpoint token is no longer copied into `imports.reference`.**
+  Every inbound webhook lead duplicated the shared secret into a table nothing
+  treats as sensitive, and those copies survived rotating the endpoint. The
+  reference is now `webhook:<id>`; the endpoint was already identified by
+  `meta['webhook_endpoint_id']`.
+- **Integration base URLs are validated as `http`/`https`** (OpenFlow source,
+  AI provider) and the settings UI now warns when a plain-`http` address points
+  at a remote host — that URL receives the stored OpenFlow login password or the
+  AI API key on every call. Plain `http` is still allowed, since LAN
+  self-hosting is a legitimate deployment; the warning stays quiet for
+  localhost, private ranges and `.local`/`.lan` hosts.
+- **New regression tests for the authorization boundary.** `AuthorizationMatrixTest`
+  walks every operator-only page and action asserting a client gets 403 (and an
+  operator does not), plus that NDJSON export stays operator-only while CSV
+  export is scoped to the client's own leads. The guards were already correct;
+  nothing asserted the *set*, so a single omission on a future route would have
+  gone unnoticed.
 - **Updated `laravel/framework`, `symfony/http-kernel`, `symfony/http-foundation`,
   `symfony/mailer`, `symfony/mime` and `guzzlehttp/guzzle` to patched
   versions** in response to automated dependency-vulnerability scans

@@ -283,5 +283,9 @@
     "Meta Lead Ads (API)": "Meta Lead Ads (API)",
     "OpenFlow": "OpenFlow",
     "Report emails": "Report-E-Mails",
-    "Report views": "Report-Ansichten"
+    "Report views": "Report-Ansichten",
+    "Enter a valid URL, for example https://forms.example.com.": "Geben Sie eine gültige URL ein, zum Beispiel https://forms.example.com.",
+    "The URL must start with http:// or https://.": "Die URL muss mit http:// oder https:// beginnen.",
+    "This is a plain http:// address. The API token or login password for this source is sent to it on every pull, unencrypted. Use https:// unless the host is on your local network.": "Dies ist eine unverschlüsselte http://-Adresse. Das API-Token bzw. das Anmeldepasswort dieser Quelle wird bei jedem Abruf unverschlüsselt dorthin gesendet. Verwenden Sie https://, sofern der Host nicht in Ihrem lokalen Netzwerk liegt.",
+    "This is a plain http:// address. Your API key is sent to it as a Bearer token, unencrypted. Use https:// unless the host is on your local network.": "Dies ist eine unverschlüsselte http://-Adresse. Ihr API-Schlüssel wird als Bearer-Token unverschlüsselt dorthin gesendet. Verwenden Sie https://, sofern der Host nicht in Ihrem lokalen Netzwerk liegt."
 }

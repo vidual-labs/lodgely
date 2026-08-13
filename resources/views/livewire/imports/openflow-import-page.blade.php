@@ -187,6 +187,11 @@
                            class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
                     <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Where your OpenFlow install is reachable — no trailing /api.') }}</p>
                     @error('form.base_url') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    @if (\App\Rules\HttpUrl::isCleartextToRemoteHost($form['base_url'] ?? null))
+                        <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                            {{ __('This is a plain http:// address. The API token or login password for this source is sent to it on every pull, unencrypted. Use https:// unless the host is on your local network.') }}
+                        </p>
+                    @endif
                 </div>
 
                 {{-- Auth: API token (recommended) --}}

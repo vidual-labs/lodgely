@@ -55,6 +55,11 @@
                 {{ __('Examples: https://api.openai.com/v1, https://api.together.xyz/v1, http://localhost:11434.') }}
             </p>
             @error('form.base_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            @if (\App\Rules\HttpUrl::isCleartextToRemoteHost($form['base_url'] ?? null))
+                <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    {{ __('This is a plain http:// address. Your API key is sent to it as a Bearer token, unencrypted. Use https:// unless the host is on your local network.') }}
+                </p>
+            @endif
         </div>
 
         {{-- API key --}}

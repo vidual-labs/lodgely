@@ -20,14 +20,17 @@ class CreateBackup extends Command
 
         $this->info("Backup created: {$backup['filename']} (".number_format($backup['size'] / 1024 / 1024, 2).' MB)');
 
+        // Delegate to the manager rather than re-implementing the walk: it
+        // knows to exclude the archive we just wrote, which matters because
+        // archive filenames are second-resolution and two backups taken in the
+        // same second sort ambiguously. --keep overrides the configured
+        // LODGELY_BACKUP_KEEP for this run; create() has already applied the
+        // configured value, and pruning twice is a no-op.
         $keep = $this->option('keep');
-        if ($keep !== null && is_numeric($keep)) {
-            $keep = max(1, (int) $keep);
-            $existing = $manager->list();
 
-            foreach (array_slice($existing, $keep) as $stale) {
-                $manager->delete($stale['filename']);
-                $this->line("Pruned old backup: {$stale['filename']}");
+        if ($keep !== null && is_numeric($keep)) {
+            foreach ($manager->prune((int) $keep, $backup['filename']) as $stale) {
+                $this->line("Pruned old backup: {$stale}");
             }
         }
 

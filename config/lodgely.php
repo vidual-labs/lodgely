@@ -35,6 +35,31 @@ return [
         'github_url' => 'https://github.com/vidual-labs/lodgely',
     ],
 
+    // TRUSTED_PROXIES is deliberately *not* mirrored here: it is consumed in
+    // bootstrap/app.php, which runs before the config repository exists. See
+    // the comment there.
+
+    'backups' => [
+        // Optional passphrase for encrypting the database dump inside a backup
+        // archive. When empty (the default) archives are written exactly as
+        // they always have been: a plain pg_dump inside a plain zip.
+        //
+        // A backup contains every lead's name, email, phone and message body in
+        // cleartext, so setting this matters as soon as archives leave the
+        // server. Restore reads the archive's manifest and handles both shapes,
+        // so turning this on does not invalidate existing backups — but keep
+        // the passphrase somewhere safe, because an encrypted archive is
+        // unrecoverable without it.
+        'passphrase' => env('LODGELY_BACKUP_PASSPHRASE'),
+
+        // How many archives to keep on disk after a new one is created. null
+        // (the default) keeps every archive forever — pruning is opt-in so an
+        // upgrade never silently deletes an operator's backups.
+        'keep' => env('LODGELY_BACKUP_KEEP') !== null && env('LODGELY_BACKUP_KEEP') !== ''
+            ? max(1, (int) env('LODGELY_BACKUP_KEEP'))
+            : null,
+    ],
+
     'importers' => [
         'csv' => [
             'max_rows' => (int) env('LODGELY_CSV_MAX_ROWS', 10000),

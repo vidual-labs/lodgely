@@ -33,8 +33,18 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # APP_DEBUG defaults to false: a debug-mode error page renders request
+      # and configuration detail, and a live install holds Meta/Google/SMTP/AI
+      # credentials. Set APP_DEBUG=true in your .env or shell when you actually
+      # want stack traces.
+      #
+      # APP_ENV is left alone deliberately. Defaulting it to "production" here
+      # would switch on URL::forceScheme('https') (see AppServiceProvider),
+      # which breaks link generation for the plain-HTTP installs this stack
+      # also serves. Set APP_ENV=production in your .env once you terminate
+      # TLS — the README hardening checklist covers it.
       APP_ENV: ${APP_ENV:-local}
-      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_DEBUG: ${APP_DEBUG:-false}
     volumes:
       - .:/app
     working_dir: /app

@@ -56,7 +56,12 @@ class WebhookController extends Controller
             'user_id'        => $endpoint->user_id,
             'source'         => 'webhook',
             'label'          => 'Webhook: '.$endpoint->label,
-            'reference'      => $endpoint->token,
+            // Identify the endpoint, don't copy its secret. This used to store
+            // $endpoint->token, which duplicated the shared secret into one
+            // imports row per inbound lead — a table nothing else treats as
+            // sensitive, and copies that outlived rotating the endpoint.
+            // meta['webhook_endpoint_id'] below carries the same link.
+            'reference'      => 'webhook:'.$endpoint->id,
             'rows_total'     => 1,
             'rows_imported'  => 0,
             'rows_duplicate' => 0,
