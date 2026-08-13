@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.52.0-6366F1" alt="Version 0.52.0">
+  <img src="https://img.shields.io/badge/version-0.53.0-6366F1" alt="Version 0.53.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -73,6 +73,10 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 📥 Unified lead inbox — filters, saved views, column picker, sortable columns, pagination.
 - 🧹 Automatic duplicate detection on normalized email/phone.
 - 📝 Side-panel review — status, priority, notes, audit trail, Meta ad attribution.
+  Laid out so what you *do* (reach out, set status, write a note) stays open at the
+  top and what you only read (ad attribution, AI, older activity) collapses. The
+  activity log switches from "3 weeks ago" to an exact timestamp once an entry is
+  more than a day old.
 - 🎯 Outcome tracking — beyond the intake states (New / Reviewed / Incomplete /
   Duplicate), leads carry what came back: **Pending**, **Offer sent**,
   **Successful**, **Declined**, **No reply**, **Forwarded**. Status is a pill

@@ -27,7 +27,14 @@ below.
   highlight the matching status pill as a nudge — they never write the status
   themselves.
 - 📝 **Side-panel review** — open any lead, change status & priority,
-  add notes, see the audit trail. For Meta Lead Ads leads the panel also
+  add notes, see the audit trail. The panel is ordered by what you do with it:
+  Contact, one **Status** card (outreach toggles + status pills together), the
+  lead's own words, then Notes — with ad attribution, AI evaluation and older
+  activity collapsed into `<details>` below. Intake statuses collapse behind an
+  "Intake" disclosure unless the lead is currently on one; the header keeps the
+  current status badge in view while the body scrolls. Activity entries older
+  than a day show an exact timestamp rather than "3 weeks ago"
+  (`App\Support\Dates::relativeOrExact()`), with the full stamp on hover. For Meta Lead Ads leads the panel also
   shows the ad-source attribution (platform, organic/paid, campaign,
   adset, ad and form names) and the form's custom-question answers — so
   clients can see at a glance *where* a lead came from and what they said.
