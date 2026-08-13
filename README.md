@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.53.0-6366F1" alt="Version 0.53.0">
+  <img src="https://img.shields.io/badge/version-0.53.1-6366F1" alt="Version 0.53.1">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -83,9 +83,11 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
   row in the side panel (not a dropdown) and fills itself in for the first two
   steps: opening a lead marks it Reviewed, the first outreach toggle marks it
   Pending. Everything after that stays a deliberate click.
-- 💬 One-click note phrases — "Mailed them", "Sent offer", "Declined offer" and
-  friends drop into the note box; the outcome ones highlight the matching status
-  pill as a nudge.
+- 💬 One-click note phrases — "Mailed them", "Declined — price", "Successful —
+  booked" and friends drop into the note box. Declined/Successful reasons
+  highlight the matching status pill as a nudge; there's deliberately no bare
+  "Declined"/"Sent offer" chip, since the status pill next to it already says
+  that precisely — the phrase adds the *why*.
 - 📞 One-click `tel:` / `mailto:` links on the phone/email in the lead side
   panel — no copy-pasting a number to reach out.
 - ✅ Outreach state (Qualified / Called / Mailed) toggles with audit trail;

@@ -22,10 +22,13 @@ below.
   automation is forward-only and never overwrites a status someone chose —
   every automatic move is audited with `automatic: true`.
 - 💬 **One-click note phrases** — a row of quick chips above the note box
-  ("Called them, no answer", "Mailed them", "Sent offer", "Declined offer",
-  "Accepted offer", …) inserts the phrase into the note. Outcome phrases
-  highlight the matching status pill as a nudge — they never write the status
-  themselves.
+  ("Called them, no answer", "Mailed them", "Declined — price", "Declined —
+  chose a competitor", "Declined — bad timing", "Successful — booked",
+  "Successful — signed", …) inserts the phrase into the note. The status pill
+  already logs and filters Declined/Successful precisely, so there is no bare
+  "Declined"/"Successful" chip that would just restate it — the reason phrases
+  add the one thing the status can't hold, and highlight the matching status
+  pill as a nudge without ever writing it themselves.
 - 📝 **Side-panel review** — open any lead, change status & priority,
   add notes, see the audit trail. The panel is ordered by what you do with it:
   Contact, one **Status** card (outreach toggles + status pills together), the
