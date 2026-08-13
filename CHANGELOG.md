@@ -22,9 +22,19 @@ semantic-ish versioning once a 1.0 is tagged.
   outcome statuses stay visible; if the lead currently *is* on an intake status, that
   pill stays out where you can see it. "Click a pill to toggle." is gone (the ✓/○ and
   the tooltips already said it) and the automation explainer moved into the Status
-  heading's tooltip. Of the eight quick note phrases, the four outcome ones stay
-  visible and the rest sit behind "More phrases". Source and received time moved from
-  two table rows to one muted line under Contact.
+  heading's tooltip. Of the nine quick note phrases, the five reason-specific
+  outcome ones stay visible and the rest sit behind "More phrases". Source and
+  received time moved from two table rows to one muted line under Contact.
+- **Quick note phrases no longer restate the status pill they sit next to.**
+  "Sent offer" / "Declined offer" / "Accepted offer" / "No reply so far" each
+  duplicated a status that was already precisely logged and filterable on its
+  own — the chip and the pill said the same thing twice. Declined and
+  Successful kept a chip each, but reworked into short common **reasons**
+  ("Declined — price", "Declined — chose a competitor", "Declined — bad
+  timing", "Successful — booked", "Successful — signed") — the one thing a
+  status pill structurally can't hold. "Sent offer" and "No reply so far" were
+  dropped outright with no replacement: there is nothing to add beyond the
+  status flip itself.
 
 ### Added
 
@@ -58,14 +68,15 @@ semantic-ish versioning once a 1.0 is tagged.
   `automatic: true` in the payload. New service:
   `App\Domain\Leads\Services\LeadStatusAutomation`.
 - **One-click note phrases** above the note box on the lead panel — "Called
-  them, no answer", "Mailed them", "Sent offer", "Declined offer", "Accepted
-  offer" and friends (`App\Domain\Leads\Enums\LeadNoteSnippet`). Clicking a chip
-  drops the phrase into the note; phrases that describe an outcome also
-  highlight the matching status pill for a few seconds as a nudge — the same
-  suggest-never-write deal as the `tel:`/`mailto:` nudge, since only the person
-  who sent the offer knows what happened to it. Insertion is Alpine + a deferred
-  `$wire.set()` rather than `wire:click`, per the morph-drop gotchas in
-  CLAUDE.md.
+  them, no answer", "Mailed them", "Declined — price", "Successful — booked"
+  and friends (`App\Domain\Leads\Enums\LeadNoteSnippet`; see also the note
+  above on why the outcome ones carry a reason rather than restating the
+  status). Clicking a chip drops the phrase into the note; the reason phrases
+  also highlight the matching status pill for a few seconds as a nudge — the
+  same suggest-never-write deal as the `tel:`/`mailto:` nudge, since only the
+  person who sent the offer knows what happened to it. Insertion is Alpine + a
+  deferred `$wire.set()` rather than `wire:click`, per the morph-drop gotchas
+  in CLAUDE.md.
 - **"Offer sent" KPI card** on the inbox stats strip, so pending offers are
   countable at a glance rather than only filterable.
 - **Status labels are now translated**, with German entries for all nine states

@@ -96,9 +96,9 @@ class LeadOutcomeStatusTest extends TestCase
             ->assertSee(LeadStatus::Declined->label())
             ->assertSee(LeadStatus::NoReply->label())
             ->assertSee(LeadStatus::Successful->label())
-            ->assertSee(LeadNoteSnippet::SentOffer->text())
             ->assertSee(LeadNoteSnippet::Mailed->text())
-            ->assertSee(LeadNoteSnippet::Declined->text());
+            ->assertSee(LeadNoteSnippet::DeclinedPrice->text())
+            ->assertSee(LeadNoteSnippet::SuccessfulBooked->text());
 
         // The pills post through setStatus(), not a <select> — the panel is the
         // one place a client can actually reach these.
@@ -119,6 +119,37 @@ class LeadOutcomeStatusTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * The status pill already logs and filters Declined/Successful precisely —
+     * a chip that just restates the outcome ("Declined offer") adds nothing the
+     * status change didn't already say. So there is deliberately no bare
+     * "Declined"/"Successful" phrase; only reason-specific ones.
+     */
+    public function test_no_note_phrase_merely_restates_a_bare_outcome(): void
+    {
+        foreach (LeadNoteSnippet::cases() as $snippet) {
+            $this->assertNotSame(LeadStatus::Declined->label(), $snippet->text());
+            $this->assertNotSame(LeadStatus::Successful->label(), $snippet->text());
+            $this->assertNotSame(LeadStatus::OfferSent->label(), $snippet->text());
+            $this->assertNotSame(LeadStatus::NoReply->label(), $snippet->text());
+        }
+    }
+
+    public function test_every_declined_or_successful_reason_nudges_the_matching_status(): void
+    {
+        $this->assertSame(LeadStatus::Declined, LeadNoteSnippet::DeclinedPrice->suggestedStatus());
+        $this->assertSame(LeadStatus::Declined, LeadNoteSnippet::DeclinedCompetitor->suggestedStatus());
+        $this->assertSame(LeadStatus::Declined, LeadNoteSnippet::DeclinedTiming->suggestedStatus());
+        $this->assertSame(LeadStatus::Successful, LeadNoteSnippet::SuccessfulBooked->suggestedStatus());
+        $this->assertSame(LeadStatus::Successful, LeadNoteSnippet::SuccessfulSigned->suggestedStatus());
+
+        // The contact-log phrases aren't outcomes — nothing to nudge.
+        $this->assertNull(LeadNoteSnippet::CalledNoAnswer->suggestedStatus());
+        $this->assertNull(LeadNoteSnippet::CalledSpoke->suggestedStatus());
+        $this->assertNull(LeadNoteSnippet::Mailed->suggestedStatus());
+        $this->assertNull(LeadNoteSnippet::SentDetails->suggestedStatus());
     }
 
     public function test_status_options_are_split_into_intake_and_outcome_without_losing_a_case(): void
