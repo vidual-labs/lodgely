@@ -71,7 +71,7 @@ class GoogleSheetSource extends Model
             'source'         => 'Source',
             'platform'       => 'Platform',
             // Status & priority
-            'status'         => 'Status (new/reviewed/incomplete/forwarded)',
+            'status'         => 'Status (new/reviewed/offer_sent/declined/…)',
             'priority'       => 'Priority (low/medium/high)',
             // Outreach toggles — any truthy value (yes/1/true) marks the outreach
             'is_qualified'   => 'Qualified (outreach)',

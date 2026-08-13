@@ -11,6 +11,21 @@ below.
   column picker, saved views, and pagination.
 - 🧹 **Duplicate detection** — leads with a matching normalized email or
   phone are flagged automatically; you can re-check on demand.
+- 🎯 **Lead status, intake + outcome** — the intake states (New, Reviewed,
+  Incomplete, Duplicate) describe the lead as it arrived; the outcome states
+  (Pending, Offer sent, Successful, Declined, No reply, Forwarded) describe what
+  came back after someone reached out. Both halves live in one field, so the
+  status filter, saved views, bulk edit, sorting and CSV export cover them
+  alike. The side panel sets status with a grouped pill row rather than a
+  dropdown, and two steps happen on their own: opening a lead moves New →
+  Reviewed, the first outreach toggle moves New/Reviewed → Pending. The
+  automation is forward-only and never overwrites a status someone chose —
+  every automatic move is audited with `automatic: true`.
+- 💬 **One-click note phrases** — a row of quick chips above the note box
+  ("Called them, no answer", "Mailed them", "Sent offer", "Declined offer",
+  "Accepted offer", …) inserts the phrase into the note. Outcome phrases
+  highlight the matching status pill as a nudge — they never write the status
+  themselves.
 - 📝 **Side-panel review** — open any lead, change status & priority,
   add notes, see the audit trail. For Meta Lead Ads leads the panel also
   shows the ad-source attribution (platform, organic/paid, campaign,

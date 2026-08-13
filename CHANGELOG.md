@@ -8,6 +8,42 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Outcome statuses.** `LeadStatus` gained a second half — **Pending**,
+  **Offer sent**, **Successful**, **Declined** and **No reply** — alongside the
+  existing intake states (New / Reviewed / Incomplete / Duplicate / Forwarded),
+  so clients can record what actually came back after they reached out instead
+  of leaving every worked lead sitting on "New". They are ordinary status
+  values, so the status filter, saved views, bulk edit, column sort, importer
+  status mapping and CSV export all understand them with no extra wiring. The
+  status selects (toolbar filter, bulk edit) now group the two halves under
+  `<optgroup>`s so nine entries stay scannable.
+- **Status is a pill row in the lead side panel**, replacing the dropdown that
+  clients almost never opened — same shape and behaviour as the Outreach pills
+  right above it, grouped Intake / Outcome, with a caption showing how long the
+  lead has been sitting on its current status.
+- **Automatic status for the two steps nobody wants to click**: opening a lead
+  in the side panel marks it Reviewed, and switching on the first outreach
+  toggle (Qualified / Called / Mailed) marks it Pending. The automation is
+  forward-only and narrow — Reviewed only replaces New, Pending only replaces
+  New or Reviewed — so a lead already sitting on Offer sent, Successful,
+  Declined, No reply, Forwarded, Incomplete or Duplicate is never overwritten,
+  and clearing an outreach toggle never walks the status back. Every automatic
+  move writes the usual `lead.status_changed` audit event with
+  `automatic: true` in the payload. New service:
+  `App\Domain\Leads\Services\LeadStatusAutomation`.
+- **One-click note phrases** above the note box on the lead panel — "Called
+  them, no answer", "Mailed them", "Sent offer", "Declined offer", "Accepted
+  offer" and friends (`App\Domain\Leads\Enums\LeadNoteSnippet`). Clicking a chip
+  drops the phrase into the note; phrases that describe an outcome also
+  highlight the matching status pill for a few seconds as a nudge — the same
+  suggest-never-write deal as the `tel:`/`mailto:` nudge, since only the person
+  who sent the offer knows what happened to it. Insertion is Alpine + a deferred
+  `$wire.set()` rather than `wire:click`, per the morph-drop gotchas in
+  CLAUDE.md.
+- **"Offer sent" KPI card** on the inbox stats strip, so pending offers are
+  countable at a glance rather than only filterable.
+- **Status labels are now translated**, with German entries for all nine states
+  plus the new note phrases and panel captions.
 - **Click-to-call and click-to-email links** on the phone/email shown in the
   lead side panel's Contact section — phone numbers are now `tel:` links and
   email addresses `mailto:` links, so reaching out no longer requires

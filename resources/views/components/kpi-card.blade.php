@@ -11,6 +11,7 @@
         'rose'    => ['text' => 'text-rose-700 dark:text-rose-400',       'bar' => 'bg-rose-500'],
         'amber'   => ['text' => 'text-amber-700 dark:text-amber-400',     'bar' => 'bg-amber-500'],
         'emerald' => ['text' => 'text-emerald-700 dark:text-emerald-400', 'bar' => 'bg-emerald-500'],
+        'violet'  => ['text' => 'text-violet-700 dark:text-violet-400',   'bar' => 'bg-violet-500'],
     ];
     $tone_conf = $tones[$tone] ?? $tones['slate'];
 @endphp

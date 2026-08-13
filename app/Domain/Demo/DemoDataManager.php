@@ -170,6 +170,15 @@ class DemoDataManager
                     if ($i % 3 === 0) {
                         $l->mailed_at = now()->subDays($i)->subHours(1);
                     }
+                    // These are the demo leads someone "worked", so give them a
+                    // lived-in spread of outcomes — otherwise a fresh install
+                    // shows the outcome statuses and the Offer sent KPI empty.
+                    $l->status = [
+                        LeadStatus::Pending,
+                        LeadStatus::OfferSent,
+                        LeadStatus::Successful,
+                        LeadStatus::Declined,
+                    ][$i % 4]->value;
                     $l->save();
                 });
 
