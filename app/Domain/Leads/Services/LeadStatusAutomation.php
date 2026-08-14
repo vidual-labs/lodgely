@@ -36,6 +36,14 @@ class LeadStatusAutomation
         'pending'  => ['new', 'reviewed'],
     ];
 
+    /**
+     * Status values this service ever sets on its own — exposed so the panel
+     * can flag those two pills as "automatic" instead of "yours to click".
+     *
+     * @var list<string>
+     */
+    public const AUTO_TARGETS = ['reviewed', 'pending'];
+
     public function __construct(private readonly AuditLogger $audit) {}
 
     /** A client or operator opened the lead in the side panel. */
