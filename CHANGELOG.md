@@ -22,9 +22,11 @@ semantic-ish versioning once a 1.0 is tagged.
   outcome statuses stay visible; if the lead currently *is* on an intake status, that
   pill stays out where you can see it. "Click a pill to toggle." is gone (the ✓/○ and
   the tooltips already said it) and the automation explainer moved into the Status
-  heading's tooltip. Of the nine quick note phrases, the five reason-specific
-  outcome ones stay visible and the rest sit behind "More phrases". Source and
-  received time moved from two table rows to one muted line under Contact.
+  heading's tooltip. Of the nine quick note phrases, the four plain
+  contact-logging ones stay visible (they're the ones used daily) and the
+  five outcome-reason ones sit behind "More phrases" — they just restate a
+  status the pills below already carry. Source and received time moved from
+  two table rows to one muted line under Contact.
 - **Quick note phrases no longer restate the status pill they sit next to.**
   "Sent offer" / "Declined offer" / "Accepted offer" / "No reply so far" each
   duplicated a status that was already precisely logged and filterable on its

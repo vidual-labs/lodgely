@@ -263,10 +263,11 @@
                      scopes the target lead the same way every other action here does. --}}
                 @auth
                     @php
-                        // Outcome phrases stay on screen — they are the ones that
-                        // nudge a status. The plain contact phrases collapse.
-                        $primarySnippets = array_values(array_filter($noteSnippets, fn ($s) => $s['status'] !== null));
-                        $moreSnippets    = array_values(array_filter($noteSnippets, fn ($s) => $s['status'] === null));
+                        // Plain contact phrases stay on screen — they're the ones
+                        // used daily. Outcome-reason phrases (they just restate a
+                        // status the pills below already carry) collapse.
+                        $primarySnippets = array_values(array_filter($noteSnippets, fn ($s) => $s['status'] === null));
+                        $moreSnippets    = array_values(array_filter($noteSnippets, fn ($s) => $s['status'] !== null));
                     @endphp
                     <form wire:submit.prevent="addNote" class="mt-3">
                         {{-- Quick phrases. insertPhrase() (on the panel's root
