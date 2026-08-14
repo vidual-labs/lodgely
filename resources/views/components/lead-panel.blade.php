@@ -153,6 +153,7 @@
                 $currentIntake  = collect($intakeOptions)->firstWhere('value', $currentValue);
                 $visibleStatuses = $currentIntake ? array_merge([$currentIntake], $outcomeOptions) : $outcomeOptions;
                 $collapsedStatuses = collect($intakeOptions)->reject(fn ($o) => $o['value'] === $currentValue)->values()->all();
+                $autoStatuses = \App\Domain\Leads\Services\LeadStatusAutomation::AUTO_TARGETS;
             @endphp
             <section class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50/60 dark:bg-slate-800/30 p-3">
                 <h3 class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
@@ -160,6 +161,7 @@
                     {{ __('Status') }}
                 </h3>
 
+                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ __('Outreach') }}</p>
                 <div class="flex flex-wrap gap-2">
                     @foreach($outreach as $o)
                         @php $nudgeVar = $o['field'] === 'called_at' ? 'calledNudge' : ($o['field'] === 'mailed_at' ? 'mailedNudge' : null); @endphp
@@ -180,9 +182,10 @@
                     {{ __('Reached them? Confirm by tapping the highlighted pill — a dial or compose window opening doesn\'t mean the call connected or the email was actually sent.') }}
                 </p>
 
-                <div class="mt-2 flex flex-wrap gap-1">
+                <p class="mt-3 text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ __('Current status') }}</p>
+                <div class="flex flex-wrap gap-1">
                     @foreach($visibleStatuses as $o)
-                        <x-lead-status-pill :lead="$lead" :option="$o" :current="$lead->status->value === $o['value']" />
+                        <x-lead-status-pill :lead="$lead" :option="$o" :current="$lead->status->value === $o['value']" :auto="in_array($o['value'], $autoStatuses, true)" />
                     @endforeach
                 </div>
 
@@ -192,7 +195,7 @@
                             <summary class="cursor-pointer select-none text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">{{ __('Intake') }}</summary>
                             <div class="mt-1.5 flex flex-wrap gap-1">
                                 @foreach($collapsedStatuses as $o)
-                                    <x-lead-status-pill :lead="$lead" :option="$o" />
+                                    <x-lead-status-pill :lead="$lead" :option="$o" :auto="in_array($o['value'], $autoStatuses, true)" />
                                 @endforeach
                             </div>
                         </details>

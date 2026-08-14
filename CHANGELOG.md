@@ -8,6 +8,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **The Status card now labels its two pill rows and flags the automatic
+  ones.** "Outreach" and "Current status" captions sit above their
+  respective rows — outreach pills are independent toggles (Called and
+  Mailed can both be true), status pills are a single current value, and
+  nothing on screen said so before. Reviewed and Pending, the two statuses
+  the app sets on its own, now carry a small "· automatic" label and an
+  extended tooltip instead of relying on clients noticing the heading's
+  hover text.
 - **The lead side panel is laid out around what a client actually does.** Everything
   editable is now at the top: Contact, then a single **Status** card that merges the
   Outreach toggles and the status pills (they are the same gesture — tap a pill to
