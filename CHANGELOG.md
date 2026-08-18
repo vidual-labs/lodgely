@@ -6,6 +6,14 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Status and priority pills in the inbox table no longer wrap onto a
+  second line.** The pills now stay `whitespace-nowrap`, so a longer label
+  simply widens the pill instead of breaking mid-word across two lines. The
+  German "Offer sent" label was also shortened from "Angebot gesendet" to
+  "Angebot raus", which was the actual cause of the wrap in that column.
+
 ### Changed
 
 - **The Status card now labels its two pill rows and flags the automatic

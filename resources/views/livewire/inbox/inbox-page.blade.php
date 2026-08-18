@@ -783,14 +783,14 @@
                                         @break
                                     @case('status')
                                         <td class="px-3 py-2">
-                                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->status->badgeClasses() }}">
+                                            <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->status->badgeClasses() }}">
                                                 {{ $lead->status->label() }}
                                             </span>
                                         </td>
                                         @break
                                     @case('priority')
                                         <td class="px-3 py-2">
-                                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->priority->badgeClasses() }}">
+                                            <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->priority->badgeClasses() }}">
                                                 {{ $lead->priority->label() }}
                                             </span>
                                         </td>
