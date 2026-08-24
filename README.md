@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.53.4-6366F1" alt="Version 0.53.4">
+  <img src="https://img.shields.io/badge/version-0.54.0-6366F1" alt="Version 0.54.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -118,6 +118,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 - 👥 In-app user management, client-name scoping, self-service password reset links. Deactivation and password changes invalidate existing sessions immediately.
 - 🔐 Two roles: `operator` (sees everything) and `client` (scoped to their `client_name`).
+- 🏷️ Client type presets (B2B / Jobs / B2C / Individual intent) — swaps the word "Lead" for "Applicant", "Prospect" or "Inquiry" on that client's own inbox, since not every client is sourcing B2B sales leads. Set per client user in `/users`; defaults to B2B (unchanged wording) when not set. Free-form label editing is not offered — presets only.
 - 👤 Per-user profile page (name, email, password, language, theme).
 - 🔑 Public password-recovery flow, enumeration-safe.
 

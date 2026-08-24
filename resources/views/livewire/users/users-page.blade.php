@@ -171,6 +171,23 @@
 
                     @if($form['role'] === 'client')
                         <div>
+                            <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ __('Client type') }}</label>
+                            <select wire:model="form.client_type"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                <option value="">{{ __('Default (B2B)') }}</option>
+                                @foreach(\App\Domain\Leads\Enums\ClientType::options() as $option)
+                                    @if($option['value'] !== \App\Domain\Leads\Enums\ClientType::B2b->value)
+                                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {{ __('Swaps the word "Lead" for this client\'s own inbox — e.g. "Applicant" for job intake.') }}
+                            </p>
+                            @error('form.client_type') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
                             <label class="text-xs font-medium text-slate-600 dark:text-slate-400">
                                 {{ __('Client name scopes') }}
                                 <span class="text-slate-400 dark:text-slate-500">{{ __('(comma-separated)') }}</span>
