@@ -118,7 +118,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 - 👥 In-app user management, client-name scoping, self-service password reset links. Deactivation and password changes invalidate existing sessions immediately.
 - 🔐 Two roles: `operator` (sees everything) and `client` (scoped to their `client_name`).
-- 🏷️ Client type presets (B2B / Jobs / B2C / Individual intent) — swaps the word "Lead" for "Applicant", "Prospect" or "Inquiry" on that client's own inbox, since not every client is sourcing B2B sales leads. Set per client user in `/users`; defaults to B2B (unchanged wording) when not set. Free-form label editing is not offered — presets only.
+- 🏷️ Client type presets (B2B / Jobs / B2C / Individual intent) — swaps the word "Lead" for "Applicant", "Prospect" or "Inquiry" on that client's own inbox, since not every client is sourcing B2B sales leads. Also relabels a handful of outcome statuses that read oddly outside B2B sales (Jobs: "Offer sent"/"Successful"/"Declined" → "Invited"/"Hired"/"Rejected"; Individual intent: "Successful" → "Enrolled") — most statuses stay as-is. Set per client user in `/users`; defaults to B2B (unchanged wording) when not set. Free-form label editing is not offered — presets only.
 - 👤 Per-user profile page (name, email, password, language, theme).
 - 🔑 Public password-recovery flow, enumeration-safe.
 

@@ -6,6 +6,7 @@ use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Exceptions\AiDisabledException;
 use App\Domain\Ai\Services\AiSummarizer;
+use App\Domain\Leads\Enums\ClientType;
 use App\Domain\Leads\Enums\LeadNoteSnippet;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
@@ -171,7 +172,7 @@ class InboxPage extends Component
 
         $audit->record($lead, 'lead.outreach_toggled', [
             'field' => $field,
-            'set'   => $previous === null,
+            'set' => $previous === null,
         ]);
 
         // Recording a first contact means this lead is now waiting on the other
@@ -287,8 +288,8 @@ class InboxPage extends Component
             'clientOptions' => $clientOptions,
             'sourceOptions' => $sourceOptions,
             'selected' => $selected,
-            'statusOptions' => LeadStatus::options(),
-            'statusGroups' => LeadStatus::grouped(),
+            'statusOptions' => LeadStatus::options(ClientType::current()),
+            'statusGroups' => LeadStatus::grouped(ClientType::current()),
             'noteSnippets' => LeadNoteSnippet::options(),
             'priorityOptions' => LeadPriority::options(),
             'savedFilters' => $this->userSavedFilters(),
