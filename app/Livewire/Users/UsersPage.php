@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Users;
 
+use App\Domain\Leads\Enums\ClientType;
 use App\Domain\Leads\Enums\UserRole;
 use App\Models\User;
 use App\Models\UserLeadScope;
+use App\Support\Like;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +40,7 @@ class UsersPage extends Component
         'name' => '',
         'email' => '',
         'role' => 'operator',
+        'client_type' => '',
         'password' => '',
         'is_active' => true,
         'scopes_input' => '',
@@ -74,6 +77,7 @@ class UsersPage extends Component
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role->value,
+            'client_type' => $user->client_type?->value ?? '',
             'password' => '',
             'is_active' => (bool) $user->is_active,
             'scopes_input' => $user->leadScopes->pluck('client_name')->implode(', '),
@@ -104,6 +108,7 @@ class UsersPage extends Component
             'form.name' => ['required', 'string', 'max:120'],
             'form.email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->editingUserId)],
             'form.role' => ['required', Rule::in(['operator', 'client'])],
+            'form.client_type' => ['nullable', Rule::in(array_merge([''], array_column(ClientType::cases(), 'value')))],
             'form.password' => [$editing ? 'nullable' : 'required', 'string', 'min:12'],
             'form.is_active' => ['boolean'],
             'form.scopes_input' => ['nullable', 'string', 'max:2000'],
@@ -126,6 +131,9 @@ class UsersPage extends Component
             'name' => trim($data['name']),
             'email' => mb_strtolower(trim($data['email'])),
             'role' => $data['role'],
+            'client_type' => $data['role'] === UserRole::Client->value && $data['client_type'] !== ''
+                ? $data['client_type']
+                : null,
             'is_active' => (bool) $data['is_active'],
         ];
         if ($data['password'] !== '') {
@@ -207,7 +215,7 @@ class UsersPage extends Component
     {
         $users = User::query()
             ->when($this->search, function ($q, $term) {
-                $like = '%'.\App\Support\Like::escape(mb_strtolower($term)).'%';
+                $like = '%'.Like::escape(mb_strtolower($term)).'%';
                 $q->where(function ($qq) use ($like) {
                     $qq->whereRaw("LOWER(name) LIKE ? ESCAPE '\\'", [$like])
                         ->orWhereRaw("LOWER(email) LIKE ? ESCAPE '\\'", [$like]);
@@ -260,6 +268,7 @@ class UsersPage extends Component
             'name' => '',
             'email' => '',
             'role' => 'operator',
+            'client_type' => '',
             'password' => '',
             'is_active' => true,
             'scopes_input' => '',

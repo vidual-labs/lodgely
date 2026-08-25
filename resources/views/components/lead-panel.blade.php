@@ -42,7 +42,7 @@
              has scrolled — including while the intake pills are collapsed. --}}
         <header class="border-b border-slate-200 dark:border-slate-700/50 px-5 py-4 flex items-start justify-between gap-3">
             <div class="min-w-0">
-                <div class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __('Lead #:id', ['id' => $lead->id]) }}</div>
+                <div class="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ __(\App\Domain\Leads\Enums\ClientType::current()->detailTitleKey(), ['id' => $lead->id]) }}</div>
                 <h2 id="lead-panel-title" class="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50 truncate">{{ $lead->full_name ?? '—' }}</h2>
                 <div class="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {{ $lead->client_name ?? '—' }} · {{ $lead->campaign_name ?? '—' }}

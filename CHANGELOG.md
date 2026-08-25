@@ -6,6 +6,27 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Per-client "Client type" label presets.** Not every client is sourcing
+  B2B sales leads — some collect job applicants, consumer prospects, or
+  general individual inquiries (e.g. school enrollment). Operators can now
+  set a Client type (B2B, Jobs, B2C, Individual intent) on a client user in
+  `/users`, which swaps the word "Lead" for that client's own inbox header,
+  empty state, and lead detail title (e.g. "Applicant inbox" / "Applicant
+  #123"). Defaults to B2B (today's wording, unchanged) when unset, and an
+  operator's own aggregated inbox always reads "Lead" regardless of any
+  individual client's type. Free-form label editing is deferred — this is
+  preset selection only.
+- **A handful of outcome-status labels also follow the client type.** Most
+  statuses read fine regardless of what's being intaken, but a few don't —
+  a Jobs client now sees "Invited" / "Hired" / "Rejected" instead of "Offer
+  sent" / "Successful" / "Declined", and Individual intent clients see
+  "Enrolled" instead of "Successful". Everything else (New, Reviewed,
+  Pending, Duplicate, Incomplete, No reply, Forwarded, and all of B2B/B2C)
+  keeps today's wording — the underlying status values are unchanged, only
+  the display label varies.
+
 ### Fixed
 
 - **Status and priority pills in the inbox table no longer wrap onto a

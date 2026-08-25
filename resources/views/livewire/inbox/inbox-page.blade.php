@@ -3,11 +3,11 @@
     <div x-data="{ kpiOpen: false }">
         <div class="flex items-end justify-between gap-4">
             <div>
-                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">{{ __('Lead inbox') }}</h1>
+                <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-50">{{ __(\App\Domain\Leads\Enums\ClientType::current()->inboxTitle()) }}</h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     @auth
                         @if(auth()->user()->isClient())
-                            {{ __('Your leads across all configured sources.') }}
+                            {{ __(\App\Domain\Leads\Enums\ClientType::current()->subtitle()) }}
                         @else
                             {{ __('All leads across all sources for this workspace.') }}
                         @endif
@@ -829,7 +829,7 @@
                         <tr>
                             <td colspan="{{ $visibleCount }}"
                                 class="px-3 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
-                                {{ __('No leads match these filters yet.') }}
+                                {{ __(\App\Domain\Leads\Enums\ClientType::current()->emptyStateText()) }}
                             </td>
                         </tr>
                     @endforelse

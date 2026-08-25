@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Leads\Enums\ClientType;
 use App\Domain\Leads\Enums\UserRole;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'client_type',
         'is_active',
         'locale',
         'ui_theme',
@@ -35,11 +37,12 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_active'         => 'boolean',
-            'role'              => UserRole::class,
-            'inbox_columns'     => 'array',
-            'inbox_filters'     => 'array',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'role' => UserRole::class,
+            'client_type' => ClientType::class,
+            'inbox_columns' => 'array',
+            'inbox_filters' => 'array',
         ];
     }
 
