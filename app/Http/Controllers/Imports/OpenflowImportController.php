@@ -91,6 +91,10 @@ class OpenflowImportController extends Controller
 
         $deletedImports = Import::where('source', 'openflow')->delete();
 
+        // Without this the next fetch would stop at the old high-water mark
+        // and only rebuild the last hour, not the backlog this just wiped.
+        OpenflowSource::forTenant(Tenant::DEFAULT_ID)->update(['last_successful_fetch_at' => null]);
+
         return redirect()
             ->route('imports.openflow')
             ->with('status', __(':imports import(s) and :leads lead(s) removed.', [

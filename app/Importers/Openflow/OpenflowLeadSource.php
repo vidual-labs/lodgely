@@ -352,10 +352,26 @@ class OpenflowLeadSource implements LeadSource
             return false;
         }
 
+        $parsed = self::parseOpenflowTimestamp($created);
+
+        return $parsed !== null && $parsed->lt($cutoff);
+    }
+
+    /**
+     * OpenFlow's `created_at` is SQLite `datetime('now')`: UTC, but written
+     * without an offset (`2026-09-29 10:00:00`). A bare Carbon::parse() reads
+     * that in APP_TIMEZONE, so on a Europe/Berlin install every submission
+     * looked 1–2 h older than it was — more than the 60-minute overlap — and
+     * the walk stopped before submissions made shortly after the previous
+     * fetch, which were then never ingested. Parse it as UTC; a timestamp that
+     * does carry an offset (a future ISO 8601 contract) keeps its own.
+     */
+    public static function parseOpenflowTimestamp(string $value): ?Carbon
+    {
         try {
-            return Carbon::parse($created)->lt($cutoff);
+            return Carbon::parse($value, 'UTC');
         } catch (Throwable) {
-            return false;
+            return null;
         }
     }
 

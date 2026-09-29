@@ -8,6 +8,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **`ROADMAP.md` at the repo root.** A phased forward roadmap with
+  acceptance criteria, plus a shared section (duplicated in OpenFlow's
+  `ROADMAP.md`) covering the OpenFlow ↔ lodgely interface contract, who owns
+  what, and cross-repo dependencies. `docs/ROADMAP.md` keeps the history of
+  what shipped.
+
 - **Per-client "Client type" label presets.** Not every client is sourcing
   B2B sales leads — some collect job applicants, consumer prospects, or
   general individual inquiries (e.g. school enrollment). Operators can now
@@ -29,6 +35,32 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **The OpenFlow pull could permanently skip new leads on installs not
+  running in UTC.**
+  - OpenFlow's `created_at` is UTC but carries no offset. lodgely parsed it
+    in `APP_TIMEZONE`, so on `Europe/Berlin` every submission looked one or
+    two hours older than it was.
+  - Submissions made within about an hour *after* the previous fetch were
+    taken for "already seen". The walk stopped, and the high-water mark moved
+    past them.
+  - Those timestamps are now always read as UTC
+    (`OpenflowLeadSource::parseOpenflowTimestamp()`).
+- **AI lead qualification sent OpenFlow leads' personal data to the AI
+  provider unmasked.**
+  - The prompt's `raw_payload` was filtered by *key name* only. OpenFlow keys
+    answers by generated field ids (`field_1727…`), so the name, email,
+    phone, address, IP and user agent all passed.
+  - The pseudonymizer now also drops:
+    - values equal to the lead's own name, email or phone, or to any word of
+      the name;
+    - any value that looks like an email address, phone number or inline
+      file upload;
+    - tracking keys: IP, user agent, referrer, click ids, cookies and calon
+      data.
+- **"Delete all imports" on the OpenFlow page didn't rebuild the backlog it
+  promised to.** The next fetch stopped at the old high-water mark, so only
+  the last hour came back. The mark is now reset.
+
 - **Status and priority pills in the inbox table no longer wrap onto a
   second line.** The pills now stay `whitespace-nowrap`, so a longer label
   simply widens the pill instead of breaking mid-word across two lines. The
@@ -36,6 +68,18 @@ semantic-ish versioning once a 1.0 is tagged.
   "Angebot raus", which was the actual cause of the wrap in that column.
 
 ### Changed
+
+- **New OpenFlow sources pull hourly by default** instead of every 24 h.
+  Existing sources keep their interval.
+- **Docs:**
+  - The retention default is empty in code; `.env.example` ships `365`.
+  - PRIVACY.md now says plainly that the purge only soft-deletes, so the
+    personal data stays in the row.
+  - The OpenFlow dedupe scope is install + form, not per source.
+  - FEATURES.md describes the real `external_id` and pull cutoff.
+  - The stale "OpenFlow has no API token" comments are corrected.
+  - The Reporting domain README no longer calls reporting "reserved, not in
+    MVP".
 
 - **The Status card now labels its two pill rows and flags the automatic
   ones.** "Outreach" and "Current status" captions sit above their

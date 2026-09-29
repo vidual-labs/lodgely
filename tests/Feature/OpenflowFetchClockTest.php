@@ -160,4 +160,75 @@ class OpenflowFetchClockTest extends TestCase
 
         $this->assertSame([], $leads);
     }
+
+    /**
+     * OpenFlow writes `created_at` as SQLite `datetime('now')` — UTC with no
+     * offset. On an install running APP_TIMEZONE=Europe/Berlin, reading that
+     * as local time made a fresh submission look two hours old, i.e. older
+     * than the cutoff, and the pull stopped before ingesting it.
+     */
+    public function test_openflow_utc_timestamps_are_not_read_in_the_app_timezone(): void
+    {
+        $previous = date_default_timezone_get();
+        date_default_timezone_set('Europe/Berlin');
+
+        try {
+            $source = $this->makeSource();
+            $source->update(['last_successful_fetch_at' => now()->subMinutes(10)]);
+
+            $client = $this->mock(OpenflowClient::class);
+            $client->shouldReceive('formFields')->andReturn(['title' => 'Contact', 'fields' => []]);
+            $client->shouldReceive('submissionsPage')->andReturn([
+                'submissions' => [[
+                    'id'         => 'fresh',
+                    // Exactly what OpenFlow's API returns.
+                    'created_at' => now('UTC')->subMinutes(5)->format('Y-m-d H:i:s'),
+                    'data'       => ['fEmail' => 'fresh@example.com'],
+                ]],
+                'total' => 1, 'page' => 1, 'limit' => 100,
+            ]);
+
+            $leads = iterator_to_array((new OpenflowLeadSource($client))->pull(
+                \App\Models\Import::create([
+                    'tenant_id' => Tenant::DEFAULT_ID,
+                    'source'    => 'openflow',
+                    'label'     => 'test',
+                    'meta'      => ['openflow_source_id' => $source->id],
+                ])
+            ));
+
+            $this->assertCount(1, $leads);
+            $this->assertSame('fresh@example.com', $leads[0]->email);
+        } finally {
+            date_default_timezone_set($previous);
+        }
+    }
+
+    public function test_openflow_timestamps_are_parsed_as_utc_unless_they_carry_an_offset(): void
+    {
+        $naive = OpenflowLeadSource::parseOpenflowTimestamp('2026-09-29 10:00:00');
+        $this->assertSame('2026-09-29T10:00:00+00:00', $naive->toIso8601String());
+
+        $withOffset = OpenflowLeadSource::parseOpenflowTimestamp('2026-09-29T12:00:00+02:00');
+        $this->assertTrue($withOffset->equalTo($naive));
+
+        $this->assertNull(OpenflowLeadSource::parseOpenflowTimestamp('not a date'));
+    }
+
+    public function test_wiping_the_backlog_resets_the_cutoff_so_the_next_fetch_rebuilds_it(): void
+    {
+        $source = $this->makeSource();
+        $source->update(['last_successful_fetch_at' => now()]);
+
+        $operator = \App\Models\User::create([
+            'name' => 'Op', 'email' => 'op@example.com', 'password' => \Illuminate\Support\Facades\Hash::make('p'),
+            'role' => 'operator', 'is_active' => true,
+        ]);
+
+        $this->actingAs($operator)
+            ->post(route('imports.openflow.imports.destroy-all'))
+            ->assertRedirect(route('imports.openflow'));
+
+        $this->assertNull($source->refresh()->last_successful_fetch_at);
+    }
 }

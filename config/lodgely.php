@@ -82,8 +82,8 @@ return [
         ],
         'openflow' => [
             // HTTP timeout (seconds) for outbound calls to an OpenFlow install.
-            // Each source stores its own base URL + login; there are no global
-            // credentials here because OpenFlow has no API token.
+            // Each source stores its own base URL + API token (or login
+            // fallback); there are no global OpenFlow credentials.
             'http_timeout_sec' => (int) env('LODGELY_OPENFLOW_HTTP_TIMEOUT', 30),
         ],
         'email' => [

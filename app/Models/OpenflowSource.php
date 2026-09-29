@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Crypt;
 /**
  * A single OpenFlow form configured as a recurring lead source.
  *
- * OpenFlow (the self-hosted form builder) exposes no API token — its only
- * auth is a JWT minted from an email/password login. So we store the login
- * email plus an encrypted password and mint a token on each pull. See
+ * Auth is either a read-only OpenFlow API token (preferred, stored encrypted,
+ * sent as the Bearer token) or the fallback login email plus an encrypted
+ * password, from which a short-lived JWT is minted on each pull. See
  * {@see \App\Importers\Openflow\OpenflowClient}.
  *
  * field_map: {openflow_field_id: lead_field_key}

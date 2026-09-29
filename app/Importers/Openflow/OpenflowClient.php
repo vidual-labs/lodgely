@@ -8,11 +8,12 @@ use RuntimeException;
 /**
  * Thin HTTP client for an OpenFlow install's admin API.
  *
- * OpenFlow has no API token — authentication is a JWT minted from an
- * email/password login (`POST /api/auth/login`). The token comes back as an
- * httpOnly `token` cookie (the JSON body only carries the user), so login()
- * scrapes it from the Set-Cookie jar and subsequent calls send it as a Bearer
- * token, which OpenFlow's auth middleware also accepts.
+ * Authentication is a Bearer token: preferably a read-only OpenFlow API token
+ * (`ofw_…`, minted under Settings → API Tokens in OpenFlow), used as-is.
+ * The fallback is a JWT minted from an email/password login
+ * (`POST /api/auth/login`); it comes back as an httpOnly `token` cookie (the
+ * JSON body only carries the user), so login() scrapes it from the Set-Cookie
+ * jar and subsequent calls send it as a Bearer token.
  *
  * Stateless and credential-free by construction: every method takes the base
  * URL and (where needed) a token, so the same singleton serves every source.
