@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.54.0-6366F1" alt="Version 0.54.0">
+  <img src="https://img.shields.io/badge/version-0.55.0-6366F1" alt="Version 0.55.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -110,9 +110,10 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 🌊 OpenFlow recurring lead source — add as many OpenFlow sources as you need
   (any mix of forms and self-hosted installs), each pulling submissions into a
   specific client with its own operator-defined field mapping. Idempotent on
-  the submission id, scoped per source so two sources can never dedupe against
-  each other's leads. Authenticates with a read-only OpenFlow API token
-  (recommended) or an email/password login.
+  the submission id, scoped to the OpenFlow install + form — so two forms (or
+  two installs) never collide, and two sources pointing at the *same* form
+  don't import it twice. Pulls hourly by default. Authenticates with a
+  read-only OpenFlow API token (recommended) or an email/password login.
 
 **Users & access**
 
@@ -145,7 +146,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 ## What's intentionally out of scope (for now)
 
-Architecture seams are reserved but not yet implemented — see [docs/ROADMAP.md](docs/ROADMAP.md):
+Architecture seams are reserved but not yet implemented — see [ROADMAP.md](ROADMAP.md) (LG-14):
 
 - Multi-tenancy (`tenant_id` exists everywhere; only the default tenant is wired)
 
@@ -363,7 +364,7 @@ The handful of variables you're most likely to touch on a first install:
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `APP_URL` | Public URL of the install | `http://localhost:8080` |
-| `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention, empty = retain | `365` |
+| `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention for new leads; empty = keep until deleted by hand | empty (`.env.example` sets `365`) |
 | `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
 | `LODGELY_AI_ENABLED` | Master kill-switch for the AI module | `false` |
 | `TRUSTED_PROXIES` | Proxy address/CIDR to trust for `X-Forwarded-*` | `*` (all) |
@@ -381,11 +382,11 @@ fallback. The full reference (40+ variables) is in
 
 ## Roadmap
 
-1. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
-   one-click subject erasure.
-2. **Multi-tenancy** — `tenant_id` exists everywhere; wire the full
-   tenant-resolution stack so a single install can host many isolated
-   workspaces.
+The forward roadmap — phased, with the shared OpenFlow ↔ lodgely interface
+contract — lives in **[ROADMAP.md](ROADMAP.md)**. In short: a versioned
+OpenFlow contract and a push path first, then rule-based qualification,
+attribution, and a real GDPR lifecycle (hard deletion, per-person export and
+erasure across both systems).
 
 The history of everything already shipped (reporting, AI, Meta Lead Ads,
 Google Sheets, i18n, dark mode, …) is in

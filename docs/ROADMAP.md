@@ -2,11 +2,9 @@
 
 ## Up next
 
-1. **Stronger compliance tooling** — lawful-basis tagging, DSAR export,
-   one-click subject erasure.
-2. **Multi-tenancy** — `tenant_id` exists everywhere; wire the full
-   tenant-resolution stack so a single install can host many isolated
-   workspaces.
+The forward roadmap — phased, with acceptance criteria and the shared
+OpenFlow ↔ lodgely interface contract — lives in the root
+**[ROADMAP.md](../ROADMAP.md)**. This file keeps the history of what shipped.
 
 ## Completed
 

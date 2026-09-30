@@ -40,7 +40,10 @@ class OpenflowImportPage extends Component
         'form_name'             => '',
         'default_client_name'   => '',
         'default_campaign_name' => '',
-        'refresh_hours'         => 24,
+        // Hourly by default: a lead that waits a day to reach the inbox is a
+        // lead that has already called a competitor. The scheduler runs
+        // hourly, so 1 is the fastest a pull can go.
+        'refresh_hours'         => 1,
         'is_active'             => true,
     ];
 
@@ -81,7 +84,7 @@ class OpenflowImportPage extends Component
             'form_name'             => '',
             'default_client_name'   => '',
             'default_campaign_name' => '',
-            'refresh_hours'         => 24,
+            'refresh_hours'         => 1,
             'is_active'             => true,
         ];
         $this->mode = 'form';

@@ -114,12 +114,17 @@ below.
   / status / priority / named custom answer). Any unmapped field is preserved as
   a custom answer using the OpenFlow field label, so the full submission
   survives. Each source is assigned to a **Client** (the source's default client
-  name), so the leads land in exactly one customer's scope. The OpenFlow
-  submission id is the stable `external_id`, making re-fetches **idempotent**;
-  `last_fetched_at` additionally bounds incremental pulls so the whole backlog
-  isn't re-walked each run. Each source has its own refresh interval and active
-  toggle; "Fetch" runs an immediate import, and the scheduler sweeps due sources
-  hourly via `lodgely:openflow:fetch`.
+  name), so the leads land in exactly one customer's scope. The `external_id`
+  is the OpenFlow submission id scoped to the install + form
+  (`sha1(base_url|form_id)-<submission id>`), making re-fetches
+  **idempotent** — including against soft-deleted leads, so a purged or
+  deleted lead is not re-imported. `last_successful_fetch_at` (minus a
+  60-minute overlap) bounds incremental pulls so the whole backlog isn't
+  re-walked each run; OpenFlow's offset-less timestamps are read as UTC.
+  "Delete all imports" resets that mark so the next fetch rebuilds the
+  backlog. Each source has its own refresh interval (hourly by default) and
+  active toggle; "Fetch" runs an immediate import, and the scheduler sweeps
+  due sources hourly via `lodgely:openflow:fetch`.
 - 👥 **In-app user management** — operators create, edit and enable/disable
   users at `/users`, including client-name scoping, without needing artisan.
   A one-click "Reset link" issues a single-use email so users can choose

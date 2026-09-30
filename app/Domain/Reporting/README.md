@@ -1,10 +1,12 @@
-# Domain · Reporting (reserved, not in MVP)
+# Domain · Reporting
 
-This folder is a deliberate placeholder. The MVP does not implement
-reporting features, but the architectural seam is reserved here so future
-work lands in one obvious place.
+**Built** — no longer a reserved seam. Ad-spend + creative metrics ingestion
+(`MetricsIngestor`, `AdMetricsSource` / `CreativeMetricsSource` adapters),
+campaign rollups (`CampaignRollup`), client reporting views and scheduled
+report emails all live here; see `docs/FEATURES.md` and the root
+`ROADMAP.md` for what's next (per-lead attribution for non-Meta sources).
 
-Planned scope (post-MVP):
+Original scope, kept for history:
 
 - ~~Adapters for Meta Ads and Google Ads, sparingly fetching aggregate
   campaign / source data only (no raw user-level data).~~ Done — see

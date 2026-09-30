@@ -7,10 +7,15 @@ you the tools; the policies are yours.
 - **Data minimization.** Only the lead fields in the schema are stored.
   Raw CSV rows / mock email bodies are kept in `raw_payload` for audit but
   are never displayed in summary views.
-- **Retention.** Every lead has a `retention_until` column. The
-  `lodgely:leads:purge` command soft-deletes leads past their date; it is
-  scheduled daily but does nothing unless `LODGELY_DEFAULT_RETENTION_DAYS`
-  is configured.
+- **Retention.** Every lead has a `retention_until` column, set when the
+  lead is ingested from `LODGELY_DEFAULT_RETENTION_DAYS` (empty in code =
+  keep forever; `.env.example` ships `365`). The `lodgely:leads:purge`
+  command runs daily and **soft-deletes** leads past their date. Be aware
+  that a soft-deleted lead still holds its name, email, phone, message,
+  custom answers and `raw_payload`, and its notes and audit events stay too
+  — purge hides the lead, it does not erase it yet. Real erasure (hard
+  delete / anonymisation after a grace period) is on the
+  [roadmap](../ROADMAP.md).
 - **Soft deletes** on `leads` and `lead_notes` mean an accidental delete is
   reversible until you hard-delete in the DB.
 - **Audit trail.** `lead_events` records create/update/note actions with
@@ -26,4 +31,4 @@ you the tools; the policies are yours.
 What this product does **not** do for you (yet, on purpose):
 consent capture, data-subject access reports, automatic right-to-erasure
 workflow, lawful-basis tagging. Those belong to a future compliance module
-and are listed in the [roadmap](ROADMAP.md).
+and are listed in the [roadmap](../ROADMAP.md).

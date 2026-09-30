@@ -54,7 +54,11 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   Bearer token) or an email + **encrypted** password login fallback (mints a
   short-lived JWT per pull, scraped from the login cookie). Operator-defined
   field mapping; unmapped fields become custom answers; idempotent on the
-  OpenFlow submission id. Recurring via `lodgely:openflow:fetch` (hourly
+  OpenFlow submission id scoped to install + form. OpenFlow timestamps carry
+  no offset and are UTC — always parse them with
+  `OpenflowLeadSource::parseOpenflowTimestamp()`, never a bare
+  `Carbon::parse()` (APP_TIMEZONE would skew the pull cutoff). The shared
+  cross-repo contract and what's next are in `ROADMAP.md`. Recurring via `lodgely:openflow:fetch` (hourly
   scheduler) + a "Fetch" button.
 - **Reporting** (`app/Domain/Reporting/`, operator `/reporting` + client
   `/my-reports`) — ad-spend ingestion from Meta Marketing API + Google Ads
