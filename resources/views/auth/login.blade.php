@@ -50,10 +50,5 @@
                 {{ __('Sign in') }}
             </button>
         </form>
-
-        <p class="mt-4 text-center text-xs text-slate-500 dark:text-slate-500">
-            {{ __('New deployment? Create the first operator via') }}
-            <code class="text-slate-700 dark:text-slate-400">php artisan lodgely:user:create</code>.
-        </p>
     </div>
 </x-layouts.guest>

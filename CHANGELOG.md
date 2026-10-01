@@ -35,6 +35,10 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Login page no longer shows the `php artisan lodgely:user:create` hint.**
+  The "New deployment? Create the first operator via …" line confused
+  regular client users; first-operator setup stays documented in the README.
+
 - **The OpenFlow pull could permanently skip new leads on installs not
   running in UTC.**
   - OpenFlow's `created_at` is UTC but carries no offset. lodgely parsed it
