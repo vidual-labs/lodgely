@@ -6,6 +6,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **`ROADMAP.md`: the shared section's decisions D1–D5 are confirmed** (no
+  lodgely → session feedback loop, push + pull, opt-in partials only, one
+  install per agency with clients scoped by the Client model, lodgely owns
+  qualified-lead conversions). The same change lands in OpenFlow's roadmap in
+  its 0.46.0 release, which ships OF-1 (stable field keys — what LG-2 will map
+  on).
+
 ### Added
 
 - **`ROADMAP.md` at the repo root.** A phased forward roadmap with

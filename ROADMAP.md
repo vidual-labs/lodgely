@@ -322,7 +322,10 @@ in exactly one place.
   version, offset-less timestamps, offset paging, webhook without submission
   id) → **X-1**.
 
-### Decisions this roadmap assumes (pending confirmation)
+### Decisions this roadmap builds on (confirmed 2026-10-06)
+
+All five were confirmed on 2026-10-06 (OpenFlow 0.46.0 / lodgely 0.55.2).
+Changing one is a roadmap change in both repos.
 
 | # | Decision | Consequence |
 |---|---|---|
