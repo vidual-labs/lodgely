@@ -12,68 +12,83 @@
             <h2 class="reveal" style="--d: 80ms; margin-top: 20px;">Everything between<br>the ad click and the call.</h2>
         </div>
         <p class="lead-text reveal" style="--d: 160ms">
-            Four things worth switching for. The rest — saved views, bulk edits, outreach
-            toggles, CSV and NDJSON exports, EN/DE — is one click away once you’re in.
+            Four things worth switching for. The rest — duplicate detection, saved views,
+            bulk edits, CSV and NDJSON exports, EN/DE — is one click away once you’re in.
         </p>
     </div>
 </section>
 
-{{-- 01 · Deduplication ─────────────────────────────────────────────── --}}
-<section class="sec feat" style="--a: #fbbf24;">
+{{-- 01 · Automation (auto status, outreach toggles, AI qualification) ─ --}}
+<section class="sec feat" style="--a: #a78bfa;">
     <div class="feat-grid">
         <div class="feat-copy">
-            <span class="eyebrow reveal"><span class="n">01</span> Deduplication</span>
-            <h2 class="reveal" style="--d: 80ms">Duplicates caught<br>at the door.</h2>
+            <span class="eyebrow reveal"><span class="n">01</span> Automation</span>
+            <h2 class="reveal" style="--d: 80ms">Leads that sort<br>themselves.</h2>
             <p class="lead-text reveal" style="--d: 160ms">
-                Every lead is normalized the moment it arrives — emails lower-cased with
-                <code>+tag</code> aliases stripped, phone numbers reduced to digits — and matched
-                against everything already in the inbox. The second form fill from the same
-                person gets flagged, not called twice.
+                lodgely takes the clicks nobody wants to make: opening a lead marks it Reviewed,
+                the first call or email moves it to Pending. Click a phone number and the Called
+                toggle lights up as a reminder to confirm. Switch on AI qualification and each lead
+                gets a priority recommendation — built from a pseudonymized copy, delivered as a
+                draft an operator approves.
             </p>
             <ul class="feat-list reveal" style="--d: 240ms">
-                <li>Matches on email or phone, across every source</li>
-                <li>Linked to the original lead, never silently dropped</li>
-                <li>Recurring pulls are idempotent on the source’s own id</li>
+                <li>Forward-only status steps, audited like manual edits</li>
+                <li>Qualified / Called / Mailed toggles with one-click <code>tel:</code> and <code>mailto:</code></li>
+                <li>AI via any OpenAI-compatible API or a local Ollama — off by default</li>
             </ul>
         </div>
 
-        <div class="viz viz-dedupe reveal" style="--d: 120ms" aria-hidden="true">
-            <div class="vz-card lead-a">
+        <div class="viz viz-auto reveal" style="--d: 120ms" aria-hidden="true">
+            <div class="vz-card au-lead">
                 <div class="vz-row">
-                    <span class="avatar" style="--c: #60a5fa">LH</span>
-                    <span class="who"><b>Lena Hoffmann</b><small>Meta Lead Ads · #1042 · 09:12</small></span>
-                    <span class="pill pill-new">New</span>
+                    <span class="avatar" style="--c: #e879f9">MR</span>
+                    <span class="who"><b>Marco Rossi</b><small>Webhook · /pricing form · 09:12</small></span>
+                    <span class="au-phone">+49 170 555 0189</span>
                 </div>
-                <dl class="kv">
-                    <dt>email</dt><dd>lena.hoffmann@gmail.com</dd>
-                    <dt>phone</dt><dd>+49 151 2345 6789</dd>
-                </dl>
-            </div>
-
-            <div class="match">
-                <div class="m m-email">
-                    <code class="raw">Lena.Hoffmann+ads@Gmail.com</code>
-                    <span class="arr">→</span>
-                    <code class="norm">lena.hoffmann@gmail.com</code>
-                    <span class="ck">✓</span>
-                </div>
-                <div class="m m-phone">
-                    <code class="raw">(+49) 151-2345-6789</code>
-                    <span class="arr">→</span>
-                    <code class="norm">4915123456789</code>
-                    <span class="ck">✓</span>
-                </div>
-            </div>
-
-            <div class="vz-card lead-b">
-                <div class="vz-row">
-                    <span class="avatar" style="--c: #fbbf24">LH</span>
-                    <span class="who"><b>L. Hoffmann</b><small>IMAP email · #1187 · 11:40</small></span>
-                    <span class="swap">
-                        <span class="pill pill-new b-new">New</span>
-                        <span class="pill pill-dup b-dup">Duplicate of #1042</span>
+                <div class="au-group">
+                    <small>Status</small>
+                    <span class="au-pills">
+                        <span class="au-pill p-new">New</span>
+                        <span class="au-pill p-rev">Reviewed</span>
+                        <span class="au-pill p-pen">Pending</span>
                     </span>
                 </div>
+                <div class="au-group">
+                    <small>Outreach</small>
+                    <span class="au-pills">
+                        <span class="au-tog">Qualified</span>
+                        <span class="au-tog t-called">✓ Called</span>
+                        <span class="au-tog">Mailed</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="vz-card au-ai">
+                <div class="vz-head">
+                    <span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+                        AI qualification
+                    </span>
+                    <span class="swap">
+                        <span class="pill au-draft">draft</span>
+                        <span class="pill pill-ok au-approved">approved by Pat</span>
+                    </span>
+                </div>
+                <span class="au-wait">Qualification queued<i>.</i><i>.</i><i>.</i></span>
+                <code class="au-in">Lead #1187 · m***@acme-studio.de · +49 *** 89</code>
+                <div class="au-out">
+                    <span class="au-prio">Recommended priority <b>high</b></span>
+                    <p>Asks for pricing and a demo date via the /pricing form — clear buying intent.</p>
+                    <p class="au-next">→ Call back today, offer two demo slots.</p>
+                </div>
+            </div>
+
+            <div class="swap au-caps">
+                <span class="au-cap c0">New lead arrives via webhook</span>
+                <span class="au-cap c1">Opened by Pat → <b>Reviewed</b>, automatically</span>
+                <span class="au-cap c2">Phone number clicked → <b>Called</b> lights up as a reminder</span>
+                <span class="au-cap c3">Call confirmed → <b>Pending</b>, automatically</span>
+                <span class="au-cap c4">AI recommends <b>high</b> → operator approves the draft</span>
             </div>
         </div>
     </div>

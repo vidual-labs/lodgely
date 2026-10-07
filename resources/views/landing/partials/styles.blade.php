@@ -318,8 +318,9 @@
     .feat .lead-text { margin-top: 22px; font-size: 17px; }
     .feat .lead-text code { font-size: 14px; color: var(--text); }
     .feat-list { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 10px; }
-    .feat-list li { display: flex; gap: 12px; align-items: baseline; font-size: 15px; color: var(--muted); }
-    .feat-list li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 1px; background: var(--a); transform: translateY(-2px) rotate(45deg); }
+    .feat-list li { position: relative; padding-left: 18px; font-size: 15px; color: var(--muted); }
+    .feat-list li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 1px; background: var(--a); transform: rotate(45deg); }
+    .feat-list code { font-size: 13px; color: var(--text); }
 
     .viz {
         position: relative;
@@ -358,40 +359,79 @@
     .vz-head span:first-child { display: inline-flex; align-items: center; gap: 6px; }
     .vz-head .mono { font-size: 11px; color: var(--dim); font-weight: 400; }
 
-    /* 01 · dedupe */
-    .kv { display: grid; grid-template-columns: 56px 1fr; gap: 4px 12px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; }
-    .kv dt { color: var(--dim); }
-    .kv dd { margin: 0; color: var(--muted); }
-    .match { display: grid; gap: 8px; padding: 4px 8px; }
-    .m { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 20px; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; }
-    .m code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .m .raw { color: var(--dim); }
-    .m .arr { color: var(--dim); }
-    .m .norm { color: var(--text); }
-    .m .ck { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(52, 211, 153, .15); color: var(--ok); font-size: 11px; }
+    /* 01 · automation — 10s loop that starts and ends on the resting (final) frame */
     .swap { display: grid; justify-items: end; }
     .swap > * { grid-area: 1 / 1; }
-    .b-new { opacity: 0; }
-    .lead-b { border-color: rgba(251, 191, 36, .45); background: linear-gradient(90deg, rgba(251, 191, 36, .07), var(--bg-2) 60%); }
-    .viz-dedupe.play .m-email { animation: ddEmail 9s var(--ease) infinite; }
-    .viz-dedupe.play .m-email .ck { animation: ddCkEmail 9s var(--ease) infinite; }
-    .viz-dedupe.play .m-phone { animation: ddPhone 9s var(--ease) infinite; }
-    .viz-dedupe.play .m-phone .ck { animation: ddCkPhone 9s var(--ease) infinite; }
-    .viz-dedupe.play .b-new { animation: ddNew 9s var(--ease) infinite; }
-    .viz-dedupe.play .b-dup { animation: ddDup 9s var(--ease) infinite; }
-    .viz-dedupe.play .lead-b { animation: ddLeadB 9s var(--ease) infinite; }
-    .viz-dedupe.play .lead-a { animation: ddLeadA 9s var(--ease) infinite; }
-    @keyframes ddEmail { 0%, 8% { opacity: 1; transform: none; } 12%, 20% { opacity: 0; transform: translateY(6px); } 28%, 100% { opacity: 1; transform: none; } }
-    @keyframes ddPhone { 0%, 8% { opacity: 1; transform: none; } 12%, 38% { opacity: 0; transform: translateY(6px); } 46%, 100% { opacity: 1; transform: none; } }
-    @keyframes ddCkEmail { 0%, 8% { transform: scale(1); } 12%, 30% { transform: scale(0); } 34% { transform: scale(1.35); } 37%, 100% { transform: scale(1); } }
-    @keyframes ddCkPhone { 0%, 8% { transform: scale(1); } 12%, 48% { transform: scale(0); } 52% { transform: scale(1.35); } 55%, 100% { transform: scale(1); } }
-    @keyframes ddNew { 0%, 8% { opacity: 0; } 12%, 58% { opacity: 1; } 62%, 100% { opacity: 0; } }
-    @keyframes ddDup { 0%, 8% { opacity: 1; transform: none; } 12%, 58% { opacity: 0; transform: scale(.8); } 63% { opacity: 1; transform: scale(1.12); } 66%, 100% { opacity: 1; transform: none; } }
-    @keyframes ddLeadB {
-        0%, 8%, 63%, 100% { border-color: rgba(251, 191, 36, .45); background: linear-gradient(90deg, rgba(251, 191, 36, .07), var(--bg-2) 60%); }
-        12%, 58% { border-color: var(--line-2); background: linear-gradient(90deg, rgba(251, 191, 36, 0), var(--bg-2) 60%); }
+    .au-phone { font-family: var(--mono); font-size: 12px; color: var(--sky); padding: 3px 8px; border-radius: 6px; text-decoration: underline; text-underline-offset: 3px; }
+    .au-group { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .au-group small { width: 64px; flex: none; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+    .au-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .au-pill, .au-tog { padding: 4px 10px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 12px; color: var(--dim); }
+    .au-pill.p-pen { color: var(--warn); border-color: rgba(251, 191, 36, .45); background: rgba(251, 191, 36, .1); }
+    .au-tog.t-called { color: var(--ok); border-color: rgba(52, 211, 153, .45); background: rgba(52, 211, 153, .1); }
+    .au-ai .vz-head { margin-bottom: 8px; }
+    .au-ai { position: relative; }
+    .au-wait { position: absolute; left: 0; right: 0; top: 50%; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--dim); opacity: 0; }
+    .au-wait i { font-style: normal; animation: pulse 1.2s ease-in-out infinite; }
+    .au-wait i:nth-child(2) { animation-delay: .2s; }
+    .au-wait i:nth-child(3) { animation-delay: .4s; }
+    .au-ai .vz-head span:first-child { color: var(--violet); }
+    .au-draft { color: var(--dim); border-color: var(--line-2); opacity: 0; }
+    .au-in { display: block; font-size: 11.5px; color: var(--dim); padding: 6px 8px; border: 1px dashed var(--line-2); border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .au-out { margin-top: 10px; }
+    .au-prio { font-size: 12px; color: var(--muted); }
+    .au-prio b { margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--fuchsia); background: rgba(232, 121, 249, .1); border: 1px solid rgba(232, 121, 249, .35); }
+    .au-out p { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+    .au-out .au-next { color: var(--text); }
+    .au-caps { justify-items: center; }
+    .au-cap { font-family: var(--mono); font-size: 12px; color: var(--dim); text-align: center; opacity: 0; }
+    .au-cap b { color: var(--text); font-weight: 500; }
+    .au-cap.c4 { opacity: 1; }
+
+    .viz-auto.play .p-new { animation: auNew 10s var(--ease) infinite; }
+    .viz-auto.play .p-rev { animation: auRev 10s var(--ease) infinite; }
+    .viz-auto.play .p-pen { animation: auPen 10s var(--ease) infinite; }
+    .viz-auto.play .t-called { animation: auCalled 10s var(--ease) infinite; }
+    .viz-auto.play .au-phone { animation: auPhone 10s var(--ease) infinite; }
+    .viz-auto.play .au-in { animation: auIn 10s var(--ease) infinite; }
+    .viz-auto.play .au-wait { animation: auWait 10s var(--ease) infinite; }
+    .viz-auto.play .au-out { animation: auOut 10s var(--ease) infinite; }
+    .viz-auto.play .au-draft { animation: auDraft 10s var(--ease) infinite; }
+    .viz-auto.play .au-approved { animation: auApproved 10s var(--ease) infinite; }
+    .viz-auto.play .c0 { animation: auC0 10s var(--ease) infinite; }
+    .viz-auto.play .c1 { animation: auC1 10s var(--ease) infinite; }
+    .viz-auto.play .c2 { animation: auC2 10s var(--ease) infinite; }
+    .viz-auto.play .c3 { animation: auC3 10s var(--ease) infinite; }
+    .viz-auto.play .c4 { animation: auC4 10s var(--ease) infinite; }
+    @keyframes auNew {
+        0%, 6%, 20%, 100% { color: var(--dim); border-color: var(--line-2); background: transparent; }
+        9%, 17% { color: var(--sky); border-color: rgba(96, 165, 250, .45); background: rgba(96, 165, 250, .1); }
     }
-    @keyframes ddLeadA { 0%, 60%, 80%, 100% { box-shadow: none; } 66% { box-shadow: 0 0 0 4px rgba(251, 191, 36, .14); } }
+    @keyframes auRev {
+        0%, 17%, 46%, 100% { color: var(--dim); border-color: var(--line-2); background: transparent; }
+        20%, 43% { color: var(--violet); border-color: rgba(167, 139, 250, .45); background: rgba(167, 139, 250, .1); }
+    }
+    @keyframes auPen {
+        0%, 6%, 46%, 100% { color: var(--warn); border-color: rgba(251, 191, 36, .45); background: rgba(251, 191, 36, .1); }
+        9%, 43% { color: var(--dim); border-color: var(--line-2); background: transparent; }
+    }
+    @keyframes auCalled {
+        0%, 6%, 46%, 100% { color: var(--ok); border-color: rgba(52, 211, 153, .45); background: rgba(52, 211, 153, .1); box-shadow: none; }
+        9%, 31% { color: var(--dim); border-color: var(--line-2); background: transparent; box-shadow: none; }
+        34%, 43% { color: var(--warn); border-color: rgba(251, 191, 36, .6); background: transparent; box-shadow: 0 0 0 4px rgba(251, 191, 36, .14); }
+        38% { box-shadow: 0 0 0 7px rgba(251, 191, 36, .06); }
+    }
+    @keyframes auPhone { 0%, 30%, 37%, 100% { background: transparent; } 32%, 34% { background: rgba(96, 165, 250, .18); } }
+    @keyframes auWait { 0%, 8%, 56%, 100% { opacity: 0; } 11%, 53% { opacity: 1; } }
+    @keyframes auIn { 0%, 6% { opacity: 1; } 9%, 54% { opacity: 0; } 58%, 100% { opacity: 1; } }
+    @keyframes auOut { 0%, 6% { opacity: 1; transform: none; } 9%, 64% { opacity: 0; transform: translateY(6px); } 69%, 100% { opacity: 1; transform: none; } }
+    @keyframes auDraft { 0%, 6%, 80%, 100% { opacity: 0; } 9%, 76% { opacity: 1; } }
+    @keyframes auApproved { 0%, 6% { opacity: 1; transform: none; } 9%, 76% { opacity: 0; transform: scale(.85); } 81% { opacity: 1; transform: scale(1.1); } 84%, 100% { opacity: 1; transform: none; } }
+    @keyframes auC0 { 0%, 7%, 18%, 100% { opacity: 0; } 9%, 16% { opacity: 1; } }
+    @keyframes auC1 { 0%, 18%, 31%, 100% { opacity: 0; } 20%, 29% { opacity: 1; } }
+    @keyframes auC2 { 0%, 31%, 44%, 100% { opacity: 0; } 33%, 42% { opacity: 1; } }
+    @keyframes auC3 { 0%, 44%, 56%, 100% { opacity: 0; } 46%, 54% { opacity: 1; } }
+    @keyframes auC4 { 0%, 6%, 58%, 100% { opacity: 1; } 8%, 56% { opacity: 0; } }
 
     /* 02 · reporting */
     .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -642,8 +682,9 @@
         .kpis b { font-size: 18px; }
         .bar { grid-template-columns: 1fr 70px; }
         .bar-track { grid-column: 1 / -1; grid-row: 2; }
-        .m { grid-template-columns: 1fr 20px; gap: 2px 10px; }
-        .m .raw, .m .arr { display: none; }
+        .vz-row { grid-template-columns: 32px 1fr; }
+        .au-phone { grid-column: 2; justify-self: start; padding-left: 0; }
+        .au-group { align-items: flex-start; flex-direction: column; gap: 8px; }
         .clients { grid-template-columns: 1fr; }
         .op .cl-rows { grid-template-columns: 1fr; }
         .row { grid-template-columns: 28px 1fr auto; }

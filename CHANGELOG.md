@@ -10,7 +10,8 @@ semantic-ish versioning once a 1.0 is tagged.
 
 - **Public landing page at `/`.** A dark, self-contained product page for
   technical marketers: animated sources-to-inbox hero, four highlighted
-  feature sections with their own animated graphics (deduplication, ad-spend
+  feature sections with their own animated graphics (automation — automatic
+  status steps, outreach toggles and opt-in AI qualification — ad-spend
   reporting, client portals, GDPR & self-hosting), code examples (webhook,
   adapter, `.env`), a short Docker deploy walkthrough, and a
   "Get the most out of lodgely" section linking to vidual (vidual.org). It loads

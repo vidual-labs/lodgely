@@ -30,7 +30,7 @@ class LandingPageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('One inbox.')
-            ->assertSee('Duplicates caught')
+            ->assertSee('Leads that sort')
             ->assertSee('Ad spend next to')
             ->assertSee('href="'.route('login').'"', false)
             ->assertSee('href="https://vidual.org"', false)
