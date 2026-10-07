@@ -30,6 +30,8 @@ class LandingPageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('One inbox.')
+            ->assertSee('Duplicates caught')
+            ->assertSee('Ad spend next to')
             ->assertSee('href="'.route('login').'"', false)
             ->assertSee('href="https://vidual.org"', false)
             ->assertSee('LODGELY_LANDING_ENABLED=false', false);

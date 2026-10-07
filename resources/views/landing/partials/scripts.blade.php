@@ -64,25 +64,22 @@
         paint();
     }
 
-    // ── Feature grid: cursor spotlight ──────────────────────────────────
-    $$('#feature-grid .cell').forEach((cell) => {
-        cell.addEventListener('pointermove', (e) => {
-            const r = cell.getBoundingClientRect();
-            cell.style.setProperty('--mx', `${e.clientX - r.left}px`);
-            cell.style.setProperty('--my', `${e.clientY - r.top}px`);
-        });
-    });
+    // ── Feature graphics: start their animations once they're on screen ──
+    onView($$('.viz'), (el) => el.classList.add('play'), { threshold: 0.3 });
 
     // ── Counters ────────────────────────────────────────────────────────
     onView($$('[data-count]'), (el) => {
-        const target = parseInt(el.getAttribute('data-count'), 10) || 0;
-        if (reduced || target === 0) { el.textContent = target; return; }
+        const target = parseFloat(el.getAttribute('data-count')) || 0;
+        const decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
+        const prefix = el.getAttribute('data-prefix') || '';
+        const fmt = (v) => prefix + v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        if (reduced || target === 0) { el.textContent = fmt(target); return; }
         const start = performance.now();
         const dur = 1100;
-        el.textContent = '0';
+        el.textContent = fmt(0);
         const step = (t) => {
             const k = Math.min(1, (t - start) / dur);
-            el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+            el.textContent = fmt(target * (1 - Math.pow(1 - k, 3)));
             if (k < 1) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);

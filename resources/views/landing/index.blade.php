@@ -27,63 +27,6 @@
 
     $statement = 'lodgely is the layer *before* your CRM. No deals, no pipelines, no forecasts — just every incoming lead, *normalized,* *deduplicated* and in front of the right person within minutes.';
 
-    $features = [
-        [
-            'Every source, one schema',
-            'Meta Lead Ads, Google Sheets, OpenFlow forms, IMAP, webhooks, CSV and manual entry land in one normalized inbox. Recurring sources pull on a schedule and stay idempotent.',
-            ['adapters', 'hourly pulls'],
-            '<path d="M3 13h5l2 3h4l2-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
-        ],
-        [
-            'Duplicates caught at the door',
-            'Normalized email and phone matching flags repeat leads before anyone calls the same person twice. One detector, one source of truth.',
-            ['email', 'phone', 'normalized'],
-            '<rect x="3" y="3" width="12" height="12" rx="2"/><rect x="9" y="9" width="12" height="12" rx="2"/>',
-        ],
-        [
-            'Client portals, scoped by default',
-            'Operators see everything. Clients see only their own leads — and can set status, priority, notes and export CSV without filing a ticket.',
-            ['operator', 'client'],
-            '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>',
-        ],
-        [
-            'Reporting next to the leads',
-            'Ad spend from the Meta Marketing and Google Ads APIs, rolled up per campaign with CPL, KPI cards, trend charts and a creative-performance view.',
-            ['CPL', 'campaigns', 'creatives'],
-            '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/>',
-        ],
-        [
-            'Scheduled client reports',
-            'Custom reporting views per client, a self-service /my-reports tab and scheduled HTML report emails over your own SMTP.',
-            ['weekly', 'monthly', 'SMTP'],
-            '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
-        ],
-        [
-            'AI that asks first',
-            'Optional lead qualification and report summaries via any OpenAI-compatible API or a local Ollama. Pseudonymized input, operator-approved output. Off by default.',
-            ['opt-in', 'Ollama', 'pseudonymized'],
-            '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
-        ],
-        [
-            'GDPR is a feature, not a footnote',
-            'Retention dates on every lead, an append-only audit trail, a purge command, secrets encrypted at rest and optionally encrypted backups.',
-            ['retention', 'audit log', 'purge'],
-            '<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
-        ],
-        [
-            'Webhooks in, exports out',
-            'Token-secured webhook endpoints for any form builder or automation tool. Streamed, audited CSV and NDJSON exports for your CRM or warehouse.',
-            ['JSON', 'CSV', 'NDJSON'],
-            '<path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/><path d="M13.5 5l-3 14"/>',
-        ],
-        [
-            'Yours, on your server',
-            'GPL-3.0, Docker-first, no telemetry. Every outbound integration is opt-in and credential-gated. Your leads never leave your infrastructure unless you send them.',
-            ['self-hosted', 'GPL-3.0', 'no telemetry'],
-            '<rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01"/><path d="M7 16.5h.01"/>',
-        ],
-    ];
-
     $stats = [
         [7, 'lead sources'],
         [2, 'ad platforms'],
@@ -260,34 +203,7 @@
     </section>
 
     {{-- ───────────── Features ───────────── --}}
-    <section class="sec" id="features">
-        <div class="pad" style="padding-bottom: 0;">
-            <div class="head">
-                <div>
-                    <span class="eyebrow reveal">Features</span>
-                    <h2 class="reveal" style="--d: 80ms">Everything between<br>the ad click and the call.</h2>
-                </div>
-                <p class="lead-text reveal" style="--d: 160ms">
-                    Built for the people who wire up the tracking, own the ad accounts and
-                    get asked “where did that lead go?”. Each piece is small, documented and
-                    replaceable.
-                </p>
-            </div>
-        </div>
-        <div class="grid" id="feature-grid">
-            @foreach ($features as $n => [$title, $body, $tags, $icon])
-                <article class="cell reveal" style="--d: {{ ($n % 3) * 90 }}ms">
-                    <span class="idx">{{ str_pad($n + 1, 2, '0', STR_PAD_LEFT) }}</span>
-                    <div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">{!! $icon !!}</svg></div>
-                    <h3>{{ $title }}</h3>
-                    <p>{{ $body }}</p>
-                    <div class="tags">
-                        @foreach ($tags as $tag)<span>{{ $tag }}</span>@endforeach
-                    </div>
-                </article>
-            @endforeach
-        </div>
-    </section>
+    @include('landing.partials.features')
 
     {{-- ───────────── Stats ───────────── --}}
     <section class="sec stats" aria-label="lodgely in numbers">
