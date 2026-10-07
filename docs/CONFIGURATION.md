@@ -9,6 +9,7 @@ headless / scripted installs.
 |----------|---------|---------|
 | `APP_NAME` | Display name in titles/headers | `lodgely` |
 | `APP_URL`  | Public URL of the install | `http://localhost:8080` |
+| `LODGELY_LANDING_ENABLED` | Public landing page at `/`. `false` restores the plain `/` → inbox (→ login for guests) redirect. Signed-in users always skip it. Consider turning it off on white-labelled installs — the page talks about lodgely and links to vidual | `true` |
 | `LODGELY_BRAND_NAME` / `LODGELY_BRAND_TAGLINE` | Optional white-label-ish strings (still under the lodgely identity) | `lodgely` / `Lead intake, unified.` |
 | `LODGELY_CSV_MAX_ROWS` | Hard cap on rows ingested per CSV | `10000` |
 | `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |

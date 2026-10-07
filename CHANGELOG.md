@@ -6,6 +6,17 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Public landing page at `/`.** A dark, self-contained product page for
+  technical marketers: animated sources-to-inbox hero, feature grid, code
+  examples (webhook, adapter, `.env`), a short Docker deploy walkthrough, and a
+  "Get the most out of lodgely" section linking to vidual (vidual.org). It loads
+  no third-party assets and doesn't depend on the Vite build. Guests reach the
+  login through a discreet "Sign in" link; signed-in users still go straight
+  to the inbox. On by default; set `LODGELY_LANDING_ENABLED=false` to restore
+  the old `/` → inbox/login redirect.
+
 ### Changed
 
 - **`ROADMAP.md`: the shared section's decisions D1–D5 are confirmed** (no

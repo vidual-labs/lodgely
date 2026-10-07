@@ -78,6 +78,12 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
 - **AI** (`app/Domain/Ai/`, opt-in via `ai.enabled`) — report-view summaries
   and pseudonymized lead qualification via OpenAI-compatible or Ollama
   providers, behind an operator approve-then-share workflow.
+- **Public landing page** (`/`, `LandingController`, `resources/views/landing/`)
+  — guests see a dark product page with a discreet "Sign in" link; signed-in
+  users and installs with `LODGELY_LANDING_ENABLED=false` go straight to the
+  inbox. Its CSS/JS are inline on purpose (no Vite/Tailwind dependency, no
+  third-party assets — see the Tailwind-bundle gotcha below), and it links to
+  vidual via `config('lodgely.brand.vidual_url')`.
 - **Ops** — DB backups (`/settings/backups`; the dump inside the archive is
   cleartext unless `LODGELY_BACKUP_PASSPHRASE` is set — the *columns* are
   encrypted, the dump is not, so treat an archive as a full PII copy),

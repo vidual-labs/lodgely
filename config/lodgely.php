@@ -33,6 +33,18 @@ return [
         // upstream source repository is part of preserving attribution. Forks may
         // edit this value in their own copy, but it must not be a deploy-time toggle.
         'github_url' => 'https://github.com/vidual-labs/lodgely',
+        // The team behind lodgely, linked from the public landing page for
+        // setup and integration help. Hardcoded for the same reason as
+        // github_url; installs that don't want it shown disable the landing.
+        'vidual_url' => 'https://vidual.org',
+    ],
+
+    // Public landing page at "/". On by default; set LODGELY_LANDING_ENABLED
+    // to false to skip it and send "/" straight to the inbox (and from there
+    // to the login form for guests), which is how lodgely behaved before the
+    // landing page existed. Signed-in users never see it either way.
+    'landing' => [
+        'enabled' => (bool) env('LODGELY_LANDING_ENABLED', true),
     ],
 
     // TRUSTED_PROXIES is deliberately *not* mirrored here: it is consumed in
