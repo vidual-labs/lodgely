@@ -6,7 +6,31 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Added
+
+- **Public landing page at `/`.** A dark, self-contained product page for
+  technical marketers: animated sources-to-inbox hero, four highlighted
+  feature sections with their own animated graphics (automation — automatic
+  status steps, outreach toggles and opt-in AI qualification — ad-spend
+  reporting, client portals, GDPR & self-hosting), code examples (webhook,
+  adapter, `.env`), a short Docker deploy walkthrough, and a
+  "Get the most out of lodgely" section linking to vidual (vidual.org). It loads
+  no third-party assets and doesn't depend on the Vite build. Guests reach the
+  login through a discreet "Sign in" link; signed-in users still go straight
+  to the inbox. On by default; set `LODGELY_LANDING_ENABLED=false` to restore
+  the old `/` → inbox/login redirect.
+
 ### Changed
+
+- **New logo across the app and on GitHub.** The dotted-staircase icon and a
+  plain "lodgely" wordmark (as on the landing page) replace the old gradient
+  wordmark artwork. The app top bar and the login / password pages now draw it
+  inline via a `<x-brand-logo>` component whose wordmark follows the light/dark
+  theme; the wordmark is Inter SemiBold converted to outlines, so it renders
+  the same without the font installed. `public/img/logo.{svg,png}` (dark
+  wordmark) and new `logo-dark.{svg,png}` (light wordmark) are the static
+  copies; the README header switches between them with the viewer's GitHub
+  theme, and the favicon is the icon alone, without the dark tile.
 
 - **`ROADMAP.md`: the shared section's decisions D1–D5 are confirmed** (no
   lodgely → session feedback loop, push + pull, opt-in partials only, one

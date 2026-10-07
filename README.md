@@ -1,5 +1,8 @@
 <p align="center">
-  <img src=".github/logo.png" alt="lodgely logo" width="320" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/logo-dark.png">
+    <img src=".github/logo.png" alt="lodgely logo" width="360" />
+  </picture>
 </p>
 
 <p align="center">
@@ -7,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.55.2-6366F1" alt="Version 0.55.2">
+  <img src="https://img.shields.io/badge/version-0.56.0-6366F1" alt="Version 0.56.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -135,6 +138,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 **Ops**
 
+- 🏠 Public landing page at `/` (product overview, deploy guide, discreet "Sign in" link). On by default; `LODGELY_LANDING_ENABLED=false` sends `/` straight to the inbox/login instead.
 - 🧾 Full audit log of lead lifecycle changes.
 - 🗑️ Retention-aware (`retention_until`) with an opt-in GDPR purge command.
 - 💾 Backup & recovery — one-click `.zip` backups, UI restore, and matching artisan commands. Optional passphrase encryption of the database dump inside the archive, plus optional retention pruning.
@@ -370,6 +374,7 @@ The handful of variables you're most likely to touch on a first install:
 | `TRUSTED_PROXIES` | Proxy address/CIDR to trust for `X-Forwarded-*` | `*` (all) |
 | `LODGELY_BACKUP_PASSPHRASE` | Encrypts the dump inside new backup archives | empty (off) |
 | `LODGELY_BACKUP_KEEP` | Backup archives to retain on disk | empty (keep all) |
+| `LODGELY_LANDING_ENABLED` | Show the public landing page at `/`; `false` sends `/` straight to the inbox/login | `true` |
 | `MAIL_MAILER` | Outbound mail transport (`log`, `smtp`) — prefer Settings → Email instead | `log` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 

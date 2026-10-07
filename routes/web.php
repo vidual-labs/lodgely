@@ -9,6 +9,7 @@ use App\Http\Controllers\Imports\OpenflowImportController;
 use App\Http\Controllers\InboxColumnPickerController;
 use App\Http\Controllers\InboxFilterPickerController;
 use App\Http\Controllers\InboxSavedFilterController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LeadExportController;
 use App\Http\Controllers\OAuth\GoogleAdsOAuthController;
 use App\Http\Controllers\ReportingDataController;
@@ -40,7 +41,9 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/inbox');
+// Public landing page; falls back to the old "/" → inbox redirect when
+// LODGELY_LANDING_ENABLED=false, and always for signed-in users.
+Route::get('/', LandingController::class)->name('landing');
 
 Route::post('/locale', function (Request $request) {
     $locale = $request->input('locale');

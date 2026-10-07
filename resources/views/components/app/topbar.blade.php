@@ -33,13 +33,7 @@
     <div class="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div class="flex items-center gap-6 min-w-0">
             <a href="{{ route('inbox') }}" class="flex items-center group shrink-0" aria-label="{{ config('lodgely.brand.name') }}">
-                {{-- height set inline so it doesn't depend on Tailwind utilities being present
-                     in the compiled CSS bundle (avoids "wrong size after pulling without npm build").
-                     ?v=filemtime busts the browser cache whenever the file is replaced. --}}
-                <img src="{{ asset('img/logo.png') }}?v={{ filemtime(public_path('img/logo.png')) }}"
-                     alt="{{ config('lodgely.brand.name') }}"
-                     style="height: 3rem; margin-top: 0.5rem;"
-                     class="w-auto transition-opacity group-hover:opacity-80">
+                <x-brand-logo height="1.75rem" class="transition-opacity group-hover:opacity-80" />
             </a>
 
             {{-- Desktop nav --}}
