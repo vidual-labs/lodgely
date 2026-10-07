@@ -80,8 +80,7 @@
                 @php $i = 0; @endphp
                 @foreach ([14, 22, 30, 38, 46] as $col => $x)
                     @for ($row = 0; $row <= $col; $row++)
-                        <circle cx="{{ $x }}" cy="{{ 46 - $row * 8 }}" r="2.6" fill="url(#lg-ic)"
-                                opacity="{{ [1, .9, .78, .62, .44][$row] }}" style="--i: {{ $i++ }}"/>
+                        <circle cx="{{ $x }}" cy="{{ 46 - $row * 8 }}" r="2.6" fill="url(#lg-ic)" style="--i: {{ $i++ }}"/>
                     @endfor
                 @endforeach
             </svg>
@@ -375,7 +374,7 @@
     <footer class="sec">
         <div class="pad-sm foot">
             <div>
-                <a href="#top" class="brand">lodgely</a>
+                <a href="#top" class="brand" aria-label="lodgely" style="color: var(--text);"><x-brand-logo height="26px" /></a>
                 <p class="tag">{{ config('lodgely.brand.tagline') }} The open-source lead intake hub for agencies and in-house marketing teams.</p>
             </div>
             <div>

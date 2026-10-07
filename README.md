@@ -1,5 +1,8 @@
 <p align="center">
-  <img src=".github/logo.png" alt="lodgely logo" width="320" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/logo-dark.png">
+    <img src=".github/logo.png" alt="lodgely logo" width="360" />
+  </picture>
 </p>
 
 <p align="center">

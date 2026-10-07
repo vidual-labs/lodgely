@@ -139,8 +139,8 @@
     }
     .nav .shell { border-color: var(--line); display: flex; align-items: center; gap: 32px; height: 64px; padding: 0 24px; }
     .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; letter-spacing: -.02em; }
-    .brand svg { width: 26px; height: 26px; }
-    .brand svg circle { animation: dotIn .6s var(--ease) both; animation-delay: calc(var(--i) * 45ms); }
+    .nav .brand svg { width: 26px; height: 26px; }
+    .nav .brand svg circle { animation: dotIn .6s var(--ease) both; animation-delay: calc(var(--i) * 45ms); }
     .nav-links { display: flex; gap: 4px; margin-right: auto; }
     .nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 14px; color: var(--muted); transition: color .2s, background-color .2s; }
     .nav-links a:hover { color: var(--text); background: rgba(255, 255, 255, .04); }

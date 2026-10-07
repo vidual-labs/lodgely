@@ -22,6 +22,16 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **New logo across the app and on GitHub.** The dotted-staircase icon and a
+  plain "lodgely" wordmark (as on the landing page) replace the old gradient
+  wordmark artwork. The app top bar and the login / password pages now draw it
+  inline via a `<x-brand-logo>` component whose wordmark follows the light/dark
+  theme; the wordmark is Inter SemiBold converted to outlines, so it renders
+  the same without the font installed. `public/img/logo.{svg,png}` (dark
+  wordmark) and new `logo-dark.{svg,png}` (light wordmark) are the static
+  copies; the README header switches between them with the viewer's GitHub
+  theme, and the favicon is the icon alone, without the dark tile.
+
 - **`ROADMAP.md`: the shared section's decisions D1–D5 are confirmed** (no
   lodgely → session feedback loop, push + pull, opt-in partials only, one
   install per agency with clients scoped by the Client model, lodgely owns
