@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.56.0-6366F1" alt="Version 0.56.0">
+  <img src="https://img.shields.io/badge/version-0.57.0-6366F1" alt="Version 0.57.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -124,7 +124,8 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 🔐 Two roles: `operator` (sees everything) and `client` (scoped to their `client_name`).
 - 🏷️ Client type presets (B2B / Jobs / B2C / Individual intent) — swaps the word "Lead" for "Applicant", "Prospect" or "Inquiry" on that client's own inbox, since not every client is sourcing B2B sales leads. Also relabels a handful of outcome statuses that read oddly outside B2B sales (Jobs: "Offer sent"/"Successful"/"Declined" → "Invited"/"Hired"/"Rejected"; Individual intent: "Successful" → "Enrolled") — most statuses stay as-is. Set per client user in `/users`; defaults to B2B (unchanged wording) when not set. Free-form label editing is not offered — presets only.
 - 👤 Per-user profile page (name, email, password, language, theme).
-- 🔑 Public password-recovery flow, enumeration-safe.
+- 🔑 Public password-recovery flow, enumeration-safe. Reset links are always built from `APP_URL`.
+- 🛡️ Optional two-factor authentication (TOTP authenticator app + single-use recovery codes) for operators, set up from the profile page. Lost both? `lodgely:user:2fa-reset <email>` on the server.
 
 **Reporting & AI**
 
@@ -243,7 +244,7 @@ docker compose exec app php artisan lodgely:user:create \
 If lodgely sits behind Cloudflare, nginx, or any other reverse proxy:
 
 - Set `APP_URL` to the **public** HTTPS URL (e.g. `https://lodgely.example.com`), not the internal address.
-- Set `SESSION_SECURE_COOKIE=true` (the browser is on HTTPS even if the internal hop is HTTP).
+- The session cookie is `Secure` automatically once `APP_URL` starts with `https://` (the browser is on HTTPS even if the internal hop is HTTP). `SESSION_SECURE_COOKIE` overrides it if you need to.
 - Set `SESSION_DRIVER=file` or ensure `SESSION_DRIVER=database` is working before testing login.
 - Forwarded headers (`X-Forwarded-Proto` and friends) are trusted out of the box, so the app works behind a proxy with no extra config.
 - Once it works, **set `TRUSTED_PROXIES` to your proxy's address or CIDR** — `172.16.0.0/12` for the bundled Docker stack. The default trusts every proxy, which means the "client IP" is whatever the caller puts in `X-Forwarded-For`. Narrowing it makes your access logs and IP-based limits meaningful. (Login and password-reset throttling does not depend on this: it is keyed on the submitted email address as well as the IP, precisely so a forged header cannot buy extra attempts.)
@@ -260,16 +261,33 @@ wants a few of them changed:
 |---|---|
 | `APP_DEBUG=false` | Debug error pages render request and configuration detail. This is the default; make sure nothing in your shell or compose overrides it. |
 | `APP_ENV=production` | Enables production behaviour, including forcing `https://` in generated URLs. Set this **after** TLS works, or links will point at a scheme you do not serve. |
-| `SESSION_SECURE_COOKIE=true` | Without it the session cookie is sent over plain HTTP too. Requires HTTPS. |
+| `APP_URL=https://…` (your public address) | Password-reset links are built from it, never from the request's `Host` header. It also turns the `Secure` session cookie on unless `SESSION_SECURE_COOKIE` says otherwise. |
+| `SESSION_SECURE_COOKIE` | Leave unset: it follows `APP_URL` (on for `https://`). Set `false` only for a plain-HTTP test install. |
 | `SESSION_ENCRYPT=true` | Already the default in `.env.example`; keep it. |
 | `TRUSTED_PROXIES=<your proxy CIDR>` | See above. |
 | `LODGELY_BACKUP_PASSPHRASE` | **A backup archive contains every lead's name, email, phone and message body in cleartext.** Setting a passphrase encrypts the database dump inside new archives. Existing unencrypted archives keep restoring normally. Store the passphrase somewhere other than the server it protects — an encrypted archive cannot be recovered without it. |
 | `LODGELY_BACKUP_KEEP` | Archives otherwise accumulate forever, and each one is a full copy of your data that outlives `retention_until`. Set it to the number of archives to keep. |
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Empty means leads are kept until deleted by hand. Set a window and run the scheduler so `lodgely:leads:purge` can act on it. |
 
-The app logs a warning at boot when it is running in production with debug
-mode on or without a secure session cookie, so a misconfiguration shows up in
-`docker compose logs app` rather than staying silent.
+Also on a public install:
+
+- **Turn on two-factor authentication** for every operator account
+  (Profile → Two-factor authentication). It is optional, but an operator
+  login reaches every lead, every integration credential and the backups.
+- **Rebuild the image** (`docker compose build`) after upgrading, so the
+  production PHP defaults in `docker/php/conf.d/` (`expose_php` and
+  `display_errors` off) are baked in.
+- **Install without dev dependencies** in production:
+  `composer install --no-dev --optimize-autoloader`. The debug error page
+  package is a dev dependency.
+- **Watch the auth log lines**: `lodgely.auth.login_failed` (masked email +
+  IP) and `lodgely.auth.two_factor_failed` show up in `docker compose logs app`.
+  A run of `two_factor_failed` means someone has that operator's password.
+
+The app logs a warning at boot when it is running in production (or with an
+`https://` `APP_URL`) with debug mode on, without a secure session cookie, or
+with `APP_URL` still pointing at localhost. A misconfiguration therefore shows
+up in `docker compose logs app` rather than staying silent.
 
 ---
 

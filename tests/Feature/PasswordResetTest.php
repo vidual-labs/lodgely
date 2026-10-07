@@ -133,4 +133,47 @@ class PasswordResetTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertTrue(Hash::check('initial-password', $user->fresh()->password));
     }
+
+    public function test_reset_link_is_built_from_app_url_not_the_forwarded_host(): void
+    {
+        // Host-header poisoning: with TRUSTED_PROXIES='*' an attacker controls
+        // X-Forwarded-Host, and the reset mail used to build its link from it
+        // — delivering the victim's token to the attacker's domain.
+        config(['app.url' => 'https://lodgely.example.com']);
+        Notification::fake();
+        $user = $this->makeUser();
+
+        $this->withHeaders(['X-Forwarded-Host' => 'evil.example'])
+            ->post('/forgot-password', ['email' => $user->email])
+            ->assertRedirect();
+
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $n) use ($user) {
+            $url = $n->toMail($user)->actionUrl;
+
+            return str_starts_with($url, 'https://lodgely.example.com/reset-password/')
+                && ! str_contains($url, 'evil.example');
+        });
+    }
+
+    public function test_reset_errors_do_not_reveal_whether_the_email_exists(): void
+    {
+        $this->makeUser();
+
+        $payload = fn (string $email) => [
+            'token'                 => 'definitely-not-valid',
+            'email'                 => $email,
+            'password'              => 'a-brand-new-password-1',
+            'password_confirmation' => 'a-brand-new-password-1',
+        ];
+
+        $this->post('/reset-password', $payload('pat@example.com'))->assertSessionHasErrors('email');
+        $knownMessage = session('errors')->first('email');
+
+        $this->flushSession();
+
+        $this->post('/reset-password', $payload('nobody@example.com'))->assertSessionHasErrors('email');
+        $unknownMessage = session('errors')->first('email');
+
+        $this->assertSame($knownMessage, $unknownMessage);
+    }
 }

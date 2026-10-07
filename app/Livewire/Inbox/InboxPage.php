@@ -259,7 +259,15 @@ class InboxPage extends Component
             ->all();
 
         $selected = $this->selectedLeadId
-            ? (clone $base)->with(['notes.user', 'events.user', 'duplicateOf', 'import'])->find($this->selectedLeadId)
+            ? (clone $base)->with([
+                'notes.user',
+                'events.user',
+                // Duplicate detection matches across the whole tenant, so the
+                // original can belong to another client. Scope the relation
+                // too, or a client sees that other client's lead in the panel.
+                'duplicateOf' => fn ($q) => $q->visibleTo($user),
+                'import',
+            ])->find($this->selectedLeadId)
             : null;
 
         $leadAiSummary = null;

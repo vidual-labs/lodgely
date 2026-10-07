@@ -196,6 +196,32 @@ class InboxPageTest extends TestCase
         $this->assertSame(LeadStatus::New, $someoneElses->fresh()->status, 'Client must not be able to touch a lead outside their scope');
     }
 
+    public function test_client_panel_does_not_show_another_clients_duplicate(): void
+    {
+        // Duplicate detection matches across the whole tenant, so the lead
+        // flagged as the "original" can belong to a different client. Its
+        // name must not leak into this client's side panel.
+        $client = $this->clientFor('Acme');
+        $original = Lead::factory()->create(['client_name' => 'Other', 'full_name' => 'Secret Person']);
+        $lead = Lead::factory()->create([
+            'client_name'     => 'Acme',
+            'duplicate_flag'  => true,
+            'duplicate_of_id' => $original->id,
+        ]);
+
+        Livewire::actingAs($client)
+            ->test(InboxPage::class)
+            ->call('selectLead', $lead->id)
+            ->assertSee(__('Potential duplicate'))
+            ->assertDontSee('Secret Person')
+            ->assertDontSee('#'.$original->id);
+
+        Livewire::actingAs($this->operator())
+            ->test(InboxPage::class)
+            ->call('selectLead', $lead->id)
+            ->assertSee('Secret Person');
+    }
+
     public function test_client_cannot_invoke_bulk_delete(): void
     {
         $client = $this->clientFor('Acme');

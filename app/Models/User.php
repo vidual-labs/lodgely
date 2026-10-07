@@ -31,6 +31,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -43,7 +45,33 @@ class User extends Authenticatable
             'client_type' => ClientType::class,
             'inbox_columns' => 'array',
             'inbox_filters' => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_last_used_step' => 'integer',
         ];
+    }
+
+    /**
+     * True once 2FA setup has been confirmed with a valid code. Enforced at
+     * login regardless of role: enrolment is operator-only, but demoting an
+     * enrolled operator to client must not silently drop their second factor.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && filled($this->two_factor_secret);
+    }
+
+    /** Setup started (secret generated) but not yet confirmed with a code. */
+    public function hasPendingTwoFactorSetup(): bool
+    {
+        return $this->two_factor_confirmed_at === null && filled($this->two_factor_secret);
+    }
+
+    /** Whether this user may enrol in 2FA from their profile. */
+    public function canEnableTwoFactor(): bool
+    {
+        return $this->isOperator();
     }
 
     public function leadScopes(): HasMany

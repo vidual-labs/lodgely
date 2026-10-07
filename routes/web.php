@@ -3,6 +3,8 @@
 use App\Http\Controllers\AdPlatformConnectorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Imports\GoogleSheetsImportController;
 use App\Http\Controllers\Imports\MetaLeadsImportController;
 use App\Http\Controllers\Imports\OpenflowImportController;
@@ -69,6 +71,11 @@ Route::middleware('guest')->group(function () {
     // See AppServiceProvider::bootRateLimiters().
     Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:login')->name('login.attempt');
 
+    // Second login step for users with 2FA. Throttled per pending user, not
+    // per IP, for the same spoofing reason as the login limiter.
+    Route::get('/two-factor-challenge',  [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->middleware('throttle:two-factor')->name('two-factor.verify');
+
     Route::get('/forgot-password',          [PasswordResetController::class, 'requestForm'])->name('password.request');
     Route::post('/forgot-password',         [PasswordResetController::class, 'sendLink'])->middleware('throttle:password-reset')->name('password.email');
     Route::get('/reset-password/{token}',   [PasswordResetController::class, 'resetForm'])->name('password.reset');
@@ -79,6 +86,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('/profile', ProfilePage::class)->name('profile');
+    Route::post('/profile/two-factor',                [TwoFactorController::class, 'enable'])->middleware('throttle:two-factor-manage')->name('two-factor.enable');
+    Route::post('/profile/two-factor/confirm',        [TwoFactorController::class, 'confirm'])->middleware('throttle:two-factor-manage')->name('two-factor.confirm');
+    Route::post('/profile/two-factor/cancel',         [TwoFactorController::class, 'cancel'])->name('two-factor.cancel');
+    Route::post('/profile/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->middleware('throttle:two-factor-manage')->name('two-factor.recovery-codes');
+    Route::post('/profile/two-factor/disable',        [TwoFactorController::class, 'disable'])->middleware('throttle:two-factor-manage')->name('two-factor.disable');
 
     Route::get('/inbox',                       InboxPage::class)->name('inbox');
     Route::get('/inbox/export',                LeadExportController::class)->name('inbox.export');

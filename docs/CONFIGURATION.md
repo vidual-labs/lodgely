@@ -48,3 +48,4 @@ headless / scripted installs.
 | `MAIL_FROM_ADDRESS` / `MAIL_FROM_NAME` | Default From identity on outgoing mail. | `no-reply@lodgely.local` / `${APP_NAME}` |
 | `DB_*` | Postgres credentials | see `.env.example` |
 | `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION` | All default to `database` | — |
+| `SESSION_SECURE_COOKIE` | `Secure` flag on the session cookie. Unset → on when `APP_URL` starts with `https://`, off otherwise. | follows `APP_URL` |

@@ -144,8 +144,31 @@ below.
   manage their own account without seeing any operator screens.
 - 🔑 **Password recovery** — public `/forgot-password` flow that issues a
   rate-limited reset email through Laravel's password broker. Inactive
-  accounts never receive a link, and the form response is uniform so the
-  endpoint cannot be used to enumerate accounts.
+  accounts never receive a link. The form response is uniform, and the lookup
+  and send run after the response, so neither the message nor the response
+  time reveals whether an account exists. The reset form gives one message for
+  "unknown email" and "bad token". Reset links are always built from
+  `APP_URL`, so a forged `Host` / `X-Forwarded-Host` header cannot redirect
+  them. Changing your email on the profile page asks for your current password.
+- 🛡️ **Optional two-factor authentication (operators)** — Profile →
+  Two-factor authentication. Setup:
+  1. Enter your current password.
+  2. Scan the QR code (drawn on the server as inline SVG, no external
+     service) with any TOTP app.
+  3. Confirm with a 6-digit code.
+  4. Save the 8 single-use recovery codes, which are shown once.
+
+  From then on, sign-in asks for a code after the password. Nobody is
+  signed in until the code checks out, and the half-finished login expires
+  after 10 minutes. The challenge is limited to 5 attempts/min and 30/hour per
+  account, and a code is never accepted twice. Generating new recovery codes
+  asks for the password; turning 2FA off asks for the password *and* a code.
+  Turning it on also invalidates existing remember-me cookies. The secret and
+  recovery codes are encrypted at rest. 2FA stays enforced if an enrolled
+  operator is later changed to a client. Lost phone *and* recovery codes:
+  `php artisan lodgely:user:2fa-reset <email>` on the server, which is
+  deliberately not a web button, so a hijacked operator session can't strip
+  someone else's second factor.
 - 🧾 **Audit log** of lead lifecycle changes (created, status changed,
   priority changed, note added, duplicate reconciled).
 - 🗑️ **Retention awareness** — every lead carries a `retention_until`

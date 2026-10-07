@@ -18,10 +18,21 @@
         Referrer-Policy "strict-origin-when-cross-origin"
         X-Frame-Options "SAMEORIGIN"
         -Server
+        -X-Powered-By
     }
 
+    # Access log, with the secrets that travel in URL paths redacted: webhook
+    # endpoint tokens (long-lived — anyone holding one can post leads) and
+    # password-reset tokens plus the email in their query string. The Referer
+    # header too: assets loaded from the reset page carry its full URL there.
     log {
         output stdout
-        format console
+        format filter {
+            wrap console
+            fields {
+                request>uri regexp "^/(api/webhooks|reset-password)/.*$" "/$1/REDACTED"
+                request>headers>Referer regexp "/(api/webhooks|reset-password)/.*$" "/$1/REDACTED"
+            }
+        }
     }
 }

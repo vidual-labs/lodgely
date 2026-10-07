@@ -14,6 +14,10 @@ RUN apk add --no-cache \
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Production-safe ini overrides (expose_php, display_errors). Baked into the
+# image rather than mounted so the queue/scheduler containers get them too.
+COPY docker/php/conf.d/zz-lodgely-security.ini /usr/local/etc/php/conf.d/zz-lodgely-security.ini
+
 WORKDIR /app
 
 # Default command — PHP-FPM. The "queue" service overrides with `php artisan queue:work`.

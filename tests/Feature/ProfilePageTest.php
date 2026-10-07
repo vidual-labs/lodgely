@@ -44,14 +44,46 @@ class ProfilePageTest extends TestCase
             ->set('profile.email', 'samantha@example.com')
             ->set('profile.locale', 'de')
             ->set('profile.theme', 'dark')
+            ->set('profile.current_password', 'initial-password')
             ->call('saveProfile')
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertSet('profile.current_password', '');
 
         $fresh = $user->fresh();
         $this->assertSame('Samantha', $fresh->name);
         $this->assertSame('samantha@example.com', $fresh->email);
         $this->assertSame('de', $fresh->locale);
         $this->assertSame('dark', $fresh->ui_theme);
+    }
+
+    public function test_changing_email_requires_current_password(): void
+    {
+        $user = $this->makeUser();
+
+        // A stolen session must not be able to swap in the attacker's address
+        // and then take the account over through "forgot password".
+        Livewire::actingAs($user)
+            ->test(ProfilePage::class)
+            ->set('profile.email', 'attacker@example.com')
+            ->set('profile.current_password', 'wrong-password')
+            ->call('saveProfile')
+            ->assertHasErrors('profile.current_password');
+
+        $this->assertSame('sam@example.com', $user->fresh()->email);
+    }
+
+    public function test_other_profile_fields_do_not_need_the_password(): void
+    {
+        $user = $this->makeUser();
+
+        Livewire::actingAs($user)
+            ->test(ProfilePage::class)
+            ->set('profile.name', 'Samantha')
+            ->set('profile.email', 'SAM@example.com')
+            ->call('saveProfile')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Samantha', $user->fresh()->name);
     }
 
     public function test_email_must_remain_unique(): void

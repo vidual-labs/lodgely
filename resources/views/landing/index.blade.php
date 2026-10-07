@@ -1,7 +1,9 @@
 @php
     $github = config('lodgely.brand.github_url');
     $vidual = config('lodgely.brand.vidual_url');
-    $version = config('lodgely.version');
+    // No version number here: this page is public, and the exact version
+    // tells a scanner which advisories to try. Signed-in users see it in the
+    // app footer.
 
     $sources = [
         ['Meta Lead Ads', '#60a5fa'],
@@ -114,7 +116,7 @@
             <div class="glow glow-c"></div>
         </div>
         <div class="hero-inner">
-            <span class="eyebrow"><span class="dot"></span>Open source · Self-hosted · v{{ $version }}</span>
+            <span class="eyebrow"><span class="dot"></span>Open source · Self-hosted</span>
             <h1 aria-label="Every lead. One inbox. Your server.">
                 @php $w = 0; @endphp
                 @foreach ([['Every', 'lead.'], ['One', 'inbox.'], ['Your', 'server.']] as $n => $line)
@@ -406,7 +408,7 @@
         </div>
         <div class="sec legal">
             <span>© {{ date('Y') }} <a href="{{ $vidual }}" target="_blank" rel="noopener">vidual</a> · GPL-3.0</span>
-            <span>lodgely v{{ $version }}</span>
+            <span>lodgely</span>
         </div>
     </footer>
 </div>
