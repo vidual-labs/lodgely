@@ -18,7 +18,11 @@ return [
     ),
     'path' => env('SESSION_PATH', '/'),
     'domain' => env('SESSION_DOMAIN'),
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Unset → Secure whenever APP_URL is https://, which is right both for a
+    // TLS-terminating container and behind Cloudflare/nginx (the browser
+    // talks HTTPS even if the internal hop is HTTP). Set it explicitly only
+    // to override that.
+    'secure' => env('SESSION_SECURE_COOKIE', str_starts_with((string) env('APP_URL', ''), 'https://')),
     'http_only' => env('SESSION_HTTP_ONLY', true),
     'same_site' => env('SESSION_SAME_SITE', 'lax'),
     'partitioned' => env('SESSION_PARTITIONED_COOKIE', false),

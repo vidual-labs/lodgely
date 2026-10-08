@@ -8,6 +8,23 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Optional two-factor authentication (TOTP) for operators.** From their
+  profile page, operators can turn on a second sign-in step: scan a QR code
+  with any authenticator app (1Password, Google Authenticator, Authy, …),
+  confirm with a 6-digit code, and save 8 single-use recovery codes. Turning
+  2FA on, generating new recovery codes, and turning it off all ask for the
+  current password; turning it off also needs a valid code. The secret and
+  recovery codes are stored encrypted. The QR code is drawn on the server, so
+  the secret never leaves the install. Codes can't be replayed, and the
+  challenge is rate-limited per account (5/min, 30/hour). An operator who loses both phone and recovery
+  codes is reset from the server with `lodgely:user:2fa-reset <email>`; there
+  is deliberately no web button for it. New packages: `pragmarx/google2fa` and
+  `bacon/bacon-qr-code`. Needs `php artisan migrate`.
+- **Failed and successful sign-ins are logged** (`lodgely.auth.login_failed`
+  with a masked email and IP, `lodgely.auth.login`,
+  `lodgely.auth.two_factor_failed`), so an attack on the login shows up in
+  `docker compose logs app`.
+
 - **Public landing page at `/`.** A dark, self-contained product page for
   technical marketers: animated sources-to-inbox hero, four highlighted
   feature sections with their own animated graphics (automation — automatic
@@ -21,6 +38,23 @@ semantic-ish versioning once a 1.0 is tagged.
   the old `/` → inbox/login redirect.
 
 ### Changed
+
+- **Changing your email on the profile page now asks for your current
+  password.** Otherwise someone with a hijacked session could set their own
+  address and then take the account over through "forgot password".
+- **Session cookies are `Secure` by default when `APP_URL` is `https://`.**
+  `SESSION_SECURE_COOKIE` still overrides it; `.env.example` no longer sets it
+  to `false`. The boot-time security warnings now also fire for an https
+  `APP_URL` while `APP_ENV` is still `local`. There is also a new warning when
+  `APP_URL` points at localhost.
+- **Docker image: production-safe PHP defaults.** `expose_php` and
+  `display_errors` are off (`docker/php/conf.d/zz-lodgely-security.ini`). Run
+  `docker compose build` to pick this up.
+- **Caddy no longer logs secrets.** Webhook tokens and password-reset tokens
+  (plus the email in the reset link) are redacted from access-log URIs and
+  `Referer` headers, and `X-Powered-By` is stripped.
+- **The public landing page no longer shows the exact version.** Signed-in
+  users still see it in the app footer.
 
 - **New logo across the app and on GitHub.** The dotted-staircase icon and a
   plain "lodgely" wordmark (as on the landing page) replace the old gradient
@@ -67,6 +101,24 @@ semantic-ish versioning once a 1.0 is tagged.
   the display label varies.
 
 ### Fixed
+
+- **Security: password-reset links could point at an attacker's domain.**
+  The reset email built its link from the request's host. With the default
+  `TRUSTED_PROXIES='*'`, a forged `X-Forwarded-Host` controls that host. Links
+  are now always built from `APP_URL`, so make sure `APP_URL` is your public
+  address.
+- **Security: the reset form told you whether an email was registered.**
+  "No such user" and "invalid token" now return the same message. The
+  forgot-password lookup and mail send also run after the response, so
+  response time no longer shows whether an account exists.
+- **Security: clients could see a lead from another client in the duplicate
+  banner.** Duplicate detection matches across all clients, and the side
+  panel showed the name and id of the matched lead even when it belonged to
+  someone else. The matched lead is now only shown when the viewer is allowed
+  to see it.
+- **Security: guessing webhook tokens was effectively unthrottled.** Each
+  guessed token got its own 60/min allowance. Unknown tokens now share one
+  per-IP bucket of 10/min. Real endpoints keep their own allowance.
 
 - **Login page no longer shows the `php artisan lodgely:user:create` hint.**
   The "New deployment? Create the first operator via …" line confused

@@ -7,6 +7,7 @@ use App\Domain\Ai\Providers\OllamaProvider;
 use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\Contracts\CreativeMetricsSource;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Middleware\EnsureAiEnabled;
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
@@ -25,6 +26,8 @@ use App\Importers\MetaMock\MetaMockAdMetricsSource;
 use App\Importers\MetaMock\MetaMockCreativeSource;
 use App\Importers\Openflow\OpenflowLeadSource;
 use App\Models\MailSetting;
+use App\Models\WebhookEndpoint;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -135,7 +138,30 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->bootRateLimiters();
+        $this->pinPasswordResetLinksToAppUrl();
         $this->warnAboutInsecureProductionConfig();
+    }
+
+    /**
+     * Build password-reset links from APP_URL, never from the request.
+     *
+     * The reset mail is sent while handling POST /forgot-password, and by
+     * default Laravel builds the link from that request's host. With
+     * TRUSTED_PROXIES='*' an attacker can set X-Forwarded-Host, so the victim
+     * would receive a genuine email whose link carries their reset token to the
+     * attacker's domain. Pinning the root to APP_URL closes that, and APP_URL
+     * is already what every queued mail and OAuth callback uses.
+     */
+    private function pinPasswordResetLinksToAppUrl(): void
+    {
+        ResetPassword::createUrlUsing(static function ($user, string $token): string {
+            $path = route('password.reset', [
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ], false);
+
+            return rtrim((string) config('app.url'), '/').$path;
+        });
     }
 
     /**
@@ -168,16 +194,38 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('pwreset-ip:'.$request->ip()),
         ]);
 
+        // Second login step. Keyed on the user parked in the session by
+        // LoginController, so neither a new IP nor a fresh session buys more
+        // guesses at one account's codes; the hourly cap bounds a slow,
+        // patient guesser who already knows the password.
+        RateLimiter::for('two-factor', static function (Request $request) {
+            $pending = $request->session()->get(LoginController::PENDING_TWO_FACTOR);
+            $key = is_array($pending) && isset($pending['id']) ? 'user:'.$pending['id'] : 'ip:'.$request->ip();
+
+            return [
+                Limit::perMinute(5)->by('2fa:'.$key),
+                Limit::perHour(30)->by('2fa-hour:'.$key),
+            ];
+        });
+
+        // Password / code checks on the profile 2FA forms.
+        RateLimiter::for('two-factor-manage', static fn (Request $request) => [
+            Limit::perMinute(6)->by('2fa-manage:'.($request->user()?->id ?? $request->ip())),
+        ]);
+
         // Keyed on the endpoint token from the route, so one noisy integration
         // cannot exhaust another's budget and a caller cannot widen its own by
-        // changing its apparent IP. Unknown tokens fall back to the IP so
-        // scanning for valid tokens is still bounded.
+        // changing its apparent IP. Tokens that don't exist share one
+        // IP-keyed bucket — otherwise every guessed token would get a fresh
+        // allowance and scanning for valid tokens would be unbounded.
         RateLimiter::for('webhook', static function (Request $request) {
             $token = (string) $request->route('token');
 
-            return Limit::perMinute(60)->by(
-                $token !== '' ? 'webhook:'.sha1($token) : 'webhook-ip:'.$request->ip()
-            );
+            if ($token !== '' && WebhookEndpoint::where('token', $token)->exists()) {
+                return Limit::perMinute(60)->by('webhook:'.sha1($token));
+            }
+
+            return Limit::perMinute(10)->by('webhook-ip:'.$request->ip());
         });
     }
 
@@ -204,13 +252,25 @@ class AppServiceProvider extends ServiceProvider
      */
     private function warnAboutInsecureProductionConfig(): void
     {
-        if (! $this->app->environment('production') || $this->app->runningInConsole()) {
+        // An https:// APP_URL means a real deployment even when APP_ENV was
+        // left at the docker-compose default of "local".
+        $publiclyDeployed = $this->app->environment('production')
+            || str_starts_with((string) config('app.url'), 'https://');
+
+        if (! $publiclyDeployed || $this->app->runningInConsole()) {
             return;
         }
 
         if (config('app.debug')) {
             Log::warning('lodgely.security.debug_enabled_in_production', [
                 'hint' => 'Set APP_DEBUG=false. Debug mode renders configuration and request details on error pages.',
+            ]);
+        }
+
+        $appHost = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
+        if (in_array($appHost, ['', 'localhost', '127.0.0.1'], true)) {
+            Log::warning('lodgely.security.app_url_not_public', [
+                'hint' => 'Set APP_URL to your public https:// address. Password-reset links are built from it.',
             ]);
         }
 

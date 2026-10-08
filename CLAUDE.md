@@ -84,6 +84,15 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   inbox. Its CSS/JS are inline on purpose (no Vite/Tailwind dependency, no
   third-party assets — see the Tailwind-bundle gotcha below), and it links to
   vidual via `config('lodgely.brand.vidual_url')`.
+- **Auth hardening** — optional TOTP 2FA for operators
+  (`app/Support/TwoFactor/`, `TwoFactorController` for the profile card,
+  `TwoFactorChallengeController` for the login step). `LoginController` only
+  *validates* the password for a 2FA user, parks the id in the session, and
+  logs in after the code. The profile card is plain POST forms (see the
+  gotchas). The login, password-reset, 2FA and webhook throttles are named
+  limiters in `AppServiceProvider::bootRateLimiters()`, and are keyed on
+  something the caller cannot rotate. Reset-mail links are pinned to
+  `APP_URL`; never build an emailed link from the request host.
 - **Ops** — DB backups (`/settings/backups`; the dump inside the archive is
   cleartext unless `LODGELY_BACKUP_PASSPHRASE` is set — the *columns* are
   encrypted, the dump is not, so treat an archive as a full PII copy),
@@ -334,6 +343,7 @@ docker compose exec app php artisan lodgely:user:create --role=client  # add a s
 docker compose exec app php artisan lodgely:import:email-mock --count=5
 docker compose exec app php artisan lodgely:import:meta-mock --count=6 # Meta Lead Ads demo data
 docker compose exec app php artisan lodgely:leads:purge --dry-run      # GDPR cleanup, preview only
+docker compose exec app php artisan lodgely:user:2fa-reset user@example.com # lost authenticator + recovery codes
 
 # Recurring source / reporting pulls (also wired into the scheduler in routes/console.php)
 docker compose exec app php artisan lodgely:google-sheets:fetch        # pull due Google Sheet sources

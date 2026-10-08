@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
+
+use function Illuminate\Support\defer;
 
 class PasswordResetController extends Controller
 {
@@ -36,20 +39,34 @@ class PasswordResetController extends Controller
         // enough to correlate a support report with a log line.
         $maskedEmail = (new Pseudonymizer())->maskEmail($email);
 
-        $user = User::where('email', $email)->first();
-        if ($user && ! $user->is_active) {
-            // Don't issue tokens for disabled accounts. Behave like "we sent it"
-            // so the form doesn't double as an account-status oracle.
-            Log::info('lodgely.password.reset_request.skipped_inactive', ['email' => $maskedEmail]);
-            return back()->with('status', __('If that email matches an active account, a reset link is on its way.'));
-        }
+        // Deferred until after the response is sent: whether a user exists
+        // decides whether we talk to the mail server, and an SMTP round-trip
+        // is far slower than the broker's 200 ms timebox — answering only
+        // once it finished would turn response time into an
+        // "is this email registered?" oracle.
+        defer(static function () use ($email, $maskedEmail): void {
+            $user = User::where('email', $email)->first();
+            if ($user && ! $user->is_active) {
+                // Don't issue tokens for disabled accounts.
+                Log::info('lodgely.password.reset_request.skipped_inactive', ['email' => $maskedEmail]);
 
-        $status = Password::sendResetLink(['email' => $email]);
+                return;
+            }
 
-        Log::info('lodgely.password.reset_request', [
-            'email'  => $maskedEmail,
-            'status' => $status,
-        ]);
+            try {
+                $status = Password::sendResetLink(['email' => $email]);
+            } catch (Throwable $e) {
+                // Runs after the response, so nobody would see this otherwise.
+                report($e);
+
+                return;
+            }
+
+            Log::info('lodgely.password.reset_request', [
+                'email'  => $maskedEmail,
+                'status' => $status,
+            ]);
+        });
 
         return back()->with('status', __('If that email matches an active account, a reset link is on its way.'));
     }
@@ -90,9 +107,16 @@ class PasswordResetController extends Controller
             }
         );
 
+        if ($status === Password::RESET_THROTTLED) {
+            throw ValidationException::withMessages(['email' => [__($status)]]);
+        }
+
         if ($status !== Password::PASSWORD_RESET) {
+            // One message for "no such user" and "bad token" alike. The
+            // broker's own strings tell them apart, which made this form an
+            // account-enumeration oracle (POST any token + a guessed email).
             throw ValidationException::withMessages([
-                'email' => [__($status)],
+                'email' => [__('This password reset link is invalid or has expired.')],
             ]);
         }
 

@@ -122,4 +122,34 @@ class AuthRateLimitTest extends TestCase
             'email' => 'victim@example.com',
         ], ['X-Forwarded-For' => '203.0.113.99'])->assertStatus(429);
     }
+
+    public function test_webhook_token_scanning_shares_one_bucket(): void
+    {
+        // Every guessed token used to get its own fresh 60/min allowance, so
+        // scanning for valid tokens was effectively unthrottled.
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/webhooks/guess-'.$i, [])->assertNotFound();
+        }
+
+        $this->postJson('/api/webhooks/guess-final', [])->assertStatus(429);
+    }
+
+    public function test_known_webhook_token_keeps_its_own_allowance(): void
+    {
+        $this->makeUser();
+        \App\Models\WebhookEndpoint::create([
+            'tenant_id' => \App\Models\Tenant::DEFAULT_ID,
+            'token'     => 'real-token-real-token-real-token-real-token-1234',
+            'label'     => 'Site',
+            'is_active' => true,
+        ]);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/webhooks/guess-'.$i, [])->assertNotFound();
+        }
+
+        // The scanner exhausted the unknown-token bucket, not the real one.
+        $response = $this->postJson('/api/webhooks/real-token-real-token-real-token-real-token-1234', ['email' => 'lead@example.com']);
+        $this->assertNotSame(429, $response->status());
+    }
 }
