@@ -690,6 +690,10 @@
         .row { grid-template-columns: 28px 1fr auto; }
         .term pre { min-height: 0; font-size: 12px; }
         pre { padding: 18px 16px; font-size: 12px; }
+        .window-bar { padding: 0 8px; }
+        .window-bar .lights { display: none; }
+        .tab { padding: 0 8px; }
+        .tab[aria-selected="true"]::after { left: 6px; right: 6px; }
         .shell { border-left: 0; border-right: 0; }
         .sec::before, .sec::after { display: none; }
     }

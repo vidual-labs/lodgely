@@ -39,6 +39,13 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **Landing page: the code example now shows the real OpenFlow adapter.** The
+  "extend it" code window used a made-up `TypeformSource.php`, which made it
+  look as if Typeform was a built-in source. It now shows a simplified
+  `OpenflowLeadSource.php`, the form source lodgely actually ships, and the
+  matching `'openflow' => OpenflowLeadSource::class` line from
+  `AppServiceProvider::IMPORTERS`. On phones the code window's tab bar is
+  tighter, so all three tabs fit at 375px.
 - **Changing your email on the profile page now asks for your current
   password.** Otherwise someone with a hijacked session could set their own
   address and then take the account over through "forgot password".

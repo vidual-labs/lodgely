@@ -246,7 +246,7 @@
                 <div class="window-bar" role="tablist" aria-label="Code examples">
                     <span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
                     <button type="button" class="tab" role="tab" aria-selected="true" aria-controls="tab-webhook" id="t-webhook">webhook.sh</button>
-                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tab-adapter" id="t-adapter" tabindex="-1">TypeformSource.php</button>
+                    <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tab-adapter" id="t-adapter" tabindex="-1">OpenflowLeadSource.php</button>
                     <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tab-env" id="t-env" tabindex="-1">.env</button>
                 </div>
 <div class="panel active" id="tab-webhook" role="tabpanel" aria-labelledby="t-webhook"><pre><code><span class="tk-c"># Create an endpoint under /webhooks, then POST from anywhere:</span>
@@ -261,26 +261,29 @@
   }'</span>
 
 <span class="tk-c"># → normalized, deduplicated, retention date set, audit-logged.</span></code></pre></div>
-<div class="panel" id="tab-adapter" role="tabpanel" aria-labelledby="t-adapter"><pre><code><span class="tk-k">final class</span> <span class="tk-f">TypeformSource</span> <span class="tk-k">implements</span> <span class="tk-f">LeadSource</span>
+<div class="panel" id="tab-adapter" role="tabpanel" aria-labelledby="t-adapter"><pre><code><span class="tk-k">class</span> <span class="tk-f">OpenflowLeadSource</span> <span class="tk-k">implements</span> <span class="tk-f">LeadSource</span>
 {
-    <span class="tk-k">public function</span> <span class="tk-f">key</span>(): <span class="tk-k">string</span>   { <span class="tk-k">return</span> <span class="tk-s">'typeform'</span>; }
-    <span class="tk-k">public function</span> <span class="tk-f">label</span>(): <span class="tk-k">string</span> { <span class="tk-k">return</span> <span class="tk-s">'Typeform'</span>; }
+    <span class="tk-k">public function</span> <span class="tk-f">key</span>(): <span class="tk-k">string</span>   { <span class="tk-k">return</span> <span class="tk-s">'openflow'</span>; }
+    <span class="tk-k">public function</span> <span class="tk-f">label</span>(): <span class="tk-k">string</span> { <span class="tk-k">return</span> <span class="tk-s">'OpenFlow'</span>; }
 
     <span class="tk-k">public function</span> <span class="tk-f">pull</span>(<span class="tk-f">Import</span> <span class="tk-v">$import</span>): <span class="tk-k">iterable</span>
     {
-        <span class="tk-k">foreach</span> (<span class="tk-v">$this</span>-&gt;<span class="tk-f">responses</span>() <span class="tk-k">as</span> <span class="tk-v">$row</span>) {
+        <span class="tk-k">foreach</span> (<span class="tk-v">$this</span>-&gt;<span class="tk-f">submissions</span>(<span class="tk-v">$import</span>) <span class="tk-k">as</span> <span class="tk-v">$row</span>) {
+            <span class="tk-c">// operator-defined field mapping</span>
+            <span class="tk-v">$fields</span> = <span class="tk-v">$this</span>-&gt;<span class="tk-f">mapFields</span>(<span class="tk-v">$row</span>);
+
             <span class="tk-k">yield new</span> <span class="tk-f">IncomingLead</span>(
-                source:     <span class="tk-s">'typeform'</span>,
-                fullName:   <span class="tk-v">$row</span>[<span class="tk-s">'name'</span>],
-                email:      <span class="tk-v">$row</span>[<span class="tk-s">'email'</span>],
-                externalId: <span class="tk-v">$row</span>[<span class="tk-s">'response_id'</span>], <span class="tk-c">// idempotent</span>
+                source:     <span class="tk-v">$this</span>-&gt;<span class="tk-f">key</span>(),
+                fullName:   <span class="tk-v">$fields</span>[<span class="tk-s">'full_name'</span>] ?? <span class="tk-k">null</span>,
+                email:      <span class="tk-v">$fields</span>[<span class="tk-s">'email'</span>] ?? <span class="tk-k">null</span>,
+                externalId: <span class="tk-v">$this</span>-&gt;<span class="tk-f">scopedId</span>(<span class="tk-v">$row</span>), <span class="tk-c">// idempotent</span>
             );
         }
     }
 }
 
 <span class="tk-c">// AppServiceProvider::IMPORTERS — one line, done.</span>
-<span class="tk-s">'typeform'</span> =&gt; <span class="tk-f">TypeformSource</span>::<span class="tk-k">class</span>,</code></pre></div>
+<span class="tk-s">'openflow'</span> =&gt; <span class="tk-f">OpenflowLeadSource</span>::<span class="tk-k">class</span>,</code></pre></div>
 <div class="panel" id="tab-env" role="tabpanel" aria-labelledby="t-env"><pre><code><span class="tk-v">APP_URL</span>=<span class="tk-s">https://leads.example.com</span>
 
 <span class="tk-c"># Compliance defaults</span>
