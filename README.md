@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.57.1-6366F1" alt="Version 0.57.1">
+  <img src="https://img.shields.io/badge/version-0.58.0-6366F1" alt="Version 0.58.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -133,7 +133,8 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 🔌 Multiple Meta/Google Ads connectors — beyond the single default connector, `/settings/ad-platforms` lets an operator add a dedicated Meta and/or Google Ads connector per client (its own ad account, token/OAuth). That client's ad spend and creative rows are then reported to them alone on `/my-reports` and scheduled report emails, instead of the shared default connector's data. A connector can also be scoped to one brand within an ad account that serves several businesses — by Google Business Name asset id or Meta Page id, never the customer-facing name. Each client connector must carry its own ad account id / customer id — unlike the shared default connector, it does not inherit those from `.env`, so a half-configured connector cannot quietly re-import the default account's spend under a client's name.
 - 🎨 Creative performance overview on `/reporting` — top ads and age/gender segments from Meta, top keywords and ads from Google Ads, ranked by spend with clicks, leads and CPL per row. Fetched alongside the campaign metrics (same daily pull and "Fetch data now" button), aggregate numbers only.
 - 📊 Custom client reporting views, assignable per client, with a Live/Hidden toggle and a `/my-reports` client tab.
-- 🤖 AI summaries & lead qualification *(optional, off by default)* — OpenAI-compatible or Ollama, operator-reviewed drafts.
+- 🤖 AI summaries & lead qualification *(optional, inert until an operator enables it)* — OpenAI-compatible or Ollama, operator-reviewed drafts.
+- ✨ **Automatic AI lead ranking** *(optional)* — an hourly sweep ranks new leads against a built-in master prompt plus your "ideal customer" profile (operator-wide and per client) and writes priority, a one-line reason and tags onto the lead, marked with a sparkle. Anyone who changes the priority overrides it.
 - 📨 Scheduled/one-off client report emails, mobile-responsive HTML.
 - ✉️ In-app SMTP configuration that overrides `.env` mail settings at runtime.
 
@@ -388,7 +389,8 @@ The handful of variables you're most likely to touch on a first install:
 | `APP_URL` | Public URL of the install | `http://localhost:8080` |
 | `LODGELY_DEFAULT_RETENTION_DAYS` | Default lead retention for new leads; empty = keep until deleted by hand | empty (`.env.example` sets `365`) |
 | `LODGELY_EMAIL_IMPORT_DRIVER` | `mock` or `imap` | `mock` |
-| `LODGELY_AI_ENABLED` | Master kill-switch for the AI module | `false` |
+| `LODGELY_AI_ENABLED` | Hard kill-switch for the AI module (opt-out). The normal on/off is the operator toggle on `/settings/ai` | `true` |
+| `LODGELY_AI_MAX_CALLS_PER_DAY` | Daily cap on completed AI calls per tenant, shared by summaries, qualification and automatic ranking (`0` = no cap) | `100` |
 | `TRUSTED_PROXIES` | Proxy address/CIDR to trust for `X-Forwarded-*` | `*` (all) |
 | `LODGELY_BACKUP_PASSPHRASE` | Encrypts the dump inside new backup archives | empty (off) |
 | `LODGELY_BACKUP_KEEP` | Backup archives to retain on disk | empty (keep all) |

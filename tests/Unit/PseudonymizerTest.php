@@ -124,4 +124,26 @@ class PseudonymizerTest extends TestCase
         $this->assertTrue($out['raw_payload']['data']['_consent']);
         $this->assertSame('2026-09-29T10:00:00.000Z', $out['raw_payload']['metadata']['submittedAt']);
     }
+
+    public function test_custom_answers_are_included_with_identifying_answers_dropped(): void
+    {
+        $p = new Pseudonymizer();
+
+        $lead = new Lead();
+        $lead->full_name = 'Jane Doe';
+        $lead->email = 'jane.doe@example.com';
+        $lead->phone = '+49 30 1234567';
+        $lead->custom_answers = [
+            ['question' => 'Guests', 'answer' => '25'],
+            ['question' => 'Your email', 'answer' => 'jane.doe@example.com'],
+            ['question' => 'Budget per person', 'answer' => '45 EUR'],
+        ];
+
+        $out = $p->maskedLead($lead);
+        $json = json_encode($out['custom_answers']);
+
+        $this->assertStringContainsString('25', $json);
+        $this->assertStringContainsString('45 EUR', $json);
+        $this->assertStringNotContainsString('jane.doe@', $json);
+    }
 }

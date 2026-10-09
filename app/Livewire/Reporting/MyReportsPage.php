@@ -7,6 +7,7 @@ use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Exceptions\AiDisabledException;
 use App\Domain\Ai\Services\AiSummarizer;
 use App\Domain\Reporting\Services\ClientViewDataBuilder;
+use App\Models\AiSetting;
 use App\Models\AiSummary;
 use App\Models\ClientReportingView;
 use App\Models\Tenant;
@@ -96,7 +97,7 @@ class MyReportsPage extends Component
         }
 
         $aiSummary = null;
-        if ($selectedView && config('lodgely.ai.enabled')) {
+        if ($selectedView && AiSetting::resolveSafe(Tenant::DEFAULT_ID)->isActive()) {
             $visibleStatuses = $user->isOperator()
                 ? [AiSummaryStatus::Approved->value, AiSummaryStatus::Shared->value]
                 : [AiSummaryStatus::Shared->value];

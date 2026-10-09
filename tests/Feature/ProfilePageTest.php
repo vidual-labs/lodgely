@@ -153,4 +153,55 @@ class ProfilePageTest extends TestCase
 
         $this->assertSame('Renamed Client', $client->fresh()->name);
     }
+
+    private function enableRanking(): void
+    {
+        config()->set('lodgely.ai.enabled', true);
+        $row = \App\Models\AiSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->enabled = true;
+        $row->provider = 'openai_compatible';
+        $row->kinds_enabled = ['lead_ranking' => true];
+        $row->lead_data_consent = true;
+        $row->save();
+    }
+
+    public function test_client_saves_ranking_profile_for_own_scope_only(): void
+    {
+        $client = $this->makeUser('client');
+        \App\Models\UserLeadScope::create(['user_id' => $client->id, 'tenant_id' => Tenant::DEFAULT_ID, 'client_name' => 'Acme']);
+        $this->enableRanking();
+
+        $component = Livewire::actingAs($client)->test(ProfilePage::class);
+        $this->assertSame([['client_name' => 'Acme', 'profile' => '']], $component->get('rankingProfiles'));
+        $this->assertStringContainsString('AI ranking profile', $component->html());
+
+        $component->set('rankingProfiles.0.profile', 'Dinners for 20-30 guests, 40 EUR per person.')
+            ->call('saveRankingProfiles')
+            ->assertHasNoErrors();
+
+        $this->assertSame(
+            'Dinners for 20-30 guests, 40 EUR per person.',
+            \App\Models\ClientAiProfile::textFor(Tenant::DEFAULT_ID, 'acme'),
+        );
+        $this->assertSame($client->id, \App\Models\ClientAiProfile::findFor(Tenant::DEFAULT_ID, 'Acme')->updated_by);
+
+        // A tampered client_name outside the user's scopes is refused and nothing is written.
+        Livewire::actingAs($client)->test(ProfilePage::class)
+            ->set('rankingProfiles.0.client_name', 'Northwind')
+            ->set('rankingProfiles.0.profile', 'hijack')
+            ->call('saveRankingProfiles')
+            ->assertForbidden();
+        $this->assertNull(\App\Models\ClientAiProfile::textFor(Tenant::DEFAULT_ID, 'Northwind'));
+    }
+
+    public function test_operator_has_no_ranking_profile_card(): void
+    {
+        $op = $this->makeUser('operator');
+        $this->enableRanking();
+
+        $component = Livewire::actingAs($op)->test(ProfilePage::class);
+        $this->assertSame([], $component->get('rankingProfiles'));
+        $this->assertStringNotContainsString('AI ranking profile', $component->html());
+        $component->call('saveRankingProfiles')->assertForbidden();
+    }
 }

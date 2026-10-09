@@ -178,10 +178,12 @@ return [
     ],
 
     'ai' => [
-        // Master kill-switch. When false, all AI routes 404, buttons are hidden,
-        // and queued jobs no-op. Per-tenant `enabled` toggles only matter when
-        // this is true.
-        'enabled' => (bool) env('LODGELY_AI_ENABLED', false),
+        // Hard kill-switch (opt-out). When false, all AI routes 404, buttons are
+        // hidden, and queued jobs no-op. On by default so the settings page and
+        // the AI menu exist without touching .env — nothing is sent to a model
+        // until an operator enables AI and picks a provider on /settings/ai
+        // (the per-tenant `enabled` toggle is the normal on/off switch).
+        'enabled' => (bool) env('LODGELY_AI_ENABLED', true),
 
         // Maximum number of *completed* AI generations per tenant per day.
         // Set to 0 to disable the cap.

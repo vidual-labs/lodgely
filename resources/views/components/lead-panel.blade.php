@@ -219,6 +219,31 @@
                         {{ __('Status set :when', ['when' => \App\Support\Dates::relativeOrExact($lastStatusChange->created_at)]) }}
                     </p>
                 @endif
+
+                {{-- Where the priority came from. Visible to both roles: a
+                     client needs to know a priority is the AI's call before
+                     deciding to change it. Overriding = just pick another
+                     value above. --}}
+                @if($lead->isAiRanked())
+                    <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400"
+                         title="{{ $lead->ai_ranked_at ? __('Ranked :when', ['when' => \App\Support\Dates::relativeOrExact($lead->ai_ranked_at)]) : '' }}">
+                        <span class="inline-flex items-center gap-1">
+                            <x-ai.sparkle :lead="$lead" :plain="true" />
+                            <span>{{ __('Set by AI · :reason', ['reason' => $lead->ai_reason]) }}</span>
+                        </span>
+                        @if($lead->aiTags() !== [])
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @foreach($lead->aiTags() as $tag)
+                                    <span class="inline-flex items-center rounded-full bg-violet-50 dark:bg-violet-950/40 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-600/20">{{ $tag }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @elseif($lead->ai_priority)
+                    <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500" title="{{ $lead->ai_reason }}">
+                        {{ __('AI suggested :priority · overridden', ['priority' => $lead->ai_priority->label()]) }}
+                    </p>
+                @endif
             </section>
 
             {{-- message --}}
@@ -362,7 +387,7 @@
 
             {{-- AI evaluation (operator only) — collapsed until there is
                  something to read. --}}
-            @if(config('lodgely.ai.enabled') && auth()->user()?->isOperator())
+            @if(\App\Models\AiSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->isActive() && auth()->user()?->isOperator())
                 <details @if($aiSummary) open @endif>
                     <summary class="cursor-pointer select-none text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">{{ __('AI evaluation') }}</summary>
                     <div class="mt-2">
@@ -371,10 +396,18 @@
                         @else
                             <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('No approved AI evaluation yet. Run one and review it in AI drafts.') }}</p>
                         @endif
-                        <button type="button" wire:click="evaluateLeadWithAi({{ $lead->id }})"
-                                class="mt-2 text-xs text-brand-600 dark:text-brand-400 hover:underline">
-                            {{ __('Run AI evaluation') }}
-                        </button>
+                        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                            <button type="button" wire:click="evaluateLeadWithAi({{ $lead->id }})"
+                                    class="text-xs text-brand-600 dark:text-brand-400 hover:underline">
+                                {{ __('Run AI evaluation') }}
+                            </button>
+                            @if(\App\Models\AiSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->leadRankingAvailable())
+                                <button type="button" wire:click="rankLeadWithAi({{ $lead->id }})"
+                                        class="text-xs text-brand-600 dark:text-brand-400 hover:underline">
+                                    {{ __('Re-run AI ranking') }}
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 </details>
             @endif

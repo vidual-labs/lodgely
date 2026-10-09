@@ -60,7 +60,7 @@
                 <x-ai.summary-card :summary="$aiSummary" />
             @endif
 
-            @if(config('lodgely.ai.enabled') && auth()->user()?->isOperator())
+            @if(\App\Models\AiSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->isActive() && auth()->user()?->isOperator())
                 <div class="flex justify-end">
                     <button type="button" wire:click="generateAiSummary"
                             class="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">

@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Domain\Ai\DTOs\LlmRequest;
 use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Services\AiSummarizer;
+use App\Domain\Ai\Support\DailyCap;
 use App\Models\AiSetting;
 use App\Models\AiSummary;
 use App\Support\Audit\AiAuditLogger;
@@ -37,8 +38,10 @@ class GenerateAiSummary implements ShouldQueue
         return [10, 60];
     }
 
-    public function handle(AiSummarizer $summarizer, AiAuditLogger $audit): void
+    public function handle(AiSummarizer $summarizer, AiAuditLogger $audit, ?DailyCap $cap = null): void
     {
+        $cap ??= app(DailyCap::class);
+
         /** @var AiSummary|null $summary */
         $summary = AiSummary::find($this->aiSummaryId);
         if (! $summary) {
@@ -51,18 +54,9 @@ class GenerateAiSummary implements ShouldQueue
             return;
         }
 
-        $cap = (int) config('lodgely.ai.max_calls_per_day', 100);
-        if ($cap > 0) {
-            $todayCount = AiSummary::query()
-                ->where('tenant_id', $summary->tenant_id)
-                ->whereDate('created_at', now()->toDateString())
-                ->whereNotNull('response')
-                ->count();
-
-            if ($todayCount >= $cap) {
-                $this->markFailed($summary, $audit, "Daily AI call cap of {$cap} reached for this tenant.");
-                return;
-            }
+        if ($cap->reached((int) $summary->tenant_id)) {
+            $this->markFailed($summary, $audit, "Daily AI call cap of {$cap->cap()} reached for this tenant.");
+            return;
         }
 
         $settings = AiSetting::forTenant((int) $summary->tenant_id);
@@ -96,27 +90,10 @@ class GenerateAiSummary implements ShouldQueue
         }
     }
 
-    /**
-     * Reconstruct the LlmRequest from the stored prompt text. The prompt
-     * column holds "[SYSTEM]\n...\n\n[USER]\n..." — kept this way so the
-     * exact disclosure is auditable, and so retries don't depend on
-     * re-running the data assemblers (which could yield different numbers
-     * after-the-fact).
-     */
+    /** Reconstruct the LlmRequest from the stored prompt — see LlmRequest::fromStoredPrompt(). */
     private function extractRequest(AiSummary $summary, AiSetting $settings): LlmRequest
     {
-        $body = (string) $summary->prompt;
-
-        if (preg_match('/^\[SYSTEM\]\n(.*?)\n\n\[USER\]\n(.*)$/s', $body, $m)) {
-            return new LlmRequest(
-                system: $m[1],
-                user:   $m[2],
-                temperature: $settings->temperature,
-            );
-        }
-
-        // Defensive fallback: treat the whole blob as the user message.
-        return new LlmRequest(system: '', user: $body, temperature: $settings->temperature);
+        return LlmRequest::fromStoredPrompt((string) $summary->prompt, $settings->temperature);
     }
 
     private function markFailed(AiSummary $summary, AiAuditLogger $audit, string $error): void

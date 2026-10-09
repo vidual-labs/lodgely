@@ -12,6 +12,7 @@
                 'pending'  => __('Pending'),
                 'approved' => __('Approved'),
                 'shared'   => __('Shared'),
+                'applied'  => __('Applied'),
                 'rejected' => __('Rejected'),
                 'failed'   => __('Failed'),
                 'all'      => __('All'),
@@ -137,10 +138,15 @@
                                     </button>
                                 @endif
 
-                                <button wire:click="regenerate({{ $selected->id }})"
-                                        class="rounded-lg px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
-                                    {{ __('Regenerate') }}
-                                </button>
+                                @if($selected->kind === \App\Domain\Ai\Enums\AiSummaryKind::LeadRanking)
+                                    {{-- Regenerating would only re-run the text call, never re-apply it. --}}
+                                    <span class="text-xs text-slate-500 dark:text-slate-400 self-center">{{ __('Re-run rankings from the lead panel.') }}</span>
+                                @else
+                                    <button wire:click="regenerate({{ $selected->id }})"
+                                            class="rounded-lg px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                        {{ __('Regenerate') }}
+                                    </button>
+                                @endif
                             </div>
 
                             @if($selected->status?->value === 'pending' && $selected->response)

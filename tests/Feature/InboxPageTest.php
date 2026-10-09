@@ -572,4 +572,79 @@ class InboxPageTest extends TestCase
             ->set('newNoteBody', 'Should not be allowed.')
             ->call('addNote');
     }
+
+    public function test_setting_priority_overrides_an_ai_ranking(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create([
+            'client_name'     => 'Acme',
+            'priority'        => LeadPriority::High->value,
+            'priority_source' => \App\Domain\Leads\Enums\PrioritySource::Ai->value,
+            'ai_priority'     => LeadPriority::High->value,
+            'ai_reason'       => 'Asks for a quote.',
+            'ai_tags'         => ['quote request'],
+            'ai_ranked_at'    => now(),
+        ]);
+
+        $component = Livewire::actingAs($op)->test(InboxPage::class)->call('selectLead', $lead->id);
+        $this->assertStringContainsString('data-ai-ranked="1"', $component->html());
+        $this->assertStringContainsString('Set by AI', $component->html());
+
+        $component->call('setPriority', $lead->id, LeadPriority::Low->value);
+
+        $fresh = $lead->fresh();
+        $this->assertSame(LeadPriority::Low, $fresh->priority);
+        $this->assertSame(\App\Domain\Leads\Enums\PrioritySource::User, $fresh->priority_source);
+        $this->assertSame(LeadPriority::High, $fresh->ai_priority, 'the AI suggestion is kept for history');
+        $this->assertFalse($fresh->isAiRanked());
+
+        $event = LeadEvent::where('lead_id', $lead->id)->where('type', 'lead.priority_changed')->latest('id')->first();
+        $this->assertTrue($event->payload['overrode_ai']);
+
+        $html = Livewire::actingAs($op)->test(InboxPage::class)->call('selectLead', $lead->id)->html();
+        $this->assertStringNotContainsString('data-ai-ranked="1"', $html);
+        $this->assertStringContainsString('overridden', $html);
+    }
+
+    public function test_bulk_priority_overrides_ai_ranking_too(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create([
+            'client_name'     => 'Acme',
+            'priority'        => LeadPriority::High->value,
+            'priority_source' => \App\Domain\Leads\Enums\PrioritySource::Ai->value,
+            'ai_ranked_at'    => now(),
+        ]);
+
+        Livewire::actingAs($op)
+            ->test(InboxPage::class)
+            ->set('bulkSelected', [(string) $lead->id])
+            ->set('bulkPriorityValue', LeadPriority::Medium->value)
+            ->call('bulkSetPriority');
+
+        $this->assertSame(\App\Domain\Leads\Enums\PrioritySource::User, $lead->fresh()->priority_source);
+        $event = LeadEvent::where('lead_id', $lead->id)->where('type', 'lead.priority_changed')->latest('id')->first();
+        $this->assertTrue($event->payload['overrode_ai']);
+    }
+
+    public function test_operator_can_rerun_ai_ranking_but_client_cannot(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+        config()->set('lodgely.ai.enabled', true);
+        $op = $this->operator();
+        $row = \App\Models\AiSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->enabled = true;
+        $row->provider = 'openai_compatible';
+        $row->kinds_enabled = ['lead_ranking' => true];
+        $row->lead_data_consent = true;
+        $row->save();
+
+        $lead = Lead::factory()->create(['client_name' => 'Acme', 'priority_source' => \App\Domain\Leads\Enums\PrioritySource::User->value]);
+
+        Livewire::actingAs($op)->test(InboxPage::class)->call('rankLeadWithAi', $lead->id);
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\RankLeadWithAi::class, 1);
+
+        $client = $this->clientFor('Acme');
+        Livewire::actingAs($client)->test(InboxPage::class)->call('rankLeadWithAi', $lead->id)->assertForbidden();
+    }
 }

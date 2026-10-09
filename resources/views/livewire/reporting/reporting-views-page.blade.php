@@ -69,7 +69,7 @@
                                             class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                                         {{ $v->is_live ? __('Hide') : __('Set live') }}
                                     </button>
-                                    @if(config('lodgely.ai.enabled'))
+                                    @if(\App\Models\AiSetting::resolveSafe(\App\Models\Tenant::DEFAULT_ID)->isActive())
                                         <button type="button" wire:click="generateAiSummary({{ $v->id }})"
                                                 class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 transition-colors">
                                             {{ __('Generate AI summary') }}

@@ -115,6 +115,40 @@
         </form>
     </div>
 
+    {{-- AI ranking profile (client users). The operator-wide profile lives on
+         /settings/ai; this is the client's own "ideal customer" text, one per
+         client name they are scoped to. --}}
+    @if($rankingEnabled)
+        <form wire:submit.prevent="saveRankingProfiles"
+              class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-sm">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('AI ranking profile') }}</h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {{ __('Describe your ideal customer — the AI reads this when it ranks your new leads. Example: "We cater dinners for 20–30 guests with at least 40 EUR per person, in Leipzig or Halle."') }}
+                </p>
+            </div>
+
+            @foreach($rankingProfiles as $i => $row)
+                <div wire:key="ranking-profile-{{ $i }}">
+                    @if(count($rankingProfiles) > 1)
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ $row['client_name'] }}</label>
+                    @endif
+                    <textarea wire:model="rankingProfiles.{{ $i }}.profile" rows="3" maxlength="{{ \App\Models\ClientAiProfile::MAX_LENGTH }}"
+                              class="mt-1 block w-full rounded-lg border-slate-300 text-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
+                    @error('rankingProfiles.'.$i.'.profile') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+            @endforeach
+
+            <div class="flex justify-end pt-2">
+                <button type="submit"
+                        wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
+                        class="rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">
+                    {{ __('Save ranking profile') }}
+                </button>
+            </div>
+        </form>
+    @endif
+
     {{-- Two-factor authentication (operators; optional). Plain POST forms to
          TwoFactorController — not Livewire actions, see CLAUDE.md gotchas. --}}
     @if($user->canEnableTwoFactor() || $user->hasTwoFactorEnabled())

@@ -91,6 +91,8 @@ class AuthorizationMatrixTest extends TestCase
             'google sheets import' => ['/imports/google-sheets'],
             'meta leads import' => ['/imports/meta-leads'],
             'openflow import' => ['/imports/openflow'],
+            'ai settings' => ['/settings/ai'],
+            'ai drafts' => ['/ai/drafts'],
         ];
     }
 
@@ -125,6 +127,7 @@ class AuthorizationMatrixTest extends TestCase
             'delete all sheet imports' => ['post', '/imports/google-sheets/imports'],
             'delete all meta imports' => ['post', '/imports/meta-leads/imports'],
             'delete all openflow imports' => ['post', '/imports/openflow/imports'],
+            'rank leads with ai now' => ['post', '/settings/ai/rank-leads'],
         ];
     }
 

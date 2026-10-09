@@ -36,6 +36,7 @@ class Pseudonymizer
             'received_at'    => $lead->created_at?->toIso8601String(),
             'current_status' => $lead->status?->value,
             'current_priority' => $lead->priority?->value,
+            'custom_answers' => $this->stripPiiKeys((array) ($lead->custom_answers ?? []), $this->identifyingValues($lead)),
             'raw_payload'    => $this->stripPiiKeys((array) ($lead->raw_payload ?? []), $this->identifyingValues($lead)),
         ];
     }

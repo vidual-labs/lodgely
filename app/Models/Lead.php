@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
+use App\Domain\Leads\Enums\PrioritySource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +25,7 @@ class Lead extends Model
         'email_normalized', 'phone_normalized',
         'message', 'raw_payload', 'custom_answers',
         'status', 'priority',
+        'priority_source', 'ai_priority', 'ai_reason', 'ai_tags', 'ai_ranked_at',
         'duplicate_flag', 'duplicate_of_id',
         'retention_until',
         'qualified_at', 'called_at', 'mailed_at',
@@ -47,6 +50,10 @@ class Lead extends Model
             'mailed_at'       => 'datetime',
             'status'          => LeadStatus::class,
             'priority'        => LeadPriority::class,
+            'priority_source' => PrioritySource::class,
+            'ai_priority'     => LeadPriority::class,
+            'ai_tags'         => 'array',
+            'ai_ranked_at'    => 'datetime',
         ];
     }
 
@@ -68,6 +75,21 @@ class Lead extends Model
     public function duplicateOf(): BelongsTo
     {
         return $this->belongsTo(self::class, 'duplicate_of_id');
+    }
+
+    /** True while the current priority is the one the AI ranker wrote (no human override since). */
+    public function isAiRanked(): bool
+    {
+        return $this->priority_source === PrioritySource::Ai;
+    }
+
+    /** @return list<string> */
+    public function aiTags(): array
+    {
+        return array_values(array_filter(
+            array_map(static fn ($t) => trim((string) $t), (array) ($this->ai_tags ?? [])),
+            static fn (string $t) => $t !== '',
+        ));
     }
 
     // ------------------------------------------------------------------ scopes
@@ -168,6 +190,36 @@ class Lead extends Model
             'not_contacted' => $query->whereNull('qualified_at')->whereNull('called_at')->whereNull('mailed_at'),
             default => $query,
         };
+    }
+
+    /**
+     * Leads the hourly AI ranker still has to look at. This is the single
+     * definition of "unranked": never ranked, no human-set priority (a person's
+     * choice is never overwritten), not a duplicate, and no ranking attempt in
+     * the last 24 h — the ai_summaries row is created at dispatch time, so a
+     * lead the model keeps failing on is retried at most once a day and the
+     * hourly run and the "Rank now" button can never double-dispatch.
+     */
+    public function scopeRankingCandidates(Builder $query, int $tenantId): Builder
+    {
+        return $query
+            ->where('leads.tenant_id', $tenantId)
+            ->whereNull('leads.ai_ranked_at')
+            ->where(function (Builder $q) {
+                $q->whereNull('leads.priority_source')
+                  ->orWhere('leads.priority_source', '!=', PrioritySource::User->value);
+            })
+            ->where('leads.duplicate_flag', false)
+            ->whereNotExists(function ($sub) {
+                $sub->from('ai_summaries')
+                    ->selectRaw('1')
+                    ->whereColumn('ai_summaries.subject_id', 'leads.id')
+                    ->where('ai_summaries.subject_type', self::class)
+                    ->where('ai_summaries.kind', AiSummaryKind::LeadRanking->value)
+                    ->where('ai_summaries.created_at', '>=', now()->subDay());
+            })
+            ->orderBy('leads.created_at')
+            ->orderBy('leads.id');
     }
 
     public function scopeSearch(Builder $query, ?string $term): Builder
