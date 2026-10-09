@@ -8,6 +8,7 @@ use App\Console\Commands\ImportAdMetrics;
 use App\Console\Commands\ImportEmailsImap;
 use App\Console\Commands\ImportEmailsMock;
 use App\Console\Commands\PurgeExpiredLeads;
+use App\Console\Commands\RankLeadsWithAi;
 use Illuminate\Support\Facades\Schedule;
 
 // Daily mock email pull — generates fake demo leads, useful for demos and dev.
@@ -44,3 +45,8 @@ Schedule::command(FetchMetaLeads::class)->hourly()->withoutOverlapping();
 // Hourly pass over active OpenFlow sources; each source decides internally whether
 // it is due (based on its own refresh_hours interval).
 Schedule::command(FetchOpenflow::class)->hourly()->withoutOverlapping();
+
+// Hourly AI lead ranking sweep — queues the oldest unranked leads (batch size from
+// /settings/ai, bounded by the daily call cap). Quiet no-op until an operator turns
+// on AI, the ranking task and the data-sharing consent.
+Schedule::command(RankLeadsWithAi::class)->hourly()->withoutOverlapping();

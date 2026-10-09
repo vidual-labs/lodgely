@@ -40,7 +40,7 @@ trait WithColumnPicker
         'received',
         'name', 'email', 'phone',
         'client', 'source', 'campaign', 'form', 'platform',
-        'status', 'priority', 'outreach',
+        'status', 'priority', 'ai_tags', 'outreach',
     ];
 
     /** Hard cap on combined picks (static + question). Keeps the table readable. */

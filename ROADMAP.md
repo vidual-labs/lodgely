@@ -169,8 +169,10 @@ hub. It must live in exactly one place.
 - Rules run on ingest and on "re-evaluate" (bulk too). The result sets the
   lead's single qualification state. The manual *Qualified* toggle becomes an
   audited override of that state, not a second flag.
-- AI qualification stays advisory: it may *suggest* a state, and it is never
-  applied without an operator click.
+- AI never sets the qualification state. The automatic AI *ranking* (shipped
+  in 0.58.0) writes only `priority` — and only when the operator has enabled
+  the task; any human change wins and is audited, and the ranker never
+  revisits a lead a person prioritised.
 - Clients see the state and breakdown on their leads but cannot edit rules.
 
 ### LG-10 · New-lead notifications
@@ -317,7 +319,7 @@ in exactly one place.
   so a form answer can set the evaluation → removed by **LG-5**.
 - lodgely has two "qualified" notions (manual *Qualified* toggle, advisory AI
   qualification) → one qualification state owned by the rule engine in
-  **LG-5**; AI stays advisory.
+  **LG-5**; AI may rank (set `priority`, overridable) but never qualifies.
 - The OpenFlow → lodgely interface is implicit and unversioned (no API
   version, offset-less timestamps, offset paging, webhook without submission
   id) → **X-1**.

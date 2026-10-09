@@ -4,6 +4,7 @@ namespace App\Livewire\Inbox\Concerns;
 
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
+use App\Domain\Leads\Enums\PrioritySource;
 use App\Models\Lead;
 use App\Support\Audit\AuditLogger;
 use Livewire\Attributes\On;
@@ -112,10 +113,16 @@ trait WithBulkLeadActions
             if ($lead->priority === $priorityEnum) {
                 continue;
             }
-            $previous = $lead->priority?->value;
+            $previous   = $lead->priority?->value;
+            $overrodeAi = $lead->isAiRanked();
             $lead->priority = $priorityEnum;
+            $lead->priority_source = PrioritySource::User; // a person's choice wins over the AI ranker
             $lead->save();
-            $audit->record($lead, 'lead.priority_changed', ['from' => $previous, 'to' => $priorityEnum->value]);
+            $payload = ['from' => $previous, 'to' => $priorityEnum->value];
+            if ($overrodeAi) {
+                $payload['overrode_ai'] = true;
+            }
+            $audit->record($lead, 'lead.priority_changed', $payload);
         }
 
         $count = $leads->count();

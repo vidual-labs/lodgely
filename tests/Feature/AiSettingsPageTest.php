@@ -123,4 +123,100 @@ class AiSettingsPageTest extends TestCase
 
         $this->assertStringStartsWith('success:', (string) $component->get('testResult'));
     }
+
+    public function test_settings_page_is_reachable_with_the_default_config(): void
+    {
+        // No config override: LODGELY_AI_ENABLED defaults to true, so the page
+        // exists before any .env edit.
+        $op = $this->setupTenantAndOperator();
+
+        $this->withoutVite()->actingAs($op)->get('/settings/ai')->assertSuccessful();
+    }
+
+    public function test_operator_saves_ranking_fields(): void
+    {
+        config()->set('lodgely.ai.enabled', true);
+        $op = $this->setupTenantAndOperator();
+
+        Livewire::actingAs($op)
+            ->test(AiSettingsPage::class)
+            ->set('form.enabled', true)
+            ->set('form.provider', 'openai_compatible')
+            ->set('form.kinds_enabled.lead_ranking', true)
+            ->set('form.lead_data_consent', true)
+            ->set('form.lead_ranking_profile', 'Dinners for 20-30 people in Leipzig.')
+            ->set('form.ranking_batch_size', 40)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $row = AiSetting::forTenant(Tenant::DEFAULT_ID);
+        $this->assertTrue($row->isKindEnabled('lead_ranking'));
+        $this->assertTrue($row->leadRankingAvailable());
+        $this->assertSame('Dinners for 20-30 people in Leipzig.', $row->lead_ranking_profile);
+        $this->assertSame(40, $row->rankingBatchSize());
+    }
+
+    public function test_operator_saves_client_profiles_case_insensitively(): void
+    {
+        config()->set('lodgely.ai.enabled', true);
+        $op = $this->setupTenantAndOperator();
+        \App\Models\Lead::factory()->create(['client_name' => 'Acme']);
+        \App\Models\Lead::factory()->create(['client_name' => 'acme']);
+        \App\Models\Lead::factory()->create(['client_name' => 'Northwind']);
+
+        $component = Livewire::actingAs($op)->test(AiSettingsPage::class);
+        $names = array_column($component->get('clientProfiles'), 'client_name');
+        $this->assertSame(['Acme', 'Northwind'], $names);
+
+        $component->set('clientProfiles.0.profile', 'Vegan menus only.')
+            ->call('saveClientProfiles')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Vegan menus only.', \App\Models\ClientAiProfile::textFor(Tenant::DEFAULT_ID, 'ACME'));
+        $this->assertNull(\App\Models\ClientAiProfile::textFor(Tenant::DEFAULT_ID, 'Northwind'));
+
+        // Blank clears the row again.
+        Livewire::actingAs($op)->test(AiSettingsPage::class)
+            ->set('clientProfiles.0.profile', '')
+            ->call('saveClientProfiles');
+        $this->assertSame(0, \App\Models\ClientAiProfile::count());
+    }
+
+    public function test_rank_now_is_operator_only_and_reports_the_count(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+        config()->set('lodgely.ai.enabled', true);
+        $op = $this->setupTenantAndOperator();
+
+        // Gates off → explanatory status, nothing queued.
+        $this->actingAs($op)->post('/settings/ai/rank-leads')
+            ->assertRedirect(route('settings.ai'))
+            ->assertSessionHas('status', fn ($s) => str_contains($s, 'turned off'));
+
+        $row = AiSetting::forTenant(Tenant::DEFAULT_ID);
+        $row->enabled = true;
+        $row->provider = 'openai_compatible';
+        $row->kinds_enabled = ['lead_ranking' => true];
+        $row->lead_data_consent = true;
+        $row->save();
+        \App\Models\Lead::factory()->count(3)->create(['priority_source' => null, 'ai_ranked_at' => null, 'duplicate_flag' => false]);
+
+        $this->actingAs($op)->post('/settings/ai/rank-leads')
+            ->assertRedirect(route('settings.ai'))
+            ->assertSessionHas('status', 'Queued 3 lead(s) for AI ranking.');
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\RankLeadWithAi::class, 3);
+
+        config()->set('lodgely.ai.enabled', false);
+        $this->actingAs($op)->post('/settings/ai/rank-leads')->assertNotFound();
+        config()->set('lodgely.ai.enabled', true);
+
+        // Fresh session for the second user — AuthenticateSession logs out a
+        // session whose password hash belongs to someone else.
+        $this->flushSession();
+        $client = User::create([
+            'name' => 'C', 'email' => 'c@example.com', 'password' => Hash::make('p'),
+            'role' => 'client', 'is_active' => true,
+        ]);
+        $this->actingAs($client)->post('/settings/ai/rank-leads')->assertForbidden();
+    }
 }

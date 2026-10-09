@@ -294,7 +294,7 @@
 <span class="tk-v">LODGELY_EMAIL_IMPORT_DRIVER</span>=<span class="tk-s">imap</span>
 <span class="tk-v">LODGELY_AD_METRICS_SOURCES</span>=<span class="tk-s">meta,google</span>
 
-<span class="tk-c"># Opt-in only — nothing leaves your server by default</span>
+<span class="tk-c"># Opt-out kill-switch — AI stays inert until an operator turns it on in the UI</span>
 <span class="tk-v">LODGELY_AI_ENABLED</span>=<span class="tk-k">false</span>
 
 <span class="tk-c"># This page. false = "/" goes straight to the login.</span>

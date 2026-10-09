@@ -30,7 +30,12 @@ class AiSetting extends Model
         'kinds_enabled',
         'lead_data_consent',
         'temperature',
+        'lead_ranking_profile',
+        'ranking_batch_size',
     ];
+
+    /** Fallback when the row has no batch size yet (fresh install before migrate). */
+    public const DEFAULT_RANKING_BATCH_SIZE = 25;
 
     protected function casts(): array
     {
@@ -39,6 +44,7 @@ class AiSetting extends Model
             'lead_data_consent' => 'boolean',
             'kinds_enabled'     => 'array',
             'temperature'       => 'float',
+            'ranking_batch_size' => 'integer',
         ];
     }
 
@@ -53,10 +59,52 @@ class AiSetting extends Model
             ['tenant_id' => $tenantId],
             [
                 'enabled'           => false,
-                'kinds_enabled'     => ['report_view' => false, 'lead_qualification' => false],
+                'kinds_enabled'     => ['report_view' => false, 'lead_qualification' => false, 'lead_ranking' => false],
                 'lead_data_consent' => false,
             ]
         );
+    }
+
+    /**
+     * Read-only resolution for Blade gates and render() checks. Never writes a
+     * row and never throws if the table doesn't exist yet (fresh install before
+     * migrate, unit tests that skip migrations) — callers get an inert,
+     * disabled row. Same contract as {@see MailSetting::resolveSafe()}.
+     */
+    public static function resolveSafe(int $tenantId): self
+    {
+        try {
+            return self::query()->firstWhere('tenant_id', $tenantId) ?? new self();
+        } catch (\Throwable) {
+            return new self();
+        }
+    }
+
+    /**
+     * Whether AI may run at all: the app-level kill-switch is on, the operator
+     * enabled AI for this tenant, and a provider is chosen. This is the gate
+     * for every AI button in the UI — the settings page and the AI menu are
+     * governed by the config switch alone, so an operator can always reach the
+     * page to turn AI on.
+     */
+    public function isActive(): bool
+    {
+        return (bool) config('lodgely.ai.enabled')
+            && (bool) $this->enabled
+            && (bool) $this->provider;
+    }
+
+    /** All four gates the automatic lead ranker needs. */
+    public function leadRankingAvailable(): bool
+    {
+        return $this->isActive()
+            && $this->isKindEnabled('lead_ranking')
+            && (bool) $this->lead_data_consent;
+    }
+
+    public function rankingBatchSize(): int
+    {
+        return max(1, (int) ($this->ranking_batch_size ?: self::DEFAULT_RANKING_BATCH_SIZE));
     }
 
     /** Decrypts the stored ciphertext. Returns null if no key is set or it fails to decrypt. */

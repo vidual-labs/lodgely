@@ -24,7 +24,8 @@ app/
 │   │                        ClientViewDataBuilder, ReportEmailDispatcher,
 │   │                        ReportColumn enum
 │   ├── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
-│   │                        AiSummarizer + PromptBuilder + Pseudonymizer
+│   │                        AiSummarizer + PromptBuilder + Pseudonymizer,
+│   │                        LeadRanker (automatic ranking) + DailyCap
 │   └── Demo/                DemoDataManager — load/unload canonical demo
 │                            dataset shared with the DatabaseSeeder
 ├── Http/
@@ -50,7 +51,7 @@ app/
 │   │                        MetaMockCreativeSource adapters
 │   ├── Openflow/            OpenflowClient + OpenflowLeadSource (OpenFlow form pull)
 │   └── Manual/              ManualLeadSource adapter
-├── Jobs/                    GenerateAiSummary, SendClientReportEmail
+├── Jobs/                    GenerateAiSummary, RankLeadWithAi, SendClientReportEmail
 ├── Livewire/
 │   ├── Ai/DraftsPage        operator review of AI drafts
 │   ├── Inbox/InboxPage      the main UI
@@ -101,11 +102,12 @@ No changes to migrations, models or the inbox are needed.
 
 ## How AI summaries work
 
-AI is **off by default**. Enable it in two places:
+AI is **inert by default**: the settings page and the AI menu exist, but no
+model is called until an operator turns it on. (`LODGELY_AI_ENABLED=false`
+in `.env` is the opt-out hard kill-switch that removes the AI routes and
+menu entirely.)
 
-1. Set `LODGELY_AI_ENABLED=true` in `.env` (master kill-switch — the server
-   operator controls this).
-2. As an operator, open `/settings/ai` and:
+1. As an operator, open `/settings/ai`, tick **Enable AI for this tenant**, and:
    - Pick a provider — **OpenAI-compatible** (works with OpenAI, Together,
      Groq, LM Studio, vLLM, …) or **Ollama** (local or self-hosted).
    - Paste your API key (stored encrypted at rest via Laravel's `Crypt`
@@ -138,7 +140,53 @@ Flow per generation:
    API keys and bearer tokens are redacted from every payload.
 
 A daily per-tenant call cap (`LODGELY_AI_MAX_CALLS_PER_DAY`, default 100)
-is enforced inside the job so a runaway loop cannot blow past it.
+is enforced inside the job so a runaway loop cannot blow past it. The cap
+is shared with automatic lead ranking (below).
+
+## How automatic lead ranking works
+
+Unlike the advisory kinds above, **lead ranking writes to the lead**. It is
+a separate task (`kinds_enabled.lead_ranking`) that also needs the
+data-sharing consent, so nothing changes until an operator opts in.
+
+Gates, checked at dispatch *and* again inside the job: the config
+kill-switch, the tenant's *Enable AI* toggle + provider, the ranking task,
+the consent, and what is left of the daily cap.
+
+Flow per sweep (`lodgely:ai:rank-leads`, hourly via the scheduler, or the
+**"Rank unranked leads now"** button on `/settings/ai`):
+
+1. `LeadRanker::dispatchBatch()` selects the oldest *candidates*
+   (`Lead::scopeRankingCandidates()` is the single definition): never
+   ranked, no human-set priority, not a duplicate, and no `lead_ranking`
+   attempt in the last 24 h. The batch is bounded by *Leads per hourly run*
+   and by the remaining daily cap.
+2. For each lead, `LeadRanker::request()` builds the prompt — the shared
+   preamble, the built-in master ranking task (`PromptBuilder::RANKING_TASK`),
+   the operator-wide ranking profile (`ai_settings.lead_ranking_profile`)
+   and the per-client profile (`client_ai_profiles`, matched on
+   `client_name` case-insensitively) — from the pseudonymized lead (now
+   including scrubbed `custom_answers`), stores it verbatim in a pending
+   `ai_summaries` row (kind `lead_ranking`) and queues `RankLeadWithAi`.
+   Creating the row at dispatch time is what makes step 1 idempotent: the
+   hourly run and the button can never double-dispatch, and a lead the
+   model keeps failing on is retried at most once a day.
+3. The job (`LeadRanker::execute()`) re-checks every gate, calls the
+   provider, and parses the answer with `LeadRanking::parse()` — strict
+   JSON `{"priority","reason","tags"}`, tolerant of code fences and prose
+   around the object. An unparseable answer marks the row *failed* with the
+   raw text and leaves the lead untouched.
+4. On success `LeadRanker::apply()` writes `priority`, `priority_source =
+   ai`, `ai_priority`, `ai_reason`, `ai_tags`, `ai_ranked_at`, records
+   `lead.ai_ranked` (and `lead.priority_changed {automatic, ai}` when the
+   value moved) in `lead_events`, and closes the summary as **Applied**.
+
+Override semantics: `InboxPage::setPriority()` and the bulk action set
+`priority_source = user` on any human change (with `overrode_ai` in the
+audit payload when it replaced an AI value). The sparkle shows only while
+the source is `ai`; the panel then shows "AI suggested X · overridden". A
+user-sourced lead is never a candidate again; an operator's **Re-run AI
+ranking** button in the lead panel forces a fresh attempt.
 
 ## Meta Lead Ads fields
 

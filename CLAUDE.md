@@ -75,9 +75,16 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   SMTP that overrides `.env` MAIL_* at runtime (applied in `AppServiceProvider`
   for the web request and again on `Queue::before` so the long-lived worker
   picks up changes without a restart).
-- **AI** (`app/Domain/Ai/`, opt-in via `ai.enabled`) — report-view summaries
-  and pseudonymized lead qualification via OpenAI-compatible or Ollama
-  providers, behind an operator approve-then-share workflow.
+- **AI** (`app/Domain/Ai/`) — report-view summaries and pseudonymized lead
+  qualification via OpenAI-compatible or Ollama providers, behind an operator
+  approve-then-share workflow; plus **automatic lead ranking** (`LeadRanker`,
+  hourly `lodgely:ai:rank-leads` + "Rank now" button) that writes priority,
+  reason and tags straight onto the lead — a human change always wins
+  (`priority_source`), the ranker never revisits a human-prioritised lead, and
+  the master prompt is steered by an operator-wide and a per-client
+  (`client_ai_profiles`) "ideal customer" text. `LODGELY_AI_ENABLED` is an
+  opt-out kill-switch (default on); the everyday gate is
+  `AiSetting::isActive()` — use that, not the config key, for AI buttons.
 - **Public landing page** (`/`, `LandingController`, `resources/views/landing/`)
   — guests see a dark product page with a discreet "Sign in" link; signed-in
   users and installs with `LODGELY_LANDING_ENABLED=false` go straight to the
@@ -350,10 +357,12 @@ docker compose exec app php artisan lodgely:google-sheets:fetch        # pull du
 docker compose exec app php artisan lodgely:meta-leads:fetch           # pull due Meta Lead Ads connections
 docker compose exec app php artisan lodgely:openflow:fetch             # pull due OpenFlow sources
 docker compose exec app php artisan lodgely:import:ad-metrics --days=7 # backfill ad spend/metrics
+docker compose exec app php artisan lodgely:ai:rank-leads --dry-run     # list leads the AI ranker would pick up
 ```
 
 > The scheduler (`php artisan schedule:work` / cron) drives the recurring jobs —
 > Google Sheets + Meta Lead Ads + OpenFlow fetches (hourly, each source decides
-> if it's due), the daily 05:00 ad-metrics pull, report emails, and the GDPR purge.
+> if it's due), the hourly AI lead-ranking sweep, the daily 05:00 ad-metrics
+> pull, report emails, and the GDPR purge.
 > Without it, nothing recurring runs. Reporting also has a **"Fetch data now"**
 > button so operators don't have to wait for the 05:00 run.

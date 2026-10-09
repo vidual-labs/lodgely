@@ -6,10 +6,12 @@ use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Enums\AiSummaryStatus;
 use App\Domain\Ai\Exceptions\AiDisabledException;
 use App\Domain\Ai\Services\AiSummarizer;
+use App\Domain\Ai\Services\LeadRanker;
 use App\Domain\Leads\Enums\ClientType;
 use App\Domain\Leads\Enums\LeadNoteSnippet;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
+use App\Domain\Leads\Enums\PrioritySource;
 use App\Domain\Leads\Services\DuplicateDetector;
 use App\Domain\Leads\Services\LeadKpis;
 use App\Domain\Leads\Services\LeadStatusAutomation;
@@ -19,6 +21,7 @@ use App\Livewire\Inbox\Concerns\WithFilterPicker;
 use App\Livewire\Inbox\Concerns\WithLeadFilters;
 use App\Livewire\Inbox\Concerns\WithManualLeadForm;
 use App\Livewire\Inbox\Concerns\WithSavedFilters;
+use App\Models\AiSetting;
 use App\Models\AiSummary;
 use App\Models\Lead;
 use App\Models\Tenant;
@@ -145,14 +148,21 @@ class InboxPage extends Component
             return;
         }
 
-        $previous = $lead->priority?->value;
+        $previous  = $lead->priority?->value;
+        $overrodeAi = $lead->isAiRanked();
+
+        // A person's choice always wins over the AI ranker, and the ranker
+        // never revisits a lead once a person has set its priority.
         $lead->priority = $priority;
+        $lead->priority_source = PrioritySource::User;
         $lead->save();
 
-        $audit->record($lead, 'lead.priority_changed', [
-            'from' => $previous,
-            'to' => $priority->value,
-        ]);
+        $payload = ['from' => $previous, 'to' => $priority->value];
+        if ($overrodeAi) {
+            $payload['overrode_ai'] = true;
+        }
+
+        $audit->record($lead, 'lead.priority_changed', $payload);
     }
 
     /**
@@ -206,6 +216,25 @@ class InboxPage extends Component
         try {
             $summarizer->requestLeadQualification($lead, auth()->user());
             $this->dispatch('toast', message: __('AI evaluation queued. Review it in AI drafts.'), type: 'success');
+        } catch (AiDisabledException $e) {
+            $this->dispatch('toast', message: $e->getMessage(), type: 'error');
+        }
+    }
+
+    /**
+     * Operator-only: queue a fresh automatic ranking for one lead, even if it
+     * was ranked before or a person set the priority (force). The priority
+     * updates once the queued job has the model's answer.
+     */
+    public function rankLeadWithAi(int $leadId, LeadRanker $ranker): void
+    {
+        abort_unless(auth()->user()?->isOperator(), 403);
+
+        $lead = $this->guardedLead($leadId);
+
+        try {
+            $ranker->request($lead, auth()->user(), force: true);
+            $this->dispatch('toast', message: __('AI ranking queued — the priority updates once the model answers.'), type: 'success');
         } catch (AiDisabledException $e) {
             $this->dispatch('toast', message: $e->getMessage(), type: 'error');
         }
@@ -271,7 +300,7 @@ class InboxPage extends Component
             : null;
 
         $leadAiSummary = null;
-        if ($selected && $user?->isOperator() && config('lodgely.ai.enabled')) {
+        if ($selected && $user?->isOperator() && AiSetting::resolveSafe(Tenant::DEFAULT_ID)->isActive()) {
             $leadAiSummary = AiSummary::query()
                 ->where('tenant_id', Tenant::DEFAULT_ID)
                 ->where('kind', AiSummaryKind::LeadQualification->value)

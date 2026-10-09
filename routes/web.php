@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdPlatformConnectorController;
+use App\Http\Controllers\AiLeadRankingController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
@@ -123,6 +124,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('ai.enabled')->group(function () {
         Route::get('/settings/ai', AiSettingsPage::class)->name('settings.ai');
+        Route::post('/settings/ai/rank-leads', [AiLeadRankingController::class, 'rankNow'])->name('settings.ai.rank-leads');
         Route::get('/ai/drafts',   DraftsPage::class)->name('ai.drafts');
     });
 

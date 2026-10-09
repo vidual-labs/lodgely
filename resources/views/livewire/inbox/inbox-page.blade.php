@@ -292,7 +292,7 @@
                     'name' => __('Name'), 'email' => __('Email'), 'phone' => __('Phone'),
                     'client' => __('Client'), 'source' => __('Source'),
                     'campaign' => __('Campaign'), 'form' => __('Form'), 'platform' => __('Platform'),
-                    'status' => __('Status'), 'priority' => __('Priority'), 'outreach' => __('Outreach'),
+                    'status' => __('Status'), 'priority' => __('Priority'), 'ai_tags' => __('AI tags'), 'outreach' => __('Outreach'),
                 ];
             @endphp
             {{-- Alpine keeps the (n / max) counters live as chips are toggled and
@@ -644,6 +644,7 @@
             'platform' => __('Platform'),
             'status'   => __('Status'),
             'priority' => __('Priority'),
+            'ai_tags'  => __('AI tags'),
             'outreach' => __('Outreach'),
         ];
         $colWidths = [
@@ -651,7 +652,7 @@
             'name' => '', 'email' => 'w-[200px]', 'phone' => 'w-[140px]',
             'client' => 'w-[140px]', 'source' => 'w-[140px]',
             'campaign' => 'w-[160px]', 'form' => 'w-[160px]', 'platform' => 'w-[110px]',
-            'status' => 'w-[120px]', 'priority' => 'w-[110px]', 'outreach' => 'w-[140px]',
+            'status' => 'w-[120px]', 'priority' => 'w-[110px]', 'ai_tags' => 'w-[180px]', 'outreach' => 'w-[140px]',
         ];
         $visibleCount = count($activeColumns) + count($activeQuestions)
             + (auth()->check() ? 1 : 0); /* bulk checkbox — clients and operators alike */
@@ -793,6 +794,24 @@
                                             <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $lead->priority->badgeClasses() }}">
                                                 {{ $lead->priority->label() }}
                                             </span>
+                                            @if($lead->isAiRanked())
+                                                {{-- Sparkle = this priority was written by the AI ranker and no
+                                                     person has changed it since. Hover shows the reason + tags. --}}
+                                                <x-ai.sparkle :lead="$lead" />
+                                            @endif
+                                        </td>
+                                        @break
+                                    @case('ai_tags')
+                                        <td class="px-3 py-2">
+                                            @if($lead->aiTags() !== [])
+                                                <div class="flex flex-wrap gap-1">
+                                                    @foreach($lead->aiTags() as $tag)
+                                                        <span class="inline-flex items-center rounded-full bg-violet-50 dark:bg-violet-950/40 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-600/20">{{ $tag }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-slate-300 dark:text-slate-600">—</span>
+                                            @endif
                                         </td>
                                         @break
                                     @case('outreach')

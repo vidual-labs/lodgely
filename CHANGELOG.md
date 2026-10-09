@@ -8,6 +8,41 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Automatic AI lead ranking.** Once an operator switches on the new
+  *Automatic lead ranking* task on `/settings/ai` (plus the data-sharing
+  consent), an hourly sweep (`lodgely:ai:rank-leads`, also behind a **"Rank
+  unranked leads now"** button) sends each new lead — pseudonymized, as before —
+  to the configured model and writes the answer straight onto the lead: the
+  **priority**, a one-sentence **reason** and up to five short **tags**. Ranked
+  leads carry a violet sparkle next to their priority in the inbox (hover for
+  reason and tags) and under the priority select in the lead panel; an optional
+  **AI tags** column is available in the column picker. Anyone who changes the
+  priority overrides the AI — the sparkle disappears, the panel shows "AI
+  suggested … · overridden", and the audit event carries `overrode_ai`. The
+  ranker never revisits a lead a person has prioritised; operators can force a
+  re-run from the lead panel. The built-in master prompt is steered by two
+  free-text "ideal customer" profiles: an operator-wide one on `/settings/ai`
+  and a per-client one (new `client_ai_profiles` table) that client users edit
+  on their own profile page and operators edit for every client on
+  `/settings/ai`. Every attempt is an `ai_summaries` row with the exact prompt
+  (new status *Applied* on `/ai/drafts`), counts against the shared daily cap,
+  and is retried at most once a day when the model's answer cannot be parsed.
+  Needs `php artisan migrate`.
+
+### Changed
+
+- **The AI settings page and AI menu are visible by default.**
+  `LODGELY_AI_ENABLED` now defaults to `true` and is an opt-out hard
+  kill-switch; the everyday on/off is the *Enable AI for this tenant* toggle on
+  `/settings/ai`. Nothing is sent to a model until that toggle is on and a
+  provider is configured — the AI buttons on leads and reports now check the
+  tenant toggle, not just the env switch. Installs that never set the env var
+  simply gain the settings page.
+- **Form answers (`custom_answers`) are now part of the pseudonymized lead
+  data** sent for lead qualification and ranking, run through the same PII
+  scrubbing as the raw payload — they are the main signal for Meta and
+  OpenFlow leads and were missing before.
+
 - **Optional two-factor authentication (TOTP) for operators.** From their
   profile page, operators can turn on a second sign-in step: scan a QR code
   with any authenticator app (1Password, Google Authenticator, Authy, …),

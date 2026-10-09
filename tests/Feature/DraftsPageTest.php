@@ -117,4 +117,37 @@ class DraftsPageTest extends TestCase
         $this->assertNotNull($event);
         $this->assertSame('not quite right', $event->payload['reason'] ?? null);
     }
+
+    public function test_applied_filter_lists_auto_applied_rankings_without_regenerate(): void
+    {
+        $op = $this->operator();
+        $applied = AiSummary::create([
+            'tenant_id'    => Tenant::DEFAULT_ID,
+            'kind'         => AiSummaryKind::LeadRanking->value,
+            'prompt'       => 'p',
+            'response'     => '{"priority":"high","reason":"r"}',
+            'status'       => AiSummaryStatus::Applied->value,
+            'requested_by' => $op->id,
+        ]);
+        $this->pendingSummary($op->id);
+
+        $component = Livewire::actingAs($op)->test(DraftsPage::class)->set('filter', 'applied');
+        $component->assertSee('Applied automatically');
+        $component->call('select', $applied->id);
+        $this->assertStringNotContainsString('wire:click="regenerate(', $component->html());
+
+        // A failed ranking attempt still shows the action block, but without Regenerate:
+        // re-running the text call would never re-apply the result.
+        $failed = AiSummary::create([
+            'tenant_id'    => Tenant::DEFAULT_ID,
+            'kind'         => AiSummaryKind::LeadRanking->value,
+            'prompt'       => 'p',
+            'status'       => AiSummaryStatus::Failed->value,
+            'error'        => 'Could not parse ranking',
+            'requested_by' => $op->id,
+        ]);
+        $component = Livewire::actingAs($op)->test(DraftsPage::class)->set('filter', 'failed')->call('select', $failed->id);
+        $this->assertStringContainsString('Re-run rankings from the lead panel.', $component->html());
+        $this->assertStringNotContainsString('wire:click="regenerate(', $component->html());
+    }
 }

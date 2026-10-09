@@ -5,6 +5,9 @@ namespace App\Livewire\Settings;
 use App\Domain\Ai\Enums\AiSummaryKind;
 use App\Domain\Ai\Services\AiSummarizer;
 use App\Models\AiSetting;
+use App\Models\ClientAiProfile;
+use App\Models\Lead;
+use App\Models\UserLeadScope;
 use App\Models\Tenant;
 use App\Providers\AppServiceProvider;
 use App\Rules\HttpUrl;
@@ -29,10 +32,22 @@ class AiSettingsPage extends Component
         'kinds_enabled'     => [
             'report_view'        => false,
             'lead_qualification' => false,
+            'lead_ranking'       => false,
         ],
         'lead_data_consent' => false,
         'temperature'       => null,
+        'lead_ranking_profile' => '',
+        'ranking_batch_size'   => AiSetting::DEFAULT_RANKING_BATCH_SIZE,
     ];
+
+    /**
+     * Per-client "ideal customer" texts, as an indexed list — never keyed by
+     * client name, which can contain dots and spaces that break Livewire
+     * property paths.
+     *
+     * @var list<array{client_name: string, profile: string}>
+     */
+    public array $clientProfiles = [];
 
     public ?string $testResult = null;
 
@@ -45,6 +60,7 @@ class AiSettingsPage extends Component
     private function loadFromDb(): void
     {
         $row = AiSetting::forTenant(Tenant::DEFAULT_ID);
+        $this->loadClientProfiles();
 
         $this->form = [
             'enabled'           => (bool) $row->enabled,
@@ -55,12 +71,50 @@ class AiSettingsPage extends Component
             'model'             => (string) ($row->model ?? ''),
             'house_style'       => (string) ($row->house_style ?? ''),
             'kinds_enabled'     => array_merge(
-                ['report_view' => false, 'lead_qualification' => false],
+                ['report_view' => false, 'lead_qualification' => false, 'lead_ranking' => false],
                 (array) ($row->kinds_enabled ?? []),
             ),
             'lead_data_consent' => (bool) $row->lead_data_consent,
             'temperature'       => $row->temperature,
+            'lead_ranking_profile' => (string) ($row->lead_ranking_profile ?? ''),
+            'ranking_batch_size'   => $row->rankingBatchSize(),
         ];
+    }
+
+    /**
+     * Every client name the install knows — from leads, from client user
+     * scopes and from profiles already saved — de-duplicated
+     * case-insensitively (first-seen casing wins) so a profile typed for
+     * "acme" also applies to leads filed under "Acme".
+     */
+    private function loadClientProfiles(): void
+    {
+        $names = [];
+        $seen  = [];
+
+        $candidates = array_merge(
+            Lead::query()->where('tenant_id', Tenant::DEFAULT_ID)->whereNotNull('client_name')
+                ->distinct()->orderBy('client_name')->pluck('client_name')->all(),
+            UserLeadScope::query()->distinct()->orderBy('client_name')->pluck('client_name')->all(),
+            ClientAiProfile::query()->where('tenant_id', Tenant::DEFAULT_ID)->orderBy('client_name')->pluck('client_name')->all(),
+        );
+
+        foreach ($candidates as $name) {
+            $name = trim((string) $name);
+            $key  = mb_strtolower($name);
+            if ($name === '' || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $names[] = $name;
+        }
+
+        usort($names, static fn (string $a, string $b) => strcasecmp($a, $b));
+
+        $this->clientProfiles = array_map(static fn (string $name) => [
+            'client_name' => $name,
+            'profile'     => (string) (ClientAiProfile::textFor(Tenant::DEFAULT_ID, $name) ?? ''),
+        ], $names);
     }
 
     public function save(AiAuditLogger $audit): void
@@ -78,8 +132,11 @@ class AiSettingsPage extends Component
             'form.house_style'       => ['nullable', 'string', 'max:2000'],
             'form.kinds_enabled.report_view'        => ['boolean'],
             'form.kinds_enabled.lead_qualification' => ['boolean'],
+            'form.kinds_enabled.lead_ranking'       => ['boolean'],
             'form.lead_data_consent' => ['boolean'],
             'form.temperature'       => ['nullable', 'numeric', 'min:0', 'max:2'],
+            'form.lead_ranking_profile' => ['nullable', 'string', 'max:'.ClientAiProfile::MAX_LENGTH],
+            'form.ranking_batch_size'   => ['required', 'integer', 'min:1', 'max:200'],
         ])['form'];
 
         $row = AiSetting::forTenant(Tenant::DEFAULT_ID);
@@ -92,8 +149,11 @@ class AiSettingsPage extends Component
         $row->kinds_enabled     = [
             'report_view'        => (bool) ($data['kinds_enabled']['report_view'] ?? false),
             'lead_qualification' => (bool) ($data['kinds_enabled']['lead_qualification'] ?? false),
+            'lead_ranking'       => (bool) ($data['kinds_enabled']['lead_ranking'] ?? false),
         ];
         $row->lead_data_consent = (bool) $data['lead_data_consent'];
+        $row->lead_ranking_profile = trim((string) $data['lead_ranking_profile']) ?: null;
+        $row->ranking_batch_size   = (int) $data['ranking_batch_size'];
         $row->temperature       = $data['temperature'] !== null && $data['temperature'] !== ''
             ? (float) $data['temperature']
             : null;
@@ -114,6 +174,37 @@ class AiSettingsPage extends Component
 
         $this->loadFromDb();
         $this->dispatch('toast', message: __('AI settings saved.'), type: 'success');
+    }
+
+    /** Save every per-client ranking profile at once; a blank textarea removes that client's row. */
+    public function saveClientProfiles(AiAuditLogger $audit): void
+    {
+        $this->guardOperator();
+
+        $this->validate([
+            'clientProfiles'               => ['array'],
+            'clientProfiles.*.client_name' => ['required', 'string', 'max:160'],
+            'clientProfiles.*.profile'     => ['nullable', 'string', 'max:'.ClientAiProfile::MAX_LENGTH],
+        ]);
+
+        $saved = [];
+        foreach ($this->clientProfiles as $row) {
+            $name = trim((string) ($row['client_name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            ClientAiProfile::put(Tenant::DEFAULT_ID, $name, $row['profile'] ?? null, auth()->id());
+            if (trim((string) ($row['profile'] ?? '')) !== '') {
+                $saved[] = $name;
+            }
+        }
+
+        $audit->recordSettings(Tenant::DEFAULT_ID, 'ai.settings.updated', [
+            'client_profiles' => $saved,
+        ]);
+
+        $this->loadClientProfiles();
+        $this->dispatch('toast', message: __('Client profiles saved.'), type: 'success');
     }
 
     public function testConnection(AiSummarizer $summarizer): void
