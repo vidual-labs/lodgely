@@ -8,6 +8,11 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Product tour video in the README.** A 44-second animated tour (lead
+  intake, duplicate detection, AI ranking, reporting, client portals,
+  self-hosting) now sits right below the logo as a clickable poster that opens
+  the MP4 (`.github/media/lodgely-tour.mp4`, 4:5, also usable as a LinkedIn
+  post).
 - **Automatic AI lead ranking.** Once an operator switches on the new
   *Automatic lead ranking* task on `/settings/ai` (plus the data-sharing
   consent), an hourly sweep (`lodgely:ai:rank-leads`, also behind a **"Rank
