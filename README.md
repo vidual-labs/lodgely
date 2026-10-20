@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.58.1-6366F1" alt="Version 0.58.1">
+  <img src="https://img.shields.io/badge/version-0.59.0-6366F1" alt="Version 0.59.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -45,6 +45,7 @@ clean inbox to prioritize, deduplicate and forward.
 - [Quick start (Docker)](#quick-start-docker)
 - [Quick start (local PHP, no Docker)](#quick-start-local-php-no-docker)
 - [CSV import](#csv-import)
+- [Pairing with vigilo](#pairing-with-vigilo)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Privacy & GDPR notes for self-hosters](#privacy--gdpr-notes-for-self-hosters)
 - [Configuration reference](#configuration-reference)
@@ -145,6 +146,10 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - ✨ **Automatic AI lead ranking** *(optional)* — an hourly sweep ranks new leads against a built-in master prompt plus your "ideal customer" profile (operator-wide and per client) and writes priority, a one-line reason and tags onto the lead, marked with a sparkle. Anyone who changes the priority overrides it.
 - 📨 Scheduled/one-off client report emails, mobile-responsive HTML.
 - ✉️ In-app SMTP configuration that overrides `.env` mail settings at runtime.
+
+**Integrations**
+
+- 🔭 Read-only **lead-metadata API** for [vigilo](https://github.com/vidual-labs/vigilo), the ads watchdog (`GET /api/v1/lead-metadata`). A change feed per client with status, enrichment flags and Meta ad ids, so vigilo can tell when ads spend but no leads arrive. Never names, contact details, messages, answers or click ids. Operators create and revoke scoped tokens under *Settings → API tokens*; tokens are stored hashed and shown once. See [Pairing with vigilo](#pairing-with-vigilo).
 
 **Ops**
 
@@ -351,6 +356,45 @@ A working sample lives at `database/samples/leads-sample.csv`.
 
 ---
 
+## Pairing with vigilo
+
+[vigilo](https://github.com/vidual-labs/vigilo) watches the agency's ad
+accounts once a day and reports what is broken. To spot "ads spend, but no
+leads arrive" and cost per lead from real leads, it reads lead **metadata**
+from lodgely: lead id, submission and update time, status, source type, Meta
+campaign/ad set/ad/form ids and the duplicate/qualified/contacted/organic
+flags. The feed is built from an explicit allow-list of columns, so it never
+carries a name, email, phone number, message, custom answer, raw payload,
+note, AI output or click id. Deleted leads go out once as `deleted: true`
+markers, so vigilo drops them too.
+
+1. In lodgely, open **Settings → API tokens**, create a token with the
+   *Lead metadata* access and copy it (it is shown once; only a hash is
+   stored).
+2. In vigilo's `.env`, set `VIGILO_LODGELY_ENABLED=true`,
+   `VIGILO_LODGELY_URL` (this install's `APP_URL`) and
+   `VIGILO_LODGELY_API_TOKEN`.
+3. In vigilo, enter each client's **lodgely client key**: the slug of the
+   lodgely client name (`Kanzlei Brenner & Partner` →
+   `kanzlei-brenner-partner`). Renaming the client in lodgely changes the key.
+
+vigilo fetches its own ad data with the same agency credentials. Copy the
+values across; lodgely does not hand out ad-platform tokens over the API:
+
+| lodgely | vigilo |
+|---|---|
+| `LODGELY_GOOGLE_ADS_*` | `VIGILO_GOOGLE_ADS_*` |
+| `LODGELY_META_ADS_ACCESS_TOKEN` | `VIGILO_META_ADS_ACCESS_TOKEN` |
+
+The endpoint is `GET /api/v1/lead-metadata?client=&cursor=&updated_since=&limit=`
+(bearer token, scope `lead-metadata:read`, 60 requests/minute per token,
+every request logged with token id, client key and row count only). The
+contract is specified in vigilo's
+[`docs/LODGELY-CONTRACT.md`](https://github.com/vidual-labs/vigilo/blob/main/docs/LODGELY-CONTRACT.md).
+Revoking a token on the same page cuts vigilo off immediately.
+
+---
+
 ## Architecture at a glance
 
 A **modular monolith**: server-rendered Blade + Livewire, no SPA. Domain
@@ -419,7 +463,8 @@ The forward roadmap — phased, with the shared OpenFlow ↔ lodgely interface
 contract — lives in **[ROADMAP.md](ROADMAP.md)**. In short: a versioned
 OpenFlow contract and a push path first, then rule-based qualification,
 attribution, and a real GDPR lifecycle (hard deletion, per-person export and
-erasure across both systems).
+erasure across both systems). The vigilo ↔ lodgely interface (the
+lead-metadata feed, LG-15) has its own shared section there.
 
 The history of everything already shipped (reporting, AI, Meta Lead Ads,
 Google Sheets, i18n, dark mode, …) is in

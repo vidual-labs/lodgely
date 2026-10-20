@@ -16,7 +16,8 @@ app/
 │   ├── Leads/               core domain: enums, services, events
 │   │   ├── Enums/           LeadStatus, LeadPriority, UserRole
 │   │   └── Services/        LeadNormalizer, DuplicateDetector,
-│   │                        LeadIngestor, ImportRunner, LeadKpis
+│   │                        LeadIngestor, ImportRunner, LeadKpis,
+│   │                        LeadMetadataFeed (vigilo change feed, LG-15)
 │   ├── Reporting/           AdMetricsSource + CreativeMetricsSource contracts,
 │   │                        AdMetricsSnapshot + CreativeMetricsSnapshot DTOs,
 │   │                        MetricsIngestor, CreativeMetricsIngestor,
@@ -26,13 +27,17 @@ app/
 │   ├── Ai/                  LlmProvider contract, OpenAI/Ollama adapters,
 │   │                        AiSummarizer + PromptBuilder + Pseudonymizer,
 │   │                        LeadRanker (automatic ranking) + DailyCap
-│   └── Demo/                DemoDataManager — load/unload canonical demo
-│                            dataset shared with the DatabaseSeeder
+│   ├── Demo/                DemoDataManager — load/unload canonical demo
+│   │                        dataset shared with the DatabaseSeeder
+│   └── Api/Enums/           ApiTokenScope (read-only API token scopes)
 ├── Http/
 │   ├── Controllers/Auth/    LoginController, PasswordResetController
 │   ├── Controllers/OAuth/   GoogleSheetsOAuthController, GoogleAdsOAuthController
-│   ├── Controllers/         WebhookController
-│   └── Middleware/          SetLocale, EnsureAiEnabled, SecurityHeaders
+│   ├── Controllers/Api/     WebhookController, LeadMetadataController
+│   │                        (GET /api/v1/lead-metadata)
+│   ├── Controllers/         ApiTokenController, BackupController, …
+│   └── Middleware/          SetLocale, EnsureAiEnabled, SecurityHeaders,
+│                            AuthenticateApiToken (api.token:<scope>)
 ├── Importers/
 │   ├── Contracts/           LeadSource interface, IncomingLead DTO
 │   ├── Csv/                 CsvLeadSource adapter

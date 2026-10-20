@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdPlatformConnectorController;
 use App\Http\Controllers\AiLeadRankingController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
@@ -33,6 +34,7 @@ use App\Livewire\Reporting\ReportingViewsPage;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BackupDownloadController;
 use App\Livewire\Settings\AdPlatformsPage;
+use App\Livewire\Settings\ApiTokensPage;
 use App\Livewire\Settings\AiSettingsPage;
 use App\Livewire\Settings\BackupsPage;
 use App\Livewire\Settings\DemoDataPage;
@@ -153,6 +155,13 @@ Route::middleware('auth')->group(function () {
     // Outbound mail (SMTP) configuration. Operator-only enforcement lives in
     // the page; the saved row overrides the .env MAIL_* config at runtime.
     Route::get('/settings/mail', MailSettingsPage::class)->name('settings.mail');
+
+    // Read-only API tokens for other tools (vigilo's lead-metadata feed).
+    // Renders via Livewire; create/revoke are native form posts, same rail as
+    // the backup page below. Operator-only enforcement lives in both.
+    Route::get('/settings/api-tokens',                 ApiTokensPage::class)->name('settings.api-tokens');
+    Route::post('/settings/api-tokens',                [ApiTokenController::class, 'store'])->name('settings.api-tokens.store');
+    Route::post('/settings/api-tokens/{token}/revoke', [ApiTokenController::class, 'revoke'])->whereNumber('token')->name('settings.api-tokens.revoke');
 
     // The backup page renders via Livewire, but every mutation (create,
     // delete, restore) posts to a native controller and redirects back —
