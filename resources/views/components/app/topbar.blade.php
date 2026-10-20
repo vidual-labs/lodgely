@@ -12,7 +12,7 @@
     $importRoutes    = ['imports.csv', 'imports.email', 'imports.email-imap', 'imports.google-sheets', 'imports.meta-leads', 'imports.openflow', 'settings.google-sheets'];
     $reportingRoutes = ['reporting', 'reporting.views', 'reporting.emails', 'settings.ad-platforms'];
     $aiRoutes        = ['ai.drafts', 'settings.ai'];
-    $settingsRoutes  = ['users', 'webhooks', 'settings.mail', 'settings.demo-data', 'settings.backups'];
+    $settingsRoutes  = ['users', 'webhooks', 'settings.api-tokens', 'settings.mail', 'settings.demo-data', 'settings.backups'];
 
     $importsActive   = request()->routeIs(...$importRoutes);
     $reportingActive = request()->routeIs(...$reportingRoutes);
@@ -178,6 +178,10 @@
                                 <a href="{{ route('webhooks') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">
                                     {{ __('Webhooks') }}
+                                </a>
+                                <a href="{{ route('settings.api-tokens') }}" role="menuitem"
+                                   class="{{ $menuItem }} {{ request()->routeIs('settings.api-tokens') ? $menuItemActive : $menuItemIdle }}">
+                                    {{ __('API tokens') }}
                                 </a>
                                 <a href="{{ route('settings.mail') }}" role="menuitem"
                                    class="{{ $menuItem }} {{ request()->routeIs('settings.mail') ? $menuItemActive : $menuItemIdle }}">
@@ -349,6 +353,8 @@
                        class="{{ $menuItem }} {{ request()->routeIs('users') ? $menuItemActive : $menuItemIdle }}">{{ __('Users') }}</a>
                     <a href="{{ route('webhooks') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('webhooks') ? $menuItemActive : $menuItemIdle }}">{{ __('Webhooks') }}</a>
+                    <a href="{{ route('settings.api-tokens') }}"
+                       class="{{ $menuItem }} {{ request()->routeIs('settings.api-tokens') ? $menuItemActive : $menuItemIdle }}">{{ __('API tokens') }}</a>
                     <a href="{{ route('settings.mail') }}"
                        class="{{ $menuItem }} {{ request()->routeIs('settings.mail') ? $menuItemActive : $menuItemIdle }}">{{ __('Email (SMTP)') }}</a>
                     <a href="{{ route('settings.backups') }}"

@@ -8,6 +8,20 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Added
 
+- **Lead-metadata API for vigilo (LG-15).** `GET /api/v1/lead-metadata`
+  serves vigilo's contract v1: a per-client change feed of lead *metadata*
+  (status, when it last changed, source type, Meta campaign/ad set/ad/form
+  ids, duplicate/qualified/contacted/organic flags), ordered by
+  `(updated_at, id)` with an opaque cursor, and `deleted: true` tombstones
+  for deleted leads. It never contains names, contact details, messages,
+  answers, raw payloads, notes, AI output or click ids; a contract test
+  enforces that. The client key is the slug of the client name. Operators
+  create and revoke read-only tokens under the new **Settings → API tokens**
+  page; tokens are stored hashed and shown once. Rate limited to 60 requests
+  per minute per token; each request is logged with token id, client key and
+  row count only. `has_gclid` is `false` until per-lead attribution (LG-6)
+  lands. Needs `php artisan migrate` (new `api_tokens` table and a leads
+  index). See *Pairing with vigilo* in the README.
 - **Product tour video in the README.** A 44-second animated tour (lead
   intake, duplicate detection, AI ranking, reporting, client portals,
   self-hosting) now sits right below the logo as a clickable poster that opens

@@ -8,6 +8,7 @@ use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Reporting\Contracts\AdMetricsSource;
 use App\Domain\Reporting\Contracts\CreativeMetricsSource;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Middleware\AuthenticateApiToken;
 use App\Http\Middleware\EnsureAiEnabled;
 use App\Importers\Contracts\LeadSource;
 use App\Importers\Csv\CsvLeadSource;
@@ -25,6 +26,7 @@ use App\Importers\Meta\MetaLeadsSource;
 use App\Importers\MetaMock\MetaMockAdMetricsSource;
 use App\Importers\MetaMock\MetaMockCreativeSource;
 use App\Importers\Openflow\OpenflowLeadSource;
+use App\Models\ApiToken;
 use App\Models\MailSetting;
 use App\Models\WebhookEndpoint;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -125,6 +127,8 @@ class AppServiceProvider extends ServiceProvider
         // attached to specific Livewire routes.
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('ai.enabled', EnsureAiEnabled::class);
+        // Bearer-token auth for the read API (`api.token:<scope>`).
+        $router->aliasMiddleware('api.token', AuthenticateApiToken::class);
 
         // Apply the operator's UI mail (SMTP) settings over the .env mail config
         // so reporting emails, password resets, etc. honour Settings → Email.
@@ -226,6 +230,20 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(10)->by('webhook-ip:'.$request->ip());
+        });
+
+        // The read API, same idea as the webhook bucket: a valid token gets
+        // its own 60/min, keyed on the token row so a caller cannot widen it;
+        // unknown or revoked tokens share a narrow IP-keyed bucket so guessing
+        // tokens stays slow.
+        RateLimiter::for('api-token', static function (Request $request) {
+            $token = ApiToken::findActive((string) $request->bearerToken());
+
+            if ($token !== null) {
+                return Limit::perMinute(60)->by('api-token:'.$token->id);
+            }
+
+            return Limit::perMinute(10)->by('api-token-ip:'.$request->ip());
         });
     }
 

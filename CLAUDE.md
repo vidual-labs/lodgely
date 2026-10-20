@@ -100,6 +100,17 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   limiters in `AppServiceProvider::bootRateLimiters()`, and are keyed on
   something the caller cannot rotate. Reset-mail links are pinned to
   `APP_URL`; never build an emailed link from the request host.
+- **Read API for vigilo** (`GET /api/v1/lead-metadata`, LG-15) — a
+  per-client change feed of lead *metadata* for the vigilo ads watchdog,
+  built in `LeadMetadataFeed` from an explicit column allow-list. **Never
+  add a PII column to it** (`LeadMetadataApiTest` fails on PII keys/values).
+  Auth is `api.token:<scope>` (`AuthenticateApiToken`) with operator-created,
+  SHA-256-hashed `ApiToken`s from `/settings/api-tokens` (native form posts,
+  plaintext flashed once). The feed relies on every lead write bumping
+  `updated_at` and on deletions staying soft: a future hard delete (LG-11)
+  must leave a tombstone, or vigilo never learns the lead is gone. The
+  contract lives in vigilo's `docs/LODGELY-CONTRACT.md`; the shared roadmap
+  section is "Shared with vigilo" in `ROADMAP.md`.
 - **Ops** — DB backups (`/settings/backups`; the dump inside the archive is
   cleartext unless `LODGELY_BACKUP_PASSPHRASE` is set — the *columns* are
   encrypted, the dump is not, so treat an archive as a full PII copy),

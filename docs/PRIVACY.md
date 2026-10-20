@@ -26,6 +26,13 @@ you the tools; the policies are yours.
   original values remain visible to operators.
 - **No telemetry, no external calls** out of the box. lodgely does not
   phone home.
+- **Lead-metadata API (vigilo).** `GET /api/v1/lead-metadata` answers
+  only bearer tokens an operator created under *Settings → API tokens*
+  (stored hashed, revocable). It returns status, flags, source type and
+  Meta ad ids per lead, built from an explicit allow-list of columns: no
+  name, contact details, message, answers, raw payload, notes, AI output or
+  click ids. A contract test fails if any of those keys appear. Deleted
+  leads go out as id-only tombstones so the consumer deletes them too.
 - **HTTPS.** Use the Caddyfile's TLS-on-real-hostname mode for production.
 
 What this product does **not** do for you (yet, on purpose):
