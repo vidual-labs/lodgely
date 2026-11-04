@@ -110,7 +110,10 @@ Beyond the lead inbox, these are all live — don't treat them as greenfield:
   `updated_at` and on deletions staying soft: a future hard delete (LG-11)
   must leave a tombstone, or vigilo never learns the lead is gone. The
   contract lives in vigilo's `docs/LODGELY-CONTRACT.md`; the shared roadmap
-  section is "Shared with vigilo" in `ROADMAP.md`.
+  section is "Shared with vigilo" in `ROADMAP.md`. Lead counts in reporting
+  go through `Lead::scopeCountable()` — the countable-lead definition shared
+  with vigilo (no duplicates by status or flag, no incomplete leads); don't
+  count leads in reporting without it.
 - **Ops** — DB backups (`/settings/backups`; the dump inside the archive is
   cleartext unless `LODGELY_BACKUP_PASSPHRASE` is set — the *columns* are
   encrypted, the dump is not, so treat an archive as a full PII copy),

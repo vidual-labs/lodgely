@@ -150,6 +150,7 @@ class ClientViewDataBuilder
 
         return Lead::query()
             ->visibleTo($user)
+            ->countable()
             ->where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->selectRaw("

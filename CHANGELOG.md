@@ -6,6 +6,27 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ## [Unreleased]
 
+### Changed
+
+- **Reporting counts only countable leads.** The *Lodgely leads* figures on
+  `/reporting` (KPI card, trend chart, campaign table, leads by source) and
+  the *Leads* column of client report views no longer count duplicates (by
+  status or by the duplicate flag) or incomplete leads, so they no longer
+  inflate lead totals. This is the same definition vigilo uses for its cost
+  per lead findings (`Lead::scopeCountable()`; ROADMAP → *Shared with
+  vigilo*, V6). Expect lower lead numbers where duplicates were common.
+- **The vigilo lead-metadata feed has three new optional fields:**
+  `attribution.google_campaign_id`, `google_ad_group_id` and
+  `google_criterion_id`. They carry Google ValueTrack ids (numeric only, never
+  keyword text or a click id) for vigilo's keyword-level lead quality, and
+  stay `null` until per-lead attribution (LG-6) stores them. Contract v1 is
+  unchanged otherwise.
+
+## [0.59.0] · 2026-10-20
+
+Everything up to and including 0.59.0. Earlier versions were not split into
+their own headings.
+
 ### Added
 
 - **Lead-metadata API for vigilo (LG-15).** `GET /api/v1/lead-metadata`

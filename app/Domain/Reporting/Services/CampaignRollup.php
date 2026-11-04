@@ -12,6 +12,9 @@ class CampaignRollup
 {
     /**
      * Aggregate ad metrics + lodgely lead counts, grouped by campaign.
+     * Every lodgely lead count in this class is a *countable* lead
+     * ({@see Lead::scopeCountable()}): duplicates and incomplete leads do not
+     * inflate totals or lower cost per lead.
      *
      * When $client is given, ad metrics are scoped to the campaigns that the
      * client's leads carry (see campaignIdsForClient) and lead counts are scoped
@@ -48,6 +51,7 @@ class CampaignRollup
             ->whereNotNull('campaign_id')
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->when($client, fn ($q) => $q->forClientName($client))
+            ->countable()
             ->select('campaign_id', DB::raw('COUNT(*) as cnt'))
             ->groupBy('campaign_id')
             ->pluck('cnt', 'campaign_id');
@@ -84,6 +88,7 @@ class CampaignRollup
         $lodgelyLeads = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->when($client, fn ($q) => $q->forClientName($client))
+            ->countable()
             ->count();
 
         return [
@@ -129,6 +134,7 @@ class CampaignRollup
         $leadsByDay = Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->when($client, fn ($q) => $q->forClientName($client))
+            ->countable()
             ->select(DB::raw('DATE(created_at) as d'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('d')
             ->pluck('cnt', 'd');
@@ -164,6 +170,7 @@ class CampaignRollup
         return Lead::where('tenant_id', $tenantId)
             ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
             ->when($client, fn ($q) => $q->forClientName($client))
+            ->countable()
             ->select('source', DB::raw('COUNT(*) as lead_count'))
             ->groupBy('source')
             ->orderByDesc('lead_count')

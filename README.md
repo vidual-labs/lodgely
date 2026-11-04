@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.59.0-6366F1" alt="Version 0.59.0">
+  <img src="https://img.shields.io/badge/version-0.60.0-6366F1" alt="Version 0.60.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -138,7 +138,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 
 **Reporting & AI**
 
-- 📈 Operator `/reporting` dashboard — KPI cards, trend charts, campaign breakdown, ad-spend ingestion from Meta + Google Ads (live or mock adapters). A per-client pill filter (`All clients / Client A / …`) narrows the whole dashboard to one client — lead figures by `client_name`, ad spend by that client's campaigns.
+- 📈 Operator `/reporting` dashboard — KPI cards, trend charts, campaign breakdown, ad-spend ingestion from Meta + Google Ads (live or mock adapters). Lead figures count only countable leads (no duplicates, no incomplete leads), the same rule vigilo uses. A per-client pill filter (`All clients / Client A / …`) narrows the whole dashboard to one client — lead figures by `client_name`, ad spend by that client's campaigns.
 - 🔌 Multiple Meta/Google Ads connectors — beyond the single default connector, `/settings/ad-platforms` lets an operator add a dedicated Meta and/or Google Ads connector per client (its own ad account, token/OAuth). That client's ad spend and creative rows are then reported to them alone on `/my-reports` and scheduled report emails, instead of the shared default connector's data. A connector can also be scoped to one brand within an ad account that serves several businesses — by Google Business Name asset id or Meta Page id, never the customer-facing name. Each client connector must carry its own ad account id / customer id — unlike the shared default connector, it does not inherit those from `.env`, so a half-configured connector cannot quietly re-import the default account's spend under a client's name.
 - 🎨 Creative performance overview on `/reporting` — top ads and age/gender segments from Meta, top keywords and ads from Google Ads, ranked by spend with clicks, leads and CPL per row. Fetched alongside the campaign metrics (same daily pull and "Fetch data now" button), aggregate numbers only.
 - 📊 Custom client reporting views, assignable per client, with a Live/Hidden toggle and a `/my-reports` client tab.
@@ -392,6 +392,20 @@ every request logged with token id, client key and row count only). The
 contract is specified in vigilo's
 [`docs/LODGELY-CONTRACT.md`](https://github.com/vidual-labs/vigilo/blob/main/docs/LODGELY-CONTRACT.md).
 Revoking a token on the same page cuts vigilo off immediately.
+
+**Keyword-level lead quality (coming with LG-6).** vigilo will rank Google
+keywords by the quality of the leads they bring. The ids come from Google's
+ValueTrack parameters, not from click ids: set this account-level *final URL
+suffix* in each Google Ads account and pass the parameters through your
+forms (OpenFlow hidden fields):
+
+```text
+vg_cid={campaignid}&vg_agid={adgroupid}&vg_tid={targetid}
+```
+
+The feed already has the fields (`google_campaign_id`, `google_ad_group_id`,
+`google_criterion_id`, numeric ids only); they stay empty until lodgely
+stores the parameters per lead.
 
 ---
 

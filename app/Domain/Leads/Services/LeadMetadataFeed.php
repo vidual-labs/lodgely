@@ -155,6 +155,13 @@ class LeadMetadataFeed
                 'utm_source'       => null,
                 'utm_medium'       => null,
                 'utm_campaign'     => null,
+                // Google ids from the ValueTrack final URL suffix
+                // ({campaignid}, {adgroupid}, {targetid} → kwd-<criterion id>),
+                // ids only, never the keyword text or a click id. Null until
+                // LG-6 stores them per lead (decision V5, vigilo VG-9).
+                'google_campaign_id'  => null,
+                'google_ad_group_id'  => null,
+                'google_criterion_id' => null,
             ],
             'flags'             => [
                 'duplicate' => (bool) $lead->duplicate_flag,
