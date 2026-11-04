@@ -424,5 +424,6 @@
     "Revoked :date": "Revoked :date",
     "Revoke :name? Tools using this token stop working immediately.": "Revoke :name? Tools using this token stop working immediately.",
     "Revoke": "Revoke",
-    "No API tokens yet.": "No API tokens yet."
+    "No API tokens yet.": "No API tokens yet.",
+    "Leads received in lodgely, without duplicates and incomplete leads.": "Leads received in lodgely, without duplicates and incomplete leads."
 }

@@ -174,6 +174,20 @@ class Lead extends Model
     }
 
     /**
+     * Leads that count towards lead totals and cost per lead: not a duplicate
+     * (by status, or by the detector's flag — the person was already counted
+     * through the earlier lead) and not incomplete (partials, LG-8). vigilo
+     * counts the same way from the lead-metadata feed, so lodgely's reporting
+     * CPL and vigilo's CPL findings agree (ROADMAP → *Shared with vigilo*,
+     * decision V6). Every lead count in reporting goes through this scope.
+     */
+    public function scopeCountable(Builder $query): Builder
+    {
+        return $query->where('duplicate_flag', false)
+            ->whereNotIn('status', [LeadStatus::Duplicate->value, LeadStatus::Incomplete->value]);
+    }
+
+    /**
      * The Outreach inbox filter — matches the qualified/called/mailed columns
      * shown as pills on the Outreach table/panel section. `not_contacted`
      * means all three are still unset. Unrecognized values are a no-op rather

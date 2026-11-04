@@ -47,6 +47,9 @@ class ReportingClientFilterTest extends TestCase
             'client_name' => $client,
             'campaign_id' => $campaignId,
             'created_at' => now()->subDay(),
+            // Pinned: the factory's random status includes "incomplete",
+            // which reporting does not count (Lead::scopeCountable()).
+            'status' => 'new',
         ]);
     }
 

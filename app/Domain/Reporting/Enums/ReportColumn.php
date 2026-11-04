@@ -52,7 +52,7 @@ enum ReportColumn: string
             self::Cpc           => __('Cost per click: ad spend ÷ clicks.'),
             self::Cpm           => __('Cost per thousand impressions: ad spend ÷ impressions × 1000.'),
             self::ConvRate      => __('Conversion rate: platform leads ÷ clicks × 100.'),
-            self::LeadCount     => __('Total leads ingested into Lodgely.'),
+            self::LeadCount     => __('Leads received in lodgely, without duplicates and incomplete leads.'),
             self::NewLeads      => __('Leads with status "New".'),
             self::ReviewedLeads => __('Leads with status "Reviewed".'),
         };

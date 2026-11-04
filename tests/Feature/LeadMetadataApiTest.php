@@ -121,7 +121,8 @@ class LeadMetadataApiTest extends TestCase
         $response->assertJsonStructure([
             'contract_version', 'client', 'next_cursor', 'has_more',
             'data' => [['id', 'submitted_at', 'updated_at', 'status', 'status_changed_at', 'source_type',
-                'attribution' => ['meta_campaign_id', 'meta_adset_id', 'meta_ad_id', 'meta_form_id', 'has_gclid', 'utm_source', 'utm_medium', 'utm_campaign'],
+                'attribution' => ['meta_campaign_id', 'meta_adset_id', 'meta_ad_id', 'meta_form_id', 'has_gclid', 'utm_source', 'utm_medium', 'utm_campaign',
+                    'google_campaign_id', 'google_ad_group_id', 'google_criterion_id'],
                 'flags' => ['duplicate', 'qualified', 'contacted', 'organic'],
             ]],
         ]);
@@ -141,6 +142,9 @@ class LeadMetadataApiTest extends TestCase
                     'meta_ad_id'       => '2385011002',
                     'meta_form_id'     => '9001',
                     'has_gclid'        => false,
+                    'google_campaign_id'  => null,
+                    'google_ad_group_id'  => null,
+                    'google_criterion_id' => null,
                 ],
                 'flags' => ['duplicate' => false, 'qualified' => true, 'contacted' => true, 'organic' => false],
             ]],
