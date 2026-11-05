@@ -42,6 +42,12 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **OpenFlow file uploads no longer fill a lead's custom answers with the
+  file itself.** An unmapped *File Upload* answer was stored as its file name,
+  type, size and the whole file as base64 text, which could be megabytes in
+  the lead panel, the CSV export and the AI ranking prompt. It is stored as
+  the file name now; the raw payload still holds the file. Leads imported
+  before keep their answers.
 - **Lead exports with more than 500 leads are complete again.** The CSV and
   NDJSON export streamed in chunks of 500 that kept the inbox's newest-first
   order, so every chunk after the first re-read the newest leads: an export
