@@ -77,6 +77,13 @@ semantic-ish versioning once a 1.0 is tagged.
   also name sources the way the Source filter does ("Meta Lead Ads",
   "OpenFlow") instead of showing raw keys such as "meta ads".
 
+- **Scheduled report e-mails arrive in each client's own language.** They
+  were always written in the server's default language, so a client who uses
+  lodgely in German received an English e-mail ("Hi …, Here is your
+  October 2026 report."). The greeting, footer, metric names and month names
+  now follow the language the recipient picked in lodgely; the subject and
+  intro text stay exactly as the operator wrote them.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
