@@ -198,6 +198,59 @@ class LeadExportTest extends TestCase
         $this->assertStringStartsWith("'+", $row[array_search('message', LeadExportController::COLUMNS)]);
     }
 
+    /**
+     * The export streams in chunks of 500. Keyset chunking (lazyById) keeps
+     * the inbox's created_at DESC order and only swaps the id tiebreaker for
+     * "id > last id", so from the second chunk on it re-read the newest rows
+     * and never reached the oldest ones: 1,100 leads exported as 999 rows,
+     * 499 of them duplicates. Every lead must appear exactly once, in the
+     * inbox's sort order.
+     */
+    public function test_export_larger_than_one_chunk_contains_every_lead_exactly_once_in_sort_order(): void
+    {
+        $op = $this->operator();
+        $start = now()->subDays(30);
+        $rows = [];
+        for ($i = 0; $i < 1100; $i++) {
+            $rows[] = Lead::factory()->make([
+                'tenant_id' => Tenant::DEFAULT_ID,
+                'created_at' => $start->copy()->addMinutes($i),
+                'updated_at' => $start->copy()->addMinutes($i),
+            ])->getAttributes();
+        }
+        foreach (array_chunk($rows, 200) as $chunk) {
+            Lead::query()->insert(array_map(fn (array $r) => array_map(
+                fn ($v) => is_array($v) ? json_encode($v) : $v,
+                $r,
+            ), $chunk));
+        }
+        $this->assertSame(1100, Lead::count());
+
+        foreach (['csv', 'ndjson'] as $format) {
+            $response = $this->actingAs($op)->get("/inbox/export?format={$format}");
+            $body = $this->streamBody($response->baseResponse);
+
+            if ($format === 'csv') {
+                $reader = \League\Csv\Reader::createFromString($body);
+                $reader->setHeaderOffset(0);
+                $ids = array_map(fn (array $r) => (int) $r['id'], iterator_to_array($reader->getRecords(), false));
+            } else {
+                $ids = array_map(
+                    fn (string $line) => (int) json_decode($line, true)['id'],
+                    array_values(array_filter(explode("\n", $body))),
+                );
+            }
+
+            $this->assertCount(1100, $ids, "{$format}: every lead exported");
+            $this->assertCount(1100, array_unique($ids), "{$format}: no lead exported twice");
+            $this->assertSame(
+                Lead::query()->orderByDesc('created_at')->orderByDesc('id')->pluck('id')->all(),
+                $ids,
+                "{$format}: rows follow the inbox sort (newest first)",
+            );
+        }
+    }
+
     public function test_export_is_logged(): void
     {
         $op = $this->operator();

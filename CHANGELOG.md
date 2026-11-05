@@ -22,6 +22,15 @@ semantic-ish versioning once a 1.0 is tagged.
   stay `null` until per-lead attribution (LG-6) stores them. Contract v1 is
   unchanged otherwise.
 
+### Fixed
+
+- **Lead exports with more than 500 leads are complete again.** The CSV and
+  NDJSON export streamed in chunks of 500 that kept the inbox's newest-first
+  order, so every chunk after the first re-read the newest leads: an export
+  of 1,100 leads came out as 999 rows, half of them duplicates, and the
+  oldest leads were missing. Every lead now appears exactly once, in the
+  inbox's sort order.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into

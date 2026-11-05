@@ -73,6 +73,12 @@ class LeadExportController extends Controller
         $filename = "lodgely-leads-{$timestamp}.".($format === 'csv' ? 'csv' : 'ndjson');
         $mime = $format === 'csv' ? 'text/csv; charset=UTF-8' : 'application/x-ndjson';
 
+        // lazy(), not lazyById(): keyset chunking replaces only the id order
+        // with "id > last id" and keeps created_at DESC in front of it, so
+        // every chunk after the first re-read the newest rows and the oldest
+        // were never reached (1,100 leads came out as 999 rows, half of them
+        // duplicates). Offset chunking keeps the inbox sort intact, and
+        // applySort() always ends on an id tiebreaker, so pages are stable.
         $count = 0;
         $stream = function () use ($query, $format, &$count): void {
             $handle = fopen('php://output', 'wb');
@@ -80,12 +86,12 @@ class LeadExportController extends Controller
             if ($format === 'csv') {
                 $csv = Writer::createFromStream($handle);
                 $csv->insertOne(self::COLUMNS);
-                foreach ($query->lazyById(500) as $lead) {
+                foreach ($query->lazy(500) as $lead) {
                     $csv->insertOne(array_map([$this, 'escapeCsvFormula'], array_values($this->row($lead))));
                     $count++;
                 }
             } else {
-                foreach ($query->lazyById(500) as $lead) {
+                foreach ($query->lazy(500) as $lead) {
                     fwrite($handle, json_encode($this->row($lead), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
                     $count++;
                 }
