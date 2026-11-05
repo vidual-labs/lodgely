@@ -5,6 +5,7 @@ namespace Tests\Feature\Inbox;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Http\Controllers\LeadExportController;
+use App\Livewire\Inbox\InboxPage;
 use App\Models\Lead;
 use App\Models\Tenant;
 use App\Models\User;
@@ -12,6 +13,8 @@ use App\Models\UserLeadScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use League\Csv\Reader;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LeadExportTest extends TestCase
@@ -231,7 +234,7 @@ class LeadExportTest extends TestCase
             $body = $this->streamBody($response->baseResponse);
 
             if ($format === 'csv') {
-                $reader = \League\Csv\Reader::createFromString($body);
+                $reader = Reader::createFromString($body);
                 $reader->setHeaderOffset(0);
                 $ids = array_map(fn (array $r) => (int) $r['id'], iterator_to_array($reader->getRecords(), false));
             } else {
@@ -263,8 +266,8 @@ class LeadExportTest extends TestCase
         $op = $this->operator();
         Lead::factory()->create(['client_name' => 'Acme']);
 
-        $html = \Livewire\Livewire::actingAs($op)
-            ->test(\App\Livewire\Inbox\InboxPage::class)
+        $html = Livewire::actingAs($op)
+            ->test(InboxPage::class)
             ->set('client', 'Acme')
             ->set('status', LeadStatus::New->value)
             ->set('search', 'jo')

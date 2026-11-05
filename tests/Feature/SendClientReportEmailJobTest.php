@@ -11,6 +11,7 @@ use App\Models\ClientReportEmailSend;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -84,7 +85,7 @@ class SendClientReportEmailJobTest extends TestCase
     public function test_each_recipient_gets_the_report_in_their_own_language(): void
     {
         Mail::fake();
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-15 09:00:00'));
+        $this->travelTo(Carbon::parse('2026-10-15 09:00:00'));
         [, $client, $email, $send] = $this->setup_world();
         $client->update(['locale' => 'de', 'name' => 'Erika']);
         $email->update(['subject_template' => 'Report {{period}}']);

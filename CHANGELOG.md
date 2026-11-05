@@ -34,6 +34,8 @@ semantic-ish versioning once a 1.0 is tagged.
   behind it, so nobody has to work it out by hand. The README's vigilo
   setup no longer mentions `VIGILO_LODGELY_ENABLED`, which vigilo dropped:
   its lodgely integration is on once URL and token are set.
+- Tests added in this release import their classes rather than using inline
+  fully qualified names, so they add no Pint findings. No behaviour change.
 
 ### Fixed
 

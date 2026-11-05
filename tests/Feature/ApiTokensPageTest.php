@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domain\Api\Enums\ApiTokenScope;
 use App\Models\ApiToken;
+use App\Models\Lead;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,10 +66,10 @@ class ApiTokensPageTest extends TestCase
      */
     public function test_the_page_lists_the_client_keys_the_feed_answers_to(): void
     {
-        \App\Models\Lead::factory()->create(['client_name' => 'Kanzlei Brenner & Partner']);
-        \App\Models\Lead::factory()->create(['client_name' => 'kanzlei brenner & partner']);
-        \App\Models\Lead::factory()->create(['client_name' => 'Acme']);
-        \App\Models\Lead::factory()->create(['client_name' => null]);
+        Lead::factory()->create(['client_name' => 'Kanzlei Brenner & Partner']);
+        Lead::factory()->create(['client_name' => 'kanzlei brenner & partner']);
+        Lead::factory()->create(['client_name' => 'Acme']);
+        Lead::factory()->create(['client_name' => null]);
 
         $response = $this->actingAs($this->user('operator'))->get(route('settings.api-tokens'));
 
