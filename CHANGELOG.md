@@ -21,6 +21,13 @@ semantic-ish versioning once a 1.0 is tagged.
   keyword text or a click id) for vigilo's keyword-level lead quality, and
   stay `null` until per-lead attribution (LG-6) stores them. Contract v1 is
   unchanged otherwise.
+- **The test suite refuses to run against a real database.** Tests wipe the
+  database they run on, and `phpunit.xml`'s in-memory SQLite settings lose to
+  real environment variables. If `DB_CONNECTION` / `DB_DATABASE` reach
+  `php artisan test` as real environment variables (an `env_file`,
+  Kubernetes, a shell export), the run now stops with an explanation instead
+  of emptying the live PostgreSQL database. The bundled Docker setup was not
+  affected.
 
 ### Fixed
 
