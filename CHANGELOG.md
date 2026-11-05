@@ -61,6 +61,14 @@ semantic-ish versioning once a 1.0 is tagged.
   lead's checkbox also no longer throws a JavaScript error in the browser
   console.
 
+- **Demo data from `migrate --seed` can be removed from Settings → Demo
+  data.** The seeder built its own copy of the demo leads without the demo
+  tag, so that page reported "0 demo leads" and *Unload demo data* left all
+  ~74 seeded leads in the inbox. The seeder now loads the same tagged dataset
+  as the page. Re-running it no longer adds another 74 leads each time, and
+  no longer resets the demo accounts' passwords to `password`. Leads seeded
+  by an older version stay untagged and have to be deleted from the inbox.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
