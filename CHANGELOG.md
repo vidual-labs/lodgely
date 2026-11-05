@@ -36,6 +36,9 @@ semantic-ish versioning once a 1.0 is tagged.
   its lodgely integration is on once URL and token are set.
 - Tests added in this release import their classes rather than using inline
   fully qualified names, so they add no Pint findings. No behaviour change.
+- `storage/app/private/livewire-tmp/` (Livewire's temporary upload folder,
+  created by the CSV import) is git-ignored, so it no longer shows up as an
+  untracked folder on installs that deploy with `git pull`.
 
 ### Fixed
 
