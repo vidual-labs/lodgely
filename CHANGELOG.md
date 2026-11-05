@@ -120,6 +120,13 @@ semantic-ish versioning once a 1.0 is tagged.
   names originals the client can see (the duplicate flag itself stays);
   operators' exports are unchanged.
 
+- **Running the test suite on an install no longer deletes its backups.**
+  The backup tests worked in the real `storage/app/private/backups`
+  directory and removed every archive there before and after each test, so
+  `php artisan test` inside a live container (where the project directory is
+  the live storage) deleted the operator's backup archives and left an empty
+  test archive on the Backups page. They now run in a throwaway directory.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
