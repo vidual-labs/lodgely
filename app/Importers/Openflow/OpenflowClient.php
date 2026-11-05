@@ -9,7 +9,7 @@ use RuntimeException;
  * Thin HTTP client for an OpenFlow install's admin API.
  *
  * Authentication is a Bearer token: preferably a read-only OpenFlow API token
- * (`ofw_…`, minted under Settings → API Tokens in OpenFlow), used as-is.
+ * (`ofw_…`, minted under Account → API Tokens in OpenFlow), used as-is.
  * The fallback is a JWT minted from an email/password login
  * (`POST /api/auth/login`); it comes back as an httpOnly `token` cookie (the
  * JSON body only carries the user), so login() scrapes it from the Set-Cookie
@@ -48,6 +48,17 @@ class OpenflowClient
                 $response->status(),
                 substr($response->body(), 0, 300),
             ));
+        }
+
+        // A two-factor account gets no session from the password alone:
+        // OpenFlow e-mails a login code and answers 200 without a cookie. A
+        // background pull can never enter that code, so the only fix is an API
+        // token — say so instead of blaming the URL or a proxy below.
+        if ($response->json('twoFactorRequired') === true) {
+            throw new RuntimeException(
+                'OpenFlow login needs a two-factor code, which a background pull cannot enter. '
+                .'Create a read-only API token in OpenFlow (Account → API Tokens) and use it for this source instead of the email and password.'
+            );
         }
 
         // Preferred path: the httpOnly `token` cookie set on a successful login.

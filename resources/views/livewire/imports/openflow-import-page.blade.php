@@ -203,7 +203,7 @@
                            placeholder="{{ $editingId ? __('Leave blank to keep current') : 'ofw_…' }}"
                            class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
                     <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                        {{ __('In OpenFlow, go to Settings → API Tokens and create a read-only token. Stored encrypted. Preferred over a password.') }}
+                        {{ __('In OpenFlow, go to Account → API Tokens and create a read-only token. Stored encrypted. Preferred over a password.') }}
                     </p>
                     @error('form.api_token') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>

@@ -105,9 +105,11 @@ below.
   lodgely client. The **Imports → OpenFlow** page (`/imports/openflow`) lets an
   operator add one or more sources; each stores the OpenFlow base URL and an
   auth credential — a **read-only OpenFlow API token** (recommended; created in
-  OpenFlow under Settings → API Tokens, stored **encrypted**, sent as a Bearer
+  OpenFlow under Account → API Tokens, stored **encrypted**, sent as a Bearer
   token) or an email + **encrypted** password login (the connector then signs in
-  to mint a short-lived JWT, scraped from the login cookie). A **"Load forms"**
+  to mint a short-lived session token, scraped from the login cookie; an
+  OpenFlow account with two-factor login cannot be used this way and needs a
+  token). A **"Load forms"**
   button validates the credential and lists the account's
   forms; **"Load fields"** then fetches the picked form's fields so the operator
   can map each one to a lead column (`full_name` / `email` / `phone` / `message`

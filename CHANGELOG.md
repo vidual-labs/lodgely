@@ -31,6 +31,14 @@ semantic-ish versioning once a 1.0 is tagged.
   oldest leads were missing. Every lead now appears exactly once, in the
   inbox's sort order.
 
+- **An OpenFlow source that signs in to a two-factor account now says what
+  to do.** OpenFlow answers a password login for such an account with an
+  e-mailed code instead of a session, and lodgely reported that as "no auth
+  token was returned … a proxy that strips cookies". It now tells the
+  operator to create a read-only API token in OpenFlow and use that instead.
+  The OpenFlow page's hint also points at the token's current place in
+  OpenFlow (Account → API Tokens, formerly under Settings).
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
