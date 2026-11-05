@@ -84,6 +84,12 @@ semantic-ish versioning once a 1.0 is tagged.
   now follow the language the recipient picked in lodgely; the subject and
   intro text stay exactly as the operator wrote them.
 
+- **Saved views keep the inbox you were looking at.** Saving a view dropped
+  the search term from the inbox, saving one while the table was sorted by a
+  column header (name, status, client, …) silently failed, and starring or
+  deleting a saved view reset every active filter. All three now return to
+  the same filtered, sorted inbox, and views can be saved with any sort.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into

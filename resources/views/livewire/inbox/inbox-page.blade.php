@@ -485,6 +485,15 @@
                                      ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50'
                                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800' }}">
                         @csrf
+                        {{-- ★ / delete return to this inbox, so they carry its
+                             filter state like every other write-panel form. --}}
+                        <input type="hidden" name="search"   value="{{ $search }}">
+                        <input type="hidden" name="status"   value="{{ $status }}">
+                        <input type="hidden" name="priority" value="{{ $priority }}">
+                        <input type="hidden" name="source"   value="{{ $source }}">
+                        <input type="hidden" name="client"   value="{{ $client }}">
+                        <input type="hidden" name="outreach" value="{{ $outreach }}">
+                        <input type="hidden" name="sort"     value="{{ $sort }}">
                         <button type="submit" name="action" value="load"
                                 class="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 max-w-[140px] truncate transition-colors"
                                 title="{{ $sf->name }}">
