@@ -33,12 +33,12 @@
                 @auth
                     <div class="flex items-center gap-2" wire:ignore.self>
                         <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                            <a href="{{ route('inbox.export', $this->exportQuery('csv')) }}"
                                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                 {{ __('Export CSV') }}
                             </a>
                             @if(auth()->user()->isOperator())
-                                <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
+                                <a href="{{ route('inbox.export', $this->exportQuery('ndjson')) }}"
                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
                                     {{ __('Export JSON') }}
                                 </a>
@@ -258,9 +258,7 @@
                 @foreach($kpis['by_source'] as $row)
                     @php
                         $isActive = $source === $row->source;
-                        $sourceHref = route('inbox', array_filter(array_merge(request()->only(['q', 'status', 'priority', 'client', 'sort']), [
-                            'source' => $isActive ? null : $row->source,
-                        ]), fn ($v) => $v !== null && $v !== ''));
+                        $sourceHref = route('inbox', $this->filterQuery(['source' => $isActive ? null : $row->source]));
                     @endphp
                     <a href="{{ $sourceHref }}"
                        class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors

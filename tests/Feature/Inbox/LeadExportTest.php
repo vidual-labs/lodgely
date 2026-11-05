@@ -251,6 +251,40 @@ class LeadExportTest extends TestCase
         }
     }
 
+    /**
+     * The Export CSV / JSON links were built from request()->query(). That is
+     * the page URL only on the first render: every filter change re-renders
+     * through Livewire's /livewire/update request, whose query is empty, so
+     * after picking a client or status in the toolbar the links silently
+     * exported *every* lead instead of the filtered set.
+     */
+    public function test_export_links_follow_filters_changed_in_the_toolbar(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['client_name' => 'Acme']);
+
+        $html = \Livewire\Livewire::actingAs($op)
+            ->test(\App\Livewire\Inbox\InboxPage::class)
+            ->set('client', 'Acme')
+            ->set('status', LeadStatus::New->value)
+            ->set('search', 'jo')
+            ->set('sort', 'name_asc')
+            ->html();
+
+        preg_match_all('#href="([^"]*/inbox/export\?[^"]*)"#', $html, $m);
+        $this->assertCount(2, $m[1], 'CSV and JSON export links rendered');
+
+        foreach ($m[1] as $href) {
+            parse_str((string) parse_url(html_entity_decode($href), PHP_URL_QUERY), $query);
+            $this->assertSame('Acme', $query['client'] ?? null, $href);
+            $this->assertSame('new', $query['status'] ?? null, $href);
+            $this->assertSame('jo', $query['q'] ?? null, $href);
+            $this->assertSame('name_asc', $query['sort'] ?? null, $href);
+            $this->assertContains($query['format'] ?? null, ['csv', 'ndjson'], $href);
+            $this->assertArrayNotHasKey('priority', $query, 'empty filters stay out of the URL');
+        }
+    }
+
     public function test_export_is_logged(): void
     {
         $op = $this->operator();

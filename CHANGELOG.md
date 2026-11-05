@@ -45,6 +45,15 @@ semantic-ish versioning once a 1.0 is tagged.
   `attribution.meta_form_id`. That field is for Meta ids only, so it is now
   `null` for OpenFlow leads (their `source_type` is still `openflow`).
 
+- **Export CSV / Export JSON export the filtered leads again after a filter
+  change.** The export links (and the Sources chips) were built from the page
+  URL as it was when the inbox first loaded. Changing the search, status,
+  client or any other toolbar filter re-renders the inbox without a page
+  load, so the links kept the old query: an operator who narrowed the inbox
+  to one client and exported got every client's leads, and clicking a source
+  chip threw the other active filters away. Both now follow the filters on
+  screen, including the Outreach filter the chips never carried.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
