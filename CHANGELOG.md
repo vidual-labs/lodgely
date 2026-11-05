@@ -54,6 +54,13 @@ semantic-ish versioning once a 1.0 is tagged.
   chip threw the other active filters away. Both now follow the filters on
   screen, including the Outreach filter the chips never carried.
 
+- **Bulk "Set status" / "Set priority" can be applied again.** After
+  selecting leads and picking a status or priority, the *Apply* button stayed
+  greyed out: it was only re-enabled by a server round-trip that picking a
+  value never made. It now enables as soon as a value is picked. Ticking a
+  lead's checkbox also no longer throws a JavaScript error in the browser
+  console.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into

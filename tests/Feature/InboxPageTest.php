@@ -164,6 +164,31 @@ class InboxPageTest extends TestCase
         );
     }
 
+    /**
+     * The bulk status / priority selects are deferred `wire:model` (no request
+     * on change), but their Apply buttons were rendered `disabled` on the
+     * server while the value was empty. Picking a status therefore never
+     * enabled Apply: select rows → pick a status → the button stayed greyed
+     * out. The button must not be server-disabled by the deferred value; it is
+     * enabled client-side from $wire instead (bulkSetStatus() still ignores an
+     * empty value).
+     */
+    public function test_bulk_apply_buttons_are_not_disabled_by_the_deferred_select_value(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create();
+
+        $html = Livewire::actingAs($op)->test(InboxPage::class)
+            ->call('toggleBulkItem', (string) $lead->id)
+            ->html();
+
+        foreach (['bulkSetStatus' => 'bulkStatusValue', 'bulkSetPriority' => 'bulkPriorityValue'] as $action => $property) {
+            $this->assertSame(1, preg_match('#<button[^>]*wire:click="'.$action.'"[^>]*>#', $html, $m), $action.' button rendered');
+            $this->assertDoesNotMatchRegularExpression('#\sdisabled(\s|>|=)#', $m[0], $action.' must not be server-disabled');
+            $this->assertStringContainsString('x-bind:disabled="! $wire.'.$property.'"', $m[0]);
+        }
+    }
+
     public function test_client_can_bulk_set_status_on_their_own_visible_leads(): void
     {
         $client = $this->clientFor('Acme');
