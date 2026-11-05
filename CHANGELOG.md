@@ -39,6 +39,12 @@ semantic-ish versioning once a 1.0 is tagged.
   The OpenFlow page's hint also points at the token's current place in
   OpenFlow (Account → API Tokens, formerly under Settings).
 
+- **The vigilo lead-metadata feed no longer labels OpenFlow form ids as Meta
+  form ids.** OpenFlow leads keep their OpenFlow form's id in the same column
+  Meta Lead Ads use, and the feed sent it on as
+  `attribution.meta_form_id`. That field is for Meta ids only, so it is now
+  `null` for OpenFlow leads (their `source_type` is still `openflow`).
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into

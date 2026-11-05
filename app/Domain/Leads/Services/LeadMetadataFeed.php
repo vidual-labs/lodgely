@@ -148,7 +148,9 @@ class LeadMetadataFeed
                 'meta_campaign_id' => self::nullableString($lead->campaign_id),
                 'meta_adset_id'    => self::nullableString($lead->adset_id),
                 'meta_ad_id'       => self::nullableString($lead->ad_id),
-                'meta_form_id'     => self::nullableString($lead->form_id),
+                // OpenFlow keeps its own form's UUID in the same column; that
+                // is not a Meta form, and the contract's meta_* are Meta ids.
+                'meta_form_id'     => $lead->source === 'openflow' ? null : self::nullableString($lead->form_id),
                 // No per-lead click-id attribution yet (LG-6); vigilo falls
                 // back to platform conversions for Google until then.
                 'has_gclid'        => false,

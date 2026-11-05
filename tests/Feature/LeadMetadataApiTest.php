@@ -179,6 +179,27 @@ class LeadMetadataApiTest extends TestCase
         $this->assertSame('ld_'.$lead->id, $response->json('data.0.id'));
     }
 
+    /**
+     * The OpenFlow importer keeps the OpenFlow form's UUID in `leads.form_id`
+     * (the same column Meta Lead Ads use), and the feed sent it on as
+     * `attribution.meta_form_id`. The contract's `meta_*` fields are Meta ids
+     * only, so an OpenFlow lead must not claim a Meta form.
+     */
+    public function test_an_openflow_form_id_is_not_sent_as_a_meta_form_id(): void
+    {
+        $this->lead([
+            'source'   => 'openflow',
+            'platform' => 'openflow',
+            'form_id'  => '3f6c1b8e-6a43-4d0b-9a3e-0c1f2d3e4f50',
+        ]);
+
+        $response = $this->feed()->assertOk();
+
+        $this->assertSame('openflow', $response->json('data.0.source_type'));
+        $this->assertNull($response->json('data.0.attribution.meta_form_id'));
+        $this->assertStringNotContainsString('3f6c1b8e', $response->getContent());
+    }
+
     public function test_source_keys_map_to_the_contract_vocabulary(): void
     {
         $this->assertSame('meta_lead_ads', LeadMetadataFeed::sourceType('meta_leads'));
