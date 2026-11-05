@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.60.11-6366F1" alt="Version 0.60.11">
+  <img src="https://img.shields.io/badge/version-0.61.0-6366F1" alt="Version 0.61.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -371,12 +371,14 @@ markers, so vigilo drops them too.
 1. In lodgely, open **Settings → API tokens**, create a token with the
    *Lead metadata* access and copy it (it is shown once; only a hash is
    stored).
-2. In vigilo's `.env`, set `VIGILO_LODGELY_ENABLED=true`,
-   `VIGILO_LODGELY_URL` (this install's `APP_URL`) and
-   `VIGILO_LODGELY_API_TOKEN`.
+2. In vigilo's `.env`, set `VIGILO_LODGELY_URL` (this install's `APP_URL`)
+   and `VIGILO_LODGELY_API_TOKEN`; the integration switches on once both are
+   set.
 3. In vigilo, enter each client's **lodgely client key**: the slug of the
    lodgely client name (`Kanzlei Brenner & Partner` →
-   `kanzlei-brenner-partner`). Renaming the client in lodgely changes the key.
+   `kanzlei-brenner-partner`). **Settings → API tokens** lists every key
+   with the client names behind it. Renaming the client in lodgely changes
+   the key.
 
 vigilo fetches its own ad data with the same agency credentials. Copy the
 values across; lodgely does not hand out ad-platform tokens over the API:

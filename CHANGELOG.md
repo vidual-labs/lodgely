@@ -28,6 +28,12 @@ semantic-ish versioning once a 1.0 is tagged.
   Kubernetes, a shell export), the run now stops with an explanation instead
   of emptying the live PostgreSQL database. The bundled Docker setup was not
   affected.
+- **Settings → API tokens lists the client keys for vigilo.** vigilo asks
+  for a "lodgely client key" per client, the slug of the client name; the
+  page now shows every key the feed answers to next to the client names
+  behind it, so nobody has to work it out by hand. The README's vigilo
+  setup no longer mentions `VIGILO_LODGELY_ENABLED`, which vigilo dropped:
+  its lodgely integration is on once URL and token are set.
 
 ### Fixed
 

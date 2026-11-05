@@ -479,5 +479,9 @@
     "results": "results",
     "First page": "First page",
     "Last page": "Last page",
-    "Go to page :page": "Go to page :page"
+    "Go to page :page": "Go to page :page",
+    "Client keys": "Client keys",
+    "Client key": "Client key",
+    "Enter a client's key in vigilo (client settings → lodgely client key). It is derived from the client name, so renaming a client changes its key.": "Enter a client's key in vigilo (client settings → lodgely client key). It is derived from the client name, so renaming a client changes its key.",
+    "No clients yet — keys appear once leads carry a client name.": "No clients yet — keys appear once leads carry a client name."
 }

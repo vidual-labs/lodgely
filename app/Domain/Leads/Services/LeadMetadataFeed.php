@@ -75,6 +75,36 @@ class LeadMetadataFeed
     }
 
     /**
+     * Every client key the feed answers to, with the client names behind it —
+     * for the Settings → API tokens page, so an operator can copy the key into
+     * vigilo instead of slugging a name by hand. Same rule (and the same
+     * soft-deleted leads) as {@see self::clientNamesForKey()}, so every key
+     * listed resolves.
+     *
+     * @return array<string, list<string>> key => client names, sorted by key
+     */
+    public function clientKeys(int $tenantId): array
+    {
+        $keys = [];
+        $names = Lead::withTrashed()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('client_name')
+            ->distinct()
+            ->orderBy('client_name')
+            ->pluck('client_name');
+
+        foreach ($names as $name) {
+            $key = Str::slug((string) $name);
+            if ($key !== '') {
+                $keys[$key][] = (string) $name;
+            }
+        }
+        ksort($keys);
+
+        return $keys;
+    }
+
+    /**
      * One page of the feed.
      *
      * @param  list<string>  $clientNames
