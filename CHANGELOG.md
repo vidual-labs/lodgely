@@ -90,6 +90,13 @@ semantic-ish versioning once a 1.0 is tagged.
   deleting a saved view reset every active filter. All three now return to
   the same filtered, sorted inbox, and views can be saved with any sort.
 
+- **An OpenFlow source pointed at another form now imports that form's
+  existing submissions.** The pull only walks back to an hour before the
+  last successful fetch. When a source was edited to use a different form,
+  that mark was kept, so every submission the new form already had looked
+  "already fetched" and was never imported. Changing the form now restarts
+  the pull from the beginning. (Changing only the base URL keeps the mark.)
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
