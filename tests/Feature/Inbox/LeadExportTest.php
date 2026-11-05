@@ -76,6 +76,39 @@ class LeadExportTest extends TestCase
         $this->assertStringNotContainsString('Not hers', $body);
     }
 
+    /**
+     * Duplicate detection matches across the whole tenant, so a client's lead
+     * can be the duplicate of another client's lead. The lead panel hides that
+     * original from the client (InboxPage scopes duplicateOf); the CSV export
+     * still printed its id. A client's export only names originals the client
+     * can see; operators keep the id.
+     */
+    public function test_a_clients_export_does_not_point_at_another_clients_lead(): void
+    {
+        $client = $this->clientFor('Acme');
+        $foreign = Lead::factory()->create(['client_name' => 'Other']);
+        $own = Lead::factory()->create(['client_name' => 'Acme']);
+        Lead::factory()->create(['client_name' => 'Acme', 'full_name' => 'Dup of foreign', 'duplicate_flag' => true, 'duplicate_of_id' => $foreign->id]);
+        Lead::factory()->create(['client_name' => 'Acme', 'full_name' => 'Dup of own', 'duplicate_flag' => true, 'duplicate_of_id' => $own->id]);
+
+        $rows = function (User $user): array {
+            $this->flushSession(); // a fresh login per user (the session pins the password hash)
+            $body = $this->streamBody($this->actingAs($user)->get('/inbox/export?format=csv')->baseResponse);
+            $reader = Reader::createFromString($body);
+            $reader->setHeaderOffset(0);
+
+            return collect(iterator_to_array($reader->getRecords(), false))->keyBy('full_name')->all();
+        };
+
+        $forClient = $rows($client);
+        $this->assertSame('', $forClient['Dup of foreign']['duplicate_of_id']);
+        $this->assertSame('1', $forClient['Dup of foreign']['duplicate_flag']);
+        $this->assertSame((string) $own->id, $forClient['Dup of own']['duplicate_of_id']);
+
+        $forOperator = $rows($this->operator());
+        $this->assertSame((string) $foreign->id, $forOperator['Dup of foreign']['duplicate_of_id']);
+    }
+
     public function test_client_cannot_export_ndjson(): void
     {
         $client = $this->clientFor('Acme');

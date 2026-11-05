@@ -112,6 +112,14 @@ semantic-ish versioning once a 1.0 is tagged.
   "already fetched" and was never imported. Changing the form now restarts
   the pull from the beginning. (Changing only the base URL keeps the mark.)
 
+- **A client's CSV export no longer points at another client's lead.**
+  Duplicate detection runs across all clients, so a client's lead can be
+  flagged as a duplicate of a lead that belongs to someone else. The lead
+  panel already hid that original from the client, but the export's
+  `duplicate_of_id` column still printed its id. A client's export now only
+  names originals the client can see (the duplicate flag itself stays);
+  operators' exports are unchanged.
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into
