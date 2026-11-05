@@ -51,7 +51,25 @@ class InboxPage extends Component
         'meta_ads' => 'Meta Lead Ads',
         'meta_leads' => 'Meta Lead Ads',
         'google_sheets' => 'Google Sheets',
+        'openflow' => 'OpenFlow',
     ];
+
+    /**
+     * Display name of a lead source key, translated — the one place the Source
+     * filter, the Sources chips, the table column and the lead panel get it
+     * from, so they all say "Meta Lead Ads" rather than "meta ads". Unknown
+     * keys (a source an older import wrote) fall back to a humanised key.
+     */
+    public static function sourceLabel(?string $source): string
+    {
+        if ($source === null || $source === '') {
+            return '—';
+        }
+
+        return isset(self::SOURCE_LABELS[$source])
+            ? __(self::SOURCE_LABELS[$source])
+            : ucwords(str_replace('_', ' ', $source));
+    }
 
     /** Outreach toggle fields — settable by clients and operators alike. */
     private const OUTREACH_FIELDS = ['qualified_at', 'called_at', 'mailed_at'];
@@ -283,7 +301,7 @@ class InboxPage extends Component
             ->pluck('source')
             ->map(fn ($s) => [
                 'value' => $s,
-                'label' => self::SOURCE_LABELS[$s] ?? ucwords(str_replace('_', ' ', $s)),
+                'label' => self::sourceLabel($s),
             ])
             ->all();
 

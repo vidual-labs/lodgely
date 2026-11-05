@@ -11,9 +11,9 @@ enum LeadPriority: string
     public function label(): string
     {
         return match ($this) {
-            self::Low    => 'Low',
-            self::Medium => 'Medium',
-            self::High   => 'High',
+            self::Low    => __('Low'),
+            self::Medium => __('Medium'),
+            self::High   => __('High'),
         };
     }
 

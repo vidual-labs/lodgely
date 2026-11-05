@@ -702,4 +702,34 @@ class InboxPageTest extends TestCase
         $this->assertContains(['client' => 'Acme', 'outreach' => 'not_contacted'], $chips);
         $this->assertContains(['source' => 'webhook', 'client' => 'Acme', 'outreach' => 'not_contacted'], $chips);
     }
+
+    /**
+     * A German client saw the inbox half in English: priorities ("Low",
+     * "Medium", "High"), the lead count ("26 leads"), the bulk-edit toast and
+     * the source column (raw keys such as "meta ads" / "csv"). Source names now
+     * also match the Source filter's labels in every language.
+     */
+    public function test_the_inbox_speaks_german_to_a_german_client(): void
+    {
+        $client = $this->clientFor('Acme');
+        $client->update(['locale' => 'de']);
+        app()->setLocale('de');
+        $a = Lead::factory()->create(['client_name' => 'Acme', 'source' => 'meta_ads', 'priority' => LeadPriority::High->value]);
+        Lead::factory()->create(['client_name' => 'Acme', 'source' => 'csv', 'priority' => LeadPriority::Low->value]);
+
+        $component = Livewire::actingAs($client)->test(InboxPage::class);
+        $html = $component->html();
+
+        $this->assertStringContainsString('Hoch', $html);
+        $this->assertStringContainsString('Niedrig', $html);
+        $this->assertDoesNotMatchRegularExpression('#>\s*(High|Medium|Low)\s*<#', $html);
+        $this->assertMatchesRegularExpression('#2(&thinsp;|\s)*Leads#u', $html);
+        $this->assertDoesNotMatchRegularExpression('#>\s*meta ads\s*<#i', $html);
+        $this->assertMatchesRegularExpression('#>\s*Meta Lead Ads\s*<#', $html);
+
+        $component->set('bulkSelected', [(string) $a->id])
+            ->set('bulkPriorityValue', LeadPriority::Medium->value)
+            ->call('bulkSetPriority')
+            ->assertDispatched('toast', message: '1 Lead aktualisiert.');
+    }
 }

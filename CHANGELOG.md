@@ -69,6 +69,14 @@ semantic-ish versioning once a 1.0 is tagged.
   no longer resets the demo accounts' passwords to `password`. Leads seeded
   by an older version stay untagged and have to be deleted from the inbox.
 
+- **More of what a client sees is in German.** Lead priorities (Low /
+  Medium / High), the lead count above the inbox, the bulk-edit messages, the
+  metric names and chart labels on *My reports*, the AI summary card, the
+  page navigation under tables and the report e-mail's greeting and footer
+  fell back to English. The inbox table, Sources chips and lead panel now
+  also name sources the way the Source filter does ("Meta Lead Ads",
+  "OpenFlow") instead of showing raw keys such as "meta ads".
+
 ## [0.59.0] · 2026-10-20
 
 Everything up to and including 0.59.0. Earlier versions were not split into

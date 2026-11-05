@@ -94,7 +94,7 @@ trait WithBulkLeadActions
         $count = $leads->count();
         $this->bulkSelected = [];
         $this->bulkStatusValue = '';
-        $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' updated.');
+        $this->dispatch('toast', message: trans_choice(':count lead updated.|:count leads updated.', $count, ['count' => $count]));
     }
 
     public function bulkSetPriority(AuditLogger $audit): void
@@ -128,7 +128,7 @@ trait WithBulkLeadActions
         $count = $leads->count();
         $this->bulkSelected = [];
         $this->bulkPriorityValue = '';
-        $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' updated.');
+        $this->dispatch('toast', message: trans_choice(':count lead updated.|:count leads updated.', $count, ['count' => $count]));
     }
 
     /** Destructive — stays operator-only, unlike the other bulk actions above. */
@@ -152,6 +152,6 @@ trait WithBulkLeadActions
         $this->bulkSelected = [];
         $this->bulkStatusValue = '';
         $this->bulkPriorityValue = '';
-        $this->dispatch('toast', message: $count.' '.($count === 1 ? 'lead' : 'leads').' deleted.');
+        $this->dispatch('toast', message: trans_choice(':count lead deleted.|:count leads deleted.', $count, ['count' => $count]));
     }
 }

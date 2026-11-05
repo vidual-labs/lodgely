@@ -265,7 +265,7 @@
                               {{ $isActive
                                   ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900'
                                   : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
-                        <span>{{ $row->source }}</span>
+                        <span>{{ \App\Livewire\Inbox\InboxPage::sourceLabel($row->source) }}</span>
                         <span class="font-normal {{ $isActive ? 'text-slate-200 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500' }}">{{ $row->total }}</span>
                     </a>
                 @endforeach
@@ -774,7 +774,7 @@
                                         <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{{ $lead->client_name ?? '—' }}</td>
                                         @break
                                     @case('source')
-                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 capitalize">{{ str_replace('_', ' ', $lead->source) }}</td>
+                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400">{{ \App\Livewire\Inbox\InboxPage::sourceLabel($lead->source) }}</td>
                                         @break
                                     @case('campaign')
                                         <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[180px]" title="{{ $lead->campaign_name }}">{{ $lead->campaign_name ?? '—' }}</td>
