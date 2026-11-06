@@ -11,6 +11,7 @@ use App\Models\ClientReportEmailSend;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -73,6 +74,34 @@ class SendClientReportEmailJobTest extends TestCase
         $send->refresh();
         $this->assertSame(ReportEmailSendStatus::Sent, $send->status);
         $this->assertNotNull($send->sent_at);
+    }
+
+    /**
+     * Report e-mails were composed and rendered in the app's default locale,
+     * so a client who uses lodgely in German still got "Hi …, Here is your
+     * October 2026 report." Each recipient now gets their own language — the
+     * greeting, footer and the period's month names.
+     */
+    public function test_each_recipient_gets_the_report_in_their_own_language(): void
+    {
+        Mail::fake();
+        $this->travelTo(Carbon::parse('2026-10-15 09:00:00'));
+        [, $client, $email, $send] = $this->setup_world();
+        $client->update(['locale' => 'de', 'name' => 'Erika']);
+        $email->update(['subject_template' => 'Report {{period}}']);
+
+        (new SendClientReportEmail($send->id))->handle(app(ReportEmailComposer::class));
+
+        Mail::assertQueued(ClientReportEmailMessage::class, function (ClientReportEmailMessage $m) {
+            $html = $m->render();
+
+            return $m->locale === 'de'
+                && $m->composed['subject'] === 'Report Oktober 2026'
+                && str_contains($html, 'Hallo Erika,')
+                && str_contains($html, 'hier ist Ihr Report für Oktober 2026.')
+                && ! str_contains($html, 'Here is your');
+        });
+        $this->assertSame('en', app()->getLocale(), 'the job does not leak the recipient locale');
     }
 
     public function test_job_marks_failed_when_no_active_recipients(): void

@@ -47,9 +47,11 @@ class ReportEmailComposer
         $period = [
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
+            // translatedFormat: month names in the recipient's language (the
+            // job composes inside their locale); identical to format() in English.
             'label' => $months === 1
-                ? $from->format('F Y')
-                : $from->format('M Y').' – '.$to->format('M Y'),
+                ? $from->translatedFormat('F Y')
+                : $from->translatedFormat('M Y').' – '.$to->translatedFormat('M Y'),
         ];
 
         $columns = [];

@@ -21,6 +21,120 @@ semantic-ish versioning once a 1.0 is tagged.
   keyword text or a click id) for vigilo's keyword-level lead quality, and
   stay `null` until per-lead attribution (LG-6) stores them. Contract v1 is
   unchanged otherwise.
+- **The test suite refuses to run against a real database.** Tests wipe the
+  database they run on, and `phpunit.xml`'s in-memory SQLite settings lose to
+  real environment variables. If `DB_CONNECTION` / `DB_DATABASE` reach
+  `php artisan test` as real environment variables (an `env_file`,
+  Kubernetes, a shell export), the run now stops with an explanation instead
+  of emptying the live PostgreSQL database. The bundled Docker setup was not
+  affected.
+- **Settings → API tokens lists the client keys for vigilo.** vigilo asks
+  for a "lodgely client key" per client, the slug of the client name; the
+  page now shows every key the feed answers to next to the client names
+  behind it, so nobody has to work it out by hand. The README's vigilo
+  setup no longer mentions `VIGILO_LODGELY_ENABLED`, which vigilo dropped:
+  its lodgely integration is on once URL and token are set.
+- Tests added in this release import their classes rather than using inline
+  fully qualified names, so they add no Pint findings. No behaviour change.
+- `storage/app/private/livewire-tmp/` (Livewire's temporary upload folder,
+  created by the CSV import) is git-ignored, so it no longer shows up as an
+  untracked folder on installs that deploy with `git pull`.
+
+### Fixed
+
+- **OpenFlow file uploads no longer fill a lead's custom answers with the
+  file itself.** An unmapped *File Upload* answer was stored as its file name,
+  type, size and the whole file as base64 text, which could be megabytes in
+  the lead panel, the CSV export and the AI ranking prompt. It is stored as
+  the file name now; the raw payload still holds the file. Leads imported
+  before keep their answers.
+- **Lead exports with more than 500 leads are complete again.** The CSV and
+  NDJSON export streamed in chunks of 500 that kept the inbox's newest-first
+  order, so every chunk after the first re-read the newest leads: an export
+  of 1,100 leads came out as 999 rows, half of them duplicates, and the
+  oldest leads were missing. Every lead now appears exactly once, in the
+  inbox's sort order.
+
+- **An OpenFlow source that signs in to a two-factor account now says what
+  to do.** OpenFlow answers a password login for such an account with an
+  e-mailed code instead of a session, and lodgely reported that as "no auth
+  token was returned … a proxy that strips cookies". It now tells the
+  operator to create a read-only API token in OpenFlow and use that instead.
+  The OpenFlow page's hint also points at the token's current place in
+  OpenFlow (Account → API Tokens, formerly under Settings).
+
+- **The vigilo lead-metadata feed no longer labels OpenFlow form ids as Meta
+  form ids.** OpenFlow leads keep their OpenFlow form's id in the same column
+  Meta Lead Ads use, and the feed sent it on as
+  `attribution.meta_form_id`. That field is for Meta ids only, so it is now
+  `null` for OpenFlow leads (their `source_type` is still `openflow`).
+
+- **Export CSV / Export JSON export the filtered leads again after a filter
+  change.** The export links (and the Sources chips) were built from the page
+  URL as it was when the inbox first loaded. Changing the search, status,
+  client or any other toolbar filter re-renders the inbox without a page
+  load, so the links kept the old query: an operator who narrowed the inbox
+  to one client and exported got every client's leads, and clicking a source
+  chip threw the other active filters away. Both now follow the filters on
+  screen, including the Outreach filter the chips never carried.
+
+- **Bulk "Set status" / "Set priority" can be applied again.** After
+  selecting leads and picking a status or priority, the *Apply* button stayed
+  greyed out: it was only re-enabled by a server round-trip that picking a
+  value never made. It now enables as soon as a value is picked. Ticking a
+  lead's checkbox also no longer throws a JavaScript error in the browser
+  console.
+
+- **Demo data from `migrate --seed` can be removed from Settings → Demo
+  data.** The seeder built its own copy of the demo leads without the demo
+  tag, so that page reported "0 demo leads" and *Unload demo data* left all
+  ~74 seeded leads in the inbox. The seeder now loads the same tagged dataset
+  as the page. Re-running it no longer adds another 74 leads each time, and
+  no longer resets the demo accounts' passwords to `password`. Leads seeded
+  by an older version stay untagged and have to be deleted from the inbox.
+
+- **More of what a client sees is in German.** Lead priorities (Low /
+  Medium / High), the lead count above the inbox, the bulk-edit messages, the
+  metric names and chart labels on *My reports*, the AI summary card, the
+  page navigation under tables and the report e-mail's greeting and footer
+  fell back to English. The inbox table, Sources chips and lead panel now
+  also name sources the way the Source filter does ("Meta Lead Ads",
+  "OpenFlow") instead of showing raw keys such as "meta ads".
+
+- **Scheduled report e-mails arrive in each client's own language.** They
+  were always written in the server's default language, so a client who uses
+  lodgely in German received an English e-mail ("Hi …, Here is your
+  October 2026 report."). The greeting, footer, metric names and month names
+  now follow the language the recipient picked in lodgely; the subject and
+  intro text stay exactly as the operator wrote them.
+
+- **Saved views keep the inbox you were looking at.** Saving a view dropped
+  the search term from the inbox, saving one while the table was sorted by a
+  column header (name, status, client, …) silently failed, and starring or
+  deleting a saved view reset every active filter. All three now return to
+  the same filtered, sorted inbox, and views can be saved with any sort.
+
+- **An OpenFlow source pointed at another form now imports that form's
+  existing submissions.** The pull only walks back to an hour before the
+  last successful fetch. When a source was edited to use a different form,
+  that mark was kept, so every submission the new form already had looked
+  "already fetched" and was never imported. Changing the form now restarts
+  the pull from the beginning. (Changing only the base URL keeps the mark.)
+
+- **A client's CSV export no longer points at another client's lead.**
+  Duplicate detection runs across all clients, so a client's lead can be
+  flagged as a duplicate of a lead that belongs to someone else. The lead
+  panel already hid that original from the client, but the export's
+  `duplicate_of_id` column still printed its id. A client's export now only
+  names originals the client can see (the duplicate flag itself stays);
+  operators' exports are unchanged.
+
+- **Running the test suite on an install no longer deletes its backups.**
+  The backup tests worked in the real `storage/app/private/backups`
+  directory and removed every archive there before and after each test, so
+  `php artisan test` inside a live container (where the project directory is
+  the live storage) deleted the operator's backup archives and left an empty
+  test archive on the Backups page. They now run in a throwaway directory.
 
 ## [0.59.0] · 2026-10-20
 

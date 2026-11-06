@@ -33,12 +33,12 @@
                 @auth
                     <div class="flex items-center gap-2" wire:ignore.self>
                         <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                            <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                            <a href="{{ route('inbox.export', $this->exportQuery('csv')) }}"
                                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                 {{ __('Export CSV') }}
                             </a>
                             @if(auth()->user()->isOperator())
-                                <a href="{{ route('inbox.export', array_merge(request()->query(), ['format' => 'ndjson'])) }}"
+                                <a href="{{ route('inbox.export', $this->exportQuery('ndjson')) }}"
                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-l border-slate-200 dark:border-slate-700">
                                     {{ __('Export JSON') }}
                                 </a>
@@ -258,16 +258,14 @@
                 @foreach($kpis['by_source'] as $row)
                     @php
                         $isActive = $source === $row->source;
-                        $sourceHref = route('inbox', array_filter(array_merge(request()->only(['q', 'status', 'priority', 'client', 'sort']), [
-                            'source' => $isActive ? null : $row->source,
-                        ]), fn ($v) => $v !== null && $v !== ''));
+                        $sourceHref = route('inbox', $this->filterQuery(['source' => $isActive ? null : $row->source]));
                     @endphp
                     <a href="{{ $sourceHref }}"
                        class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors
                               {{ $isActive
                                   ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900'
                                   : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
-                        <span>{{ $row->source }}</span>
+                        <span>{{ \App\Livewire\Inbox\InboxPage::sourceLabel($row->source) }}</span>
                         <span class="font-normal {{ $isActive ? 'text-slate-200 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500' }}">{{ $row->total }}</span>
                     </a>
                 @endforeach
@@ -487,6 +485,15 @@
                                      ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50'
                                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800' }}">
                         @csrf
+                        {{-- ★ / delete return to this inbox, so they carry its
+                             filter state like every other write-panel form. --}}
+                        <input type="hidden" name="search"   value="{{ $search }}">
+                        <input type="hidden" name="status"   value="{{ $status }}">
+                        <input type="hidden" name="priority" value="{{ $priority }}">
+                        <input type="hidden" name="source"   value="{{ $source }}">
+                        <input type="hidden" name="client"   value="{{ $client }}">
+                        <input type="hidden" name="outreach" value="{{ $outreach }}">
+                        <input type="hidden" name="sort"     value="{{ $sort }}">
                         <button type="submit" name="action" value="load"
                                 class="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 max-w-[140px] truncate transition-colors"
                                 title="{{ $sf->name }}">
@@ -572,6 +579,9 @@
     {{-- ────────────────── bulk action bar ───────────────── --}}
     {{-- Status/priority bulk edit is available to clients and operators alike;
          bulk delete (below) stays operator-only. --}}
+    {{-- The selects are deferred wire:model (no request on change), so the
+         Apply buttons enable client-side from $wire — a server-rendered
+         `disabled` would never update after a pick. --}}
     @auth
         @if(count($bulkSelected) > 0)
             <div class="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/40 px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -592,7 +602,7 @@
                         @endforeach
                     </select>
                     <button type="button" wire:click="bulkSetStatus"
-                            @disabled(!$bulkStatusValue)
+                            x-bind:disabled="! $wire.bulkStatusValue"
                             class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         {{ __('Apply') }}
                     </button>
@@ -607,7 +617,7 @@
                         @endforeach
                     </select>
                     <button type="button" wire:click="bulkSetPriority"
-                            @disabled(!$bulkPriorityValue)
+                            x-bind:disabled="! $wire.bulkPriorityValue"
                             class="rounded-lg bg-slate-900 dark:bg-slate-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         {{ __('Apply') }}
                     </button>
@@ -727,7 +737,9 @@
                             wire:click="selectLead({{ $lead->id }})"
                             class="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 {{ $selected?->id === $lead->id ? 'bg-slate-100 dark:bg-slate-800' : '' }}">
                             @auth
-                                <td class="px-3 py-2" wire:click.stop>
+                                {{-- Alpine, not wire:click.stop: a Livewire directive with no
+                                     expression compiles to "$wire." and throws on every click. --}}
+                                <td class="px-3 py-2" x-on:click.stop>
                                     @php $isRowSelected = in_array((string) $lead->id, $bulkSelected, true); @endphp
                                     <button type="button" wire:click="toggleBulkItem('{{ $lead->id }}')"
                                             class="flex items-center justify-center w-5 h-5 rounded border transition-colors cursor-pointer
@@ -771,7 +783,7 @@
                                         <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">{{ $lead->client_name ?? '—' }}</td>
                                         @break
                                     @case('source')
-                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400 capitalize">{{ str_replace('_', ' ', $lead->source) }}</td>
+                                        <td class="px-3 py-2 text-sm text-slate-600 dark:text-slate-400">{{ \App\Livewire\Inbox\InboxPage::sourceLabel($lead->source) }}</td>
                                         @break
                                     @case('campaign')
                                         <td class="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 truncate max-w-[180px]" title="{{ $lead->campaign_name }}">{{ $lead->campaign_name ?? '—' }}</td>

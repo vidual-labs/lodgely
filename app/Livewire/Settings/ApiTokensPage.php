@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Domain\Api\Enums\ApiTokenScope;
+use App\Domain\Leads\Services\LeadMetadataFeed;
 use App\Http\Controllers\ApiTokenController;
 use App\Models\ApiToken;
 use App\Models\Tenant;
@@ -31,9 +32,10 @@ class ApiTokensPage extends Component
         $this->notice = session('api-tokens.notice');
     }
 
-    public function render(): View
+    public function render(LeadMetadataFeed $feed): View
     {
         return view('livewire.settings.api-tokens-page', [
+            'clientKeys' => $feed->clientKeys(Tenant::DEFAULT_ID),
             'tokens' => ApiToken::query()
                 ->where('tenant_id', Tenant::DEFAULT_ID)
                 ->with('user:id,name')

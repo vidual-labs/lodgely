@@ -81,6 +81,42 @@ trait WithLeadFilters
         return app(LeadFilter::class)->sortBy($this->sort);
     }
 
+    /**
+     * The current filter state as inbox URL query params (empty values and
+     * the default sort left out), with $overrides applied on top — what the
+     * Export CSV / JSON links and the Sources chips link to.
+     *
+     * Built from the component's own properties, never request()->query():
+     * that is the page URL only on the first render — every filter change
+     * re-renders through Livewire's update request, whose query string is
+     * empty, so links built from it silently dropped every active filter.
+     *
+     * @param  array<string, string|null>  $overrides  URL key => value ('' or null removes it)
+     * @return array<string, string>
+     */
+    public function filterQuery(array $overrides = []): array
+    {
+        $query = array_combine(self::FILTER_URL_KEYS, array_map(
+            fn (string $property) => (string) $this->{$property},
+            self::FILTER_PROPERTIES,
+        ));
+
+        if ($query['sort'] === 'created_desc') {
+            $query['sort'] = '';
+        }
+
+        return array_filter(
+            array_merge($query, $overrides),
+            static fn ($value) => $value !== null && $value !== '',
+        );
+    }
+
+    /** @return array<string, string> */
+    public function exportQuery(string $format): array
+    {
+        return $this->filterQuery() + ['format' => $format];
+    }
+
     protected function currentFilterState(): array
     {
         return [

@@ -5,6 +5,7 @@ namespace Tests\Feature\Inbox;
 use App\Domain\Leads\Enums\LeadPriority;
 use App\Domain\Leads\Enums\LeadStatus;
 use App\Http\Controllers\LeadExportController;
+use App\Livewire\Inbox\InboxPage;
 use App\Models\Lead;
 use App\Models\Tenant;
 use App\Models\User;
@@ -12,6 +13,8 @@ use App\Models\UserLeadScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use League\Csv\Reader;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LeadExportTest extends TestCase
@@ -71,6 +74,39 @@ class LeadExportTest extends TestCase
         $body = $this->streamBody($response->baseResponse);
         $this->assertStringContainsString('Hers', $body);
         $this->assertStringNotContainsString('Not hers', $body);
+    }
+
+    /**
+     * Duplicate detection matches across the whole tenant, so a client's lead
+     * can be the duplicate of another client's lead. The lead panel hides that
+     * original from the client (InboxPage scopes duplicateOf); the CSV export
+     * still printed its id. A client's export only names originals the client
+     * can see; operators keep the id.
+     */
+    public function test_a_clients_export_does_not_point_at_another_clients_lead(): void
+    {
+        $client = $this->clientFor('Acme');
+        $foreign = Lead::factory()->create(['client_name' => 'Other']);
+        $own = Lead::factory()->create(['client_name' => 'Acme']);
+        Lead::factory()->create(['client_name' => 'Acme', 'full_name' => 'Dup of foreign', 'duplicate_flag' => true, 'duplicate_of_id' => $foreign->id]);
+        Lead::factory()->create(['client_name' => 'Acme', 'full_name' => 'Dup of own', 'duplicate_flag' => true, 'duplicate_of_id' => $own->id]);
+
+        $rows = function (User $user): array {
+            $this->flushSession(); // a fresh login per user (the session pins the password hash)
+            $body = $this->streamBody($this->actingAs($user)->get('/inbox/export?format=csv')->baseResponse);
+            $reader = Reader::createFromString($body);
+            $reader->setHeaderOffset(0);
+
+            return collect(iterator_to_array($reader->getRecords(), false))->keyBy('full_name')->all();
+        };
+
+        $forClient = $rows($client);
+        $this->assertSame('', $forClient['Dup of foreign']['duplicate_of_id']);
+        $this->assertSame('1', $forClient['Dup of foreign']['duplicate_flag']);
+        $this->assertSame((string) $own->id, $forClient['Dup of own']['duplicate_of_id']);
+
+        $forOperator = $rows($this->operator());
+        $this->assertSame((string) $foreign->id, $forOperator['Dup of foreign']['duplicate_of_id']);
     }
 
     public function test_client_cannot_export_ndjson(): void
@@ -196,6 +232,93 @@ class LeadExportTest extends TestCase
 
         $this->assertStringStartsWith("'=", $row[array_search('full_name', LeadExportController::COLUMNS)]);
         $this->assertStringStartsWith("'+", $row[array_search('message', LeadExportController::COLUMNS)]);
+    }
+
+    /**
+     * The export streams in chunks of 500. Keyset chunking (lazyById) keeps
+     * the inbox's created_at DESC order and only swaps the id tiebreaker for
+     * "id > last id", so from the second chunk on it re-read the newest rows
+     * and never reached the oldest ones: 1,100 leads exported as 999 rows,
+     * 499 of them duplicates. Every lead must appear exactly once, in the
+     * inbox's sort order.
+     */
+    public function test_export_larger_than_one_chunk_contains_every_lead_exactly_once_in_sort_order(): void
+    {
+        $op = $this->operator();
+        $start = now()->subDays(30);
+        $rows = [];
+        for ($i = 0; $i < 1100; $i++) {
+            $rows[] = Lead::factory()->make([
+                'tenant_id' => Tenant::DEFAULT_ID,
+                'created_at' => $start->copy()->addMinutes($i),
+                'updated_at' => $start->copy()->addMinutes($i),
+            ])->getAttributes();
+        }
+        foreach (array_chunk($rows, 200) as $chunk) {
+            Lead::query()->insert(array_map(fn (array $r) => array_map(
+                fn ($v) => is_array($v) ? json_encode($v) : $v,
+                $r,
+            ), $chunk));
+        }
+        $this->assertSame(1100, Lead::count());
+
+        foreach (['csv', 'ndjson'] as $format) {
+            $response = $this->actingAs($op)->get("/inbox/export?format={$format}");
+            $body = $this->streamBody($response->baseResponse);
+
+            if ($format === 'csv') {
+                $reader = Reader::createFromString($body);
+                $reader->setHeaderOffset(0);
+                $ids = array_map(fn (array $r) => (int) $r['id'], iterator_to_array($reader->getRecords(), false));
+            } else {
+                $ids = array_map(
+                    fn (string $line) => (int) json_decode($line, true)['id'],
+                    array_values(array_filter(explode("\n", $body))),
+                );
+            }
+
+            $this->assertCount(1100, $ids, "{$format}: every lead exported");
+            $this->assertCount(1100, array_unique($ids), "{$format}: no lead exported twice");
+            $this->assertSame(
+                Lead::query()->orderByDesc('created_at')->orderByDesc('id')->pluck('id')->all(),
+                $ids,
+                "{$format}: rows follow the inbox sort (newest first)",
+            );
+        }
+    }
+
+    /**
+     * The Export CSV / JSON links were built from request()->query(). That is
+     * the page URL only on the first render: every filter change re-renders
+     * through Livewire's /livewire/update request, whose query is empty, so
+     * after picking a client or status in the toolbar the links silently
+     * exported *every* lead instead of the filtered set.
+     */
+    public function test_export_links_follow_filters_changed_in_the_toolbar(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['client_name' => 'Acme']);
+
+        $html = Livewire::actingAs($op)
+            ->test(InboxPage::class)
+            ->set('client', 'Acme')
+            ->set('status', LeadStatus::New->value)
+            ->set('search', 'jo')
+            ->set('sort', 'name_asc')
+            ->html();
+
+        preg_match_all('#href="([^"]*/inbox/export\?[^"]*)"#', $html, $m);
+        $this->assertCount(2, $m[1], 'CSV and JSON export links rendered');
+
+        foreach ($m[1] as $href) {
+            parse_str((string) parse_url(html_entity_decode($href), PHP_URL_QUERY), $query);
+            $this->assertSame('Acme', $query['client'] ?? null, $href);
+            $this->assertSame('new', $query['status'] ?? null, $href);
+            $this->assertSame('jo', $query['q'] ?? null, $href);
+            $this->assertSame('name_asc', $query['sort'] ?? null, $href);
+            $this->assertContains($query['format'] ?? null, ['csv', 'ndjson'], $href);
+            $this->assertArrayNotHasKey('priority', $query, 'empty filters stay out of the URL');
+        }
     }
 
     public function test_export_is_logged(): void

@@ -7,6 +7,7 @@ use App\Support\Backup\BackupManager;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
+use Tests\Support\IsolatesBackupDirectory;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -21,18 +22,22 @@ use ZipArchive;
  */
 class BackupEncryptionTest extends TestCase
 {
+    use IsolatesBackupDirectory;
+
     private const PASSPHRASE = 'correct horse battery staple';
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->setUpIsolatedBackupDirectory();
         $this->clearArchives();
     }
 
     protected function tearDown(): void
     {
         $this->clearArchives();
+        $this->tearDownIsolatedBackupDirectory();
 
         parent::tearDown();
     }
@@ -53,6 +58,15 @@ class BackupEncryptionTest extends TestCase
         foreach (File::glob($directory.DIRECTORY_SEPARATOR.'*.zip') as $archive) {
             File::delete($archive);
         }
+    }
+
+    public function test_backup_tests_never_touch_the_installs_backup_directory(): void
+    {
+        $this->assertStringNotContainsString(
+            base_path('storage'),
+            app(BackupManager::class)->directory(),
+            'clearArchives() deletes every *.zip in this directory',
+        );
     }
 
     /** Build an archive the way BackupManager would, with real dump contents. */

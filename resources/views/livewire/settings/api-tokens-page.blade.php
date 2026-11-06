@@ -126,4 +126,37 @@
             </table>
         </div>
     </div>
+
+    {{-- Client keys: what vigilo calls the "lodgely client key". --}}
+    <div class="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+        <div>
+            <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ __('Client keys') }}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ __('Enter a client\'s key in vigilo (client settings → lodgely client key). It is derived from the client name, so renaming a client changes its key.') }}
+            </p>
+        </div>
+
+        @if($clientKeys === [])
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('No clients yet — keys appear once leads carry a client name.') }}</p>
+        @else
+            <div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700/50 text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400">
+                        <tr>
+                            <th class="px-3 py-2 text-left">{{ __('Client key') }}</th>
+                            <th class="px-3 py-2 text-left">{{ __('Client') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @foreach($clientKeys as $key => $names)
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-200 select-all">{{ $key }}</td>
+                                <td class="px-3 py-2 text-slate-600 dark:text-slate-400">{{ implode(' · ', $names) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
 </div>

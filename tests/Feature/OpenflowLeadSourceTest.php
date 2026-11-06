@@ -238,6 +238,32 @@ class OpenflowLeadSourceTest extends TestCase
         $this->assertSame('A, B', $leads[0]->customAnswers[0]['answer']);
     }
 
+    public function test_pull_keeps_the_file_name_of_a_file_upload_answer_not_its_content(): void
+    {
+        // OpenFlow's File Upload answer carries the whole file as a base64 data
+        // URL. As a custom answer that would be megabytes of text in the lead
+        // panel, the CSV export and every AI prompt; the raw payload keeps it.
+        $source = $this->makeSource(['field_map' => ['fEmail' => 'email']]);
+        $import = $this->makeImport($source->id);
+        $file = ['name' => 'grundriss.png', 'type' => 'image/png', 'size' => 3008, 'data' => 'data:image/png;base64,'.str_repeat('iVBORw0KGgo', 500)];
+
+        $client = $this->mockClient([
+            'submissions' => [
+                [
+                    'id'         => 'sub-file',
+                    'created_at' => '2026-06-20T10:00:00Z',
+                    'data'       => ['fEmail' => 'f@example.com', 'fBudget' => $file],
+                ],
+            ],
+            'total' => 1, 'page' => 1, 'limit' => 100,
+        ]);
+
+        $leads = iterator_to_array((new OpenflowLeadSource($client))->pull($import));
+
+        $this->assertSame([['question' => 'Budget', 'answer' => 'grundriss.png']], $leads[0]->customAnswers);
+        $this->assertSame($file, $leads[0]->rawPayload['data']['fBudget']);
+    }
+
     public function test_pull_stops_at_high_water_mark(): void
     {
         // last_successful_fetch_at = now; cutoff = now-60min. Older submissions

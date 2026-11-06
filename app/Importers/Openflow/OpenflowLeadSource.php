@@ -323,12 +323,20 @@ class OpenflowLeadSource implements LeadSource
 
     /**
      * Coerce an OpenFlow answer value to a non-empty string, or null when there
-     * is nothing meaningful to record. Arrays (multi-choice) join with commas.
+     * is nothing meaningful to record. Arrays (multi-choice) join with commas;
+     * a File Upload answer becomes its file name.
      */
     private function stringValue(mixed $value): ?string
     {
         if ($value === null) {
             return null;
+        }
+        if (is_array($value) && self::isFileAnswer($value)) {
+            // {name, type, size, data: "data:…;base64,…"}: the data URL is the
+            // whole file. Joined in, it would put megabytes of base64 into the
+            // custom answers (lead panel, CSV export, AI prompts); the raw
+            // payload still holds the file.
+            $value = is_string($value['name'] ?? null) && trim($value['name']) !== '' ? $value['name'] : 'file';
         }
         if (is_array($value)) {
             $value = implode(', ', array_map(static fn ($v) => (string) $v, $value));
@@ -340,6 +348,12 @@ class OpenflowLeadSource implements LeadSource
         $value = trim((string) $value);
 
         return $value !== '' ? $value : null;
+    }
+
+    /** @param  array<mixed>  $value */
+    private static function isFileAnswer(array $value): bool
+    {
+        return is_string($value['data'] ?? null) && str_starts_with($value['data'], 'data:');
     }
 
     /**

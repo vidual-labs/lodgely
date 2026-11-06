@@ -110,6 +110,20 @@ class LeadFilter
         return DB::raw('CASE priority'.$cases.' ELSE 0 END');
     }
 
+    /**
+     * Every sort value {@see sortBy()} understands — what a saved view or a
+     * URL may carry.
+     *
+     * @return list<string>
+     */
+    public static function sortKeys(): array
+    {
+        return array_values(array_unique(array_merge(
+            ['created_desc', 'created_asc', 'priority_desc', 'priority_asc'],
+            ...array_map('array_values', array_values(self::sortableColumns())),
+        )));
+    }
+
     public static function sortableColumns(): array
     {
         return [

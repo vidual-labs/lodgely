@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Leads\Services\LeadFilter;
 use App\Models\SavedFilter;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
@@ -49,7 +50,9 @@ class InboxSavedFilterController extends Controller
             'source'      => ['nullable', 'string', 'max:64'],
             'client'      => ['nullable', 'string', 'max:255'],
             'outreach'    => ['nullable', 'string', 'max:32'],
-            'sort'        => ['nullable', Rule::in(['created_desc', 'created_asc', 'priority_desc'])],
+            // Every sort the inbox can be in — column headers set name_asc,
+            // status_desc, …, not just the three in the sort dropdown.
+            'sort'        => ['nullable', Rule::in(LeadFilter::sortKeys())],
         ]);
 
         $isDefault = (bool) ($validated['is_default'] ?? false);
@@ -143,10 +146,17 @@ class InboxSavedFilterController extends Controller
      * `inbox.open-panel` flash themselves — see the class docblock for why
      * that isn't a query param.
      */
+    /**
+     * Back to the inbox the form was posted from. The panel forms carry the
+     * filter state as hidden inputs named after the Livewire properties, so
+     * the search term arrives as `search` (it used to be read as `q`, which
+     * no form sends, and was dropped); the URL calls it `q`.
+     */
     private function redirectToInbox(Request $request): RedirectResponse
     {
-        $query = $request->only(['q', 'status', 'priority', 'source', 'client', 'outreach', 'sort']);
-        $query = array_filter($query, fn ($v) => $v !== null && $v !== '');
+        $query = ['q' => $request->input('search', $request->input('q'))]
+            + $request->only(['status', 'priority', 'source', 'client', 'outreach', 'sort']);
+        $query = array_filter($query, fn ($v) => is_string($v) && $v !== '' && $v !== 'created_desc');
 
         return redirect()->to(route('inbox', $query));
     }

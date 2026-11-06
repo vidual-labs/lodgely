@@ -181,6 +181,41 @@ class OpenflowImportPageTest extends TestCase
         $this->assertSame('s3cret', $source->fresh()->password());
     }
 
+    /**
+     * The pull stops at last_successful_fetch_at minus an hour. That mark
+     * belongs to the form it was set on: when a source is edited to point at
+     * another form, keeping it meant the new form's existing submissions were
+     * all "older than the last fetch" and never imported. A rename or a new
+     * base URL (usually the same install under a new address, and external
+     * ids are scoped to the URL) keeps the mark.
+     */
+    public function test_pointing_a_source_at_another_form_restarts_the_pull_from_the_beginning(): void
+    {
+        $source = $this->makeSource();
+        $source->forceFill(['last_successful_fetch_at' => now()->subHour()])->save();
+        $operator = $this->operator();
+
+        foreach ([['form.label', 'Renamed'], ['form.base_url', 'https://forms.example.org']] as [$field, $value]) {
+            Livewire::actingAs($operator)
+                ->test(OpenflowImportPage::class)
+                ->call('editSource', $source->id)
+                ->set($field, $value)
+                ->call('saveSource')
+                ->assertHasNoErrors();
+
+            $this->assertNotNull($source->fresh()->last_successful_fetch_at, $field.' change keeps the high-water mark');
+        }
+
+        Livewire::actingAs($operator)
+            ->test(OpenflowImportPage::class)
+            ->call('editSource', $source->id)
+            ->set('form.form_id', 'OTHER-FORM')
+            ->call('saveSource')
+            ->assertHasNoErrors();
+
+        $this->assertNull($source->fresh()->last_successful_fetch_at, 'a new form starts from the beginning');
+    }
+
     public function test_field_map_is_saved_from_mapping_rows(): void
     {
         $lw = Livewire::actingAs($this->operator())

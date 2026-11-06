@@ -295,6 +295,17 @@ class OpenflowImportPage extends Component
             $source->setPassword($password);
         }
 
+        // The pull's high-water mark belongs to the form it was set on. Pointed
+        // at another form, the new form's existing submissions would all look
+        // older than the last fetch and never be pulled — so start that form
+        // from the beginning (its external ids are scoped to the form, so the
+        // pull stays idempotent). Not on a base URL change: that is usually the
+        // same install under a new address, and since external ids are scoped
+        // to the URL too, a full re-pull would re-import every submission.
+        if ($source->exists && $source->isDirty('form_id')) {
+            $source->last_successful_fetch_at = null;
+        }
+
         $source->save();
 
         $this->mode = 'list';

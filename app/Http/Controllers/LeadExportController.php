@@ -73,20 +73,37 @@ class LeadExportController extends Controller
         $filename = "lodgely-leads-{$timestamp}.".($format === 'csv' ? 'csv' : 'ndjson');
         $mime = $format === 'csv' ? 'text/csv; charset=UTF-8' : 'application/x-ndjson';
 
+        // lazy(), not lazyById(): keyset chunking replaces only the id order
+        // with "id > last id" and keeps created_at DESC in front of it, so
+        // every chunk after the first re-read the newest rows and the oldest
+        // were never reached (1,100 leads came out as 999 rows, half of them
+        // duplicates). Offset chunking keeps the inbox sort intact, and
+        // applySort() always ends on an id tiebreaker, so pages are stable.
+        // Duplicate detection matches tenant-wide, so a client's lead can be a
+        // duplicate of another client's lead. The lead panel hides that
+        // original from the client; the export must not print its id either.
+        // Operators see everything, so their export keeps every id.
+        $visibleOriginals = $user->isOperator() ? null : array_flip(
+            Lead::query()->visibleTo($user)
+                ->whereIn('id', (clone $query)->reorder()->whereNotNull('duplicate_of_id')->select('duplicate_of_id'))
+                ->pluck('id')
+                ->all(),
+        );
+
         $count = 0;
-        $stream = function () use ($query, $format, &$count): void {
+        $stream = function () use ($query, $format, &$count, $visibleOriginals): void {
             $handle = fopen('php://output', 'wb');
 
             if ($format === 'csv') {
                 $csv = Writer::createFromStream($handle);
                 $csv->insertOne(self::COLUMNS);
-                foreach ($query->lazyById(500) as $lead) {
-                    $csv->insertOne(array_map([$this, 'escapeCsvFormula'], array_values($this->row($lead))));
+                foreach ($query->lazy(500) as $lead) {
+                    $csv->insertOne(array_map([$this, 'escapeCsvFormula'], array_values($this->row($lead, $visibleOriginals))));
                     $count++;
                 }
             } else {
-                foreach ($query->lazyById(500) as $lead) {
-                    fwrite($handle, json_encode($this->row($lead), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
+                foreach ($query->lazy(500) as $lead) {
+                    fwrite($handle, json_encode($this->row($lead, $visibleOriginals), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
                     $count++;
                 }
             }
@@ -138,8 +155,11 @@ class LeadExportController extends Controller
         return preg_match('/^[=+\-@\t\r]/', $value) ? "'".$value : $value;
     }
 
-    /** @return array<string, mixed> */
-    private function row(Lead $lead): array
+    /**
+     * @param  array<int, int>|null  $visibleOriginals  lead ids the user may see as a duplicate's original (null: all)
+     * @return array<string, mixed>
+     */
+    private function row(Lead $lead, ?array $visibleOriginals = null): array
     {
         $out = [];
         foreach (self::COLUMNS as $col) {
@@ -148,6 +168,9 @@ class LeadExportController extends Controller
                 'status' => $lead->status?->value,
                 'priority' => $lead->priority?->value,
                 'duplicate_flag' => (bool) $lead->duplicate_flag,
+                'duplicate_of_id' => $visibleOriginals === null || isset($visibleOriginals[$lead->duplicate_of_id])
+                    ? $lead->duplicate_of_id
+                    : null,
                 'is_organic' => $lead->is_organic === null ? null : (bool) $lead->is_organic,
                 default => $lead->{$col},
             };

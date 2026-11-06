@@ -164,6 +164,31 @@ class InboxPageTest extends TestCase
         );
     }
 
+    /**
+     * The bulk status / priority selects are deferred `wire:model` (no request
+     * on change), but their Apply buttons were rendered `disabled` on the
+     * server while the value was empty. Picking a status therefore never
+     * enabled Apply: select rows → pick a status → the button stayed greyed
+     * out. The button must not be server-disabled by the deferred value; it is
+     * enabled client-side from $wire instead (bulkSetStatus() still ignores an
+     * empty value).
+     */
+    public function test_bulk_apply_buttons_are_not_disabled_by_the_deferred_select_value(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create();
+
+        $html = Livewire::actingAs($op)->test(InboxPage::class)
+            ->call('toggleBulkItem', (string) $lead->id)
+            ->html();
+
+        foreach (['bulkSetStatus' => 'bulkStatusValue', 'bulkSetPriority' => 'bulkPriorityValue'] as $action => $property) {
+            $this->assertSame(1, preg_match('#<button[^>]*wire:click="'.$action.'"[^>]*>#', $html, $m), $action.' button rendered');
+            $this->assertDoesNotMatchRegularExpression('#\sdisabled(\s|>|=)#', $m[0], $action.' must not be server-disabled');
+            $this->assertStringContainsString('x-bind:disabled="! $wire.'.$property.'"', $m[0]);
+        }
+    }
+
     public function test_client_can_bulk_set_status_on_their_own_visible_leads(): void
     {
         $client = $this->clientFor('Acme');
@@ -646,5 +671,65 @@ class InboxPageTest extends TestCase
 
         $client = $this->clientFor('Acme');
         Livewire::actingAs($client)->test(InboxPage::class)->call('rankLeadWithAi', $lead->id)->assertForbidden();
+    }
+
+    /**
+     * Same root cause as the export links (LeadExportTest): the Sources chips
+     * were built from request()->only(...), which is empty after a Livewire
+     * update — so clicking a chip after changing a toolbar filter threw the
+     * other filters away. Outreach was never carried at all.
+     */
+    public function test_source_chips_keep_filters_changed_in_the_toolbar(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['client_name' => 'Acme', 'source' => 'csv']);
+        Lead::factory()->create(['client_name' => 'Acme', 'source' => 'webhook']);
+
+        $html = Livewire::actingAs($op)->test(InboxPage::class)
+            ->set('client', 'Acme')
+            ->set('outreach', 'not_contacted')
+            ->set('source', 'csv')
+            ->html();
+
+        preg_match_all('#<a href="([^"]*/inbox\?[^"]*)"#', $html, $m);
+        $chips = [];
+        foreach ($m[1] as $href) {
+            parse_str((string) parse_url(html_entity_decode($href), PHP_URL_QUERY), $query);
+            $chips[] = $query;
+        }
+
+        // The active chip (csv) clears the source; the other one switches to it.
+        $this->assertContains(['client' => 'Acme', 'outreach' => 'not_contacted'], $chips);
+        $this->assertContains(['source' => 'webhook', 'client' => 'Acme', 'outreach' => 'not_contacted'], $chips);
+    }
+
+    /**
+     * A German client saw the inbox half in English: priorities ("Low",
+     * "Medium", "High"), the lead count ("26 leads"), the bulk-edit toast and
+     * the source column (raw keys such as "meta ads" / "csv"). Source names now
+     * also match the Source filter's labels in every language.
+     */
+    public function test_the_inbox_speaks_german_to_a_german_client(): void
+    {
+        $client = $this->clientFor('Acme');
+        $client->update(['locale' => 'de']);
+        app()->setLocale('de');
+        $a = Lead::factory()->create(['client_name' => 'Acme', 'source' => 'meta_ads', 'priority' => LeadPriority::High->value]);
+        Lead::factory()->create(['client_name' => 'Acme', 'source' => 'csv', 'priority' => LeadPriority::Low->value]);
+
+        $component = Livewire::actingAs($client)->test(InboxPage::class);
+        $html = $component->html();
+
+        $this->assertStringContainsString('Hoch', $html);
+        $this->assertStringContainsString('Niedrig', $html);
+        $this->assertDoesNotMatchRegularExpression('#>\s*(High|Medium|Low)\s*<#', $html);
+        $this->assertMatchesRegularExpression('#2(&thinsp;|\s)*Leads#u', $html);
+        $this->assertDoesNotMatchRegularExpression('#>\s*meta ads\s*<#i', $html);
+        $this->assertMatchesRegularExpression('#>\s*Meta Lead Ads\s*<#', $html);
+
+        $component->set('bulkSelected', [(string) $a->id])
+            ->set('bulkPriorityValue', LeadPriority::Medium->value)
+            ->call('bulkSetPriority')
+            ->assertDispatched('toast', message: '1 Lead aktualisiert.');
     }
 }

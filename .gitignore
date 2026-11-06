@@ -32,6 +32,8 @@
 # Local imports / temp uploads
 /storage/app/private/imports/*
 !/storage/app/private/imports/.gitkeep
+# Livewire's temporary upload directory (CSV import file picker)
+/storage/app/private/livewire-tmp/
 /storage/app/imports/*
 !/storage/app/imports/.gitkeep
 

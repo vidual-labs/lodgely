@@ -47,6 +47,34 @@ class OpenflowClientTest extends TestCase
         (new OpenflowClient())->login('https://forms.example.com', 'a@b.c', 'bad');
     }
 
+    /**
+     * An OpenFlow account with two-factor login answers the password step with
+     * 200 `{twoFactorRequired: true, …}` and no cookie (it e-mails a code
+     * instead). The old message blamed the base URL or a cookie-stripping
+     * proxy, sending the operator after the wrong problem; the fix is an API
+     * token, so say that.
+     */
+    public function test_login_explains_that_a_two_factor_account_needs_an_api_token(): void
+    {
+        Http::fake([
+            'forms.example.com/api/auth/login' => Http::response([
+                'twoFactorRequired' => true,
+                'challenge' => 'abc',
+                'email' => 'a***@b.c',
+                'expiresInMinutes' => 10,
+            ], 200),
+        ]);
+
+        try {
+            (new OpenflowClient())->login('https://forms.example.com', 'a@b.c', 'pw');
+            $this->fail('Expected a RuntimeException.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('two-factor', $e->getMessage());
+            $this->assertStringContainsString('API token', $e->getMessage());
+            $this->assertStringNotContainsString('proxy', $e->getMessage());
+        }
+    }
+
     public function test_base_url_trailing_slash_is_trimmed(): void
     {
         Http::fake([

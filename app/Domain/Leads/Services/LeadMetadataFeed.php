@@ -75,6 +75,36 @@ class LeadMetadataFeed
     }
 
     /**
+     * Every client key the feed answers to, with the client names behind it —
+     * for the Settings → API tokens page, so an operator can copy the key into
+     * vigilo instead of slugging a name by hand. Same rule (and the same
+     * soft-deleted leads) as {@see self::clientNamesForKey()}, so every key
+     * listed resolves.
+     *
+     * @return array<string, list<string>> key => client names, sorted by key
+     */
+    public function clientKeys(int $tenantId): array
+    {
+        $keys = [];
+        $names = Lead::withTrashed()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('client_name')
+            ->distinct()
+            ->orderBy('client_name')
+            ->pluck('client_name');
+
+        foreach ($names as $name) {
+            $key = Str::slug((string) $name);
+            if ($key !== '') {
+                $keys[$key][] = (string) $name;
+            }
+        }
+        ksort($keys);
+
+        return $keys;
+    }
+
+    /**
      * One page of the feed.
      *
      * @param  list<string>  $clientNames
@@ -148,7 +178,9 @@ class LeadMetadataFeed
                 'meta_campaign_id' => self::nullableString($lead->campaign_id),
                 'meta_adset_id'    => self::nullableString($lead->adset_id),
                 'meta_ad_id'       => self::nullableString($lead->ad_id),
-                'meta_form_id'     => self::nullableString($lead->form_id),
+                // OpenFlow keeps its own form's UUID in the same column; that
+                // is not a Meta form, and the contract's meta_* are Meta ids.
+                'meta_form_id'     => $lead->source === 'openflow' ? null : self::nullableString($lead->form_id),
                 // No per-lead click-id attribution yet (LG-6); vigilo falls
                 // back to platform conversions for Google until then.
                 'has_gclid'        => false,

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Domain\Api\Enums\ApiTokenScope;
 use App\Models\ApiToken;
+use App\Models\Lead;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,6 +56,26 @@ class ApiTokensPageTest extends TestCase
 
         $this->get(route('settings.api-tokens'))->assertOk()->assertSee($plaintext)->assertSee('vigilo');
         $this->get(route('settings.api-tokens'))->assertOk()->assertDontSee($plaintext)->assertSee($token->token_prefix);
+    }
+
+    /**
+     * vigilo asks for a "lodgely client key" per client, which is the slug of
+     * the client name (contract v1). The page now lists the keys the feed
+     * answers to, so nobody has to slug a client name by hand — names that
+     * differ only in case share one key, exactly as the feed serves them.
+     */
+    public function test_the_page_lists_the_client_keys_the_feed_answers_to(): void
+    {
+        Lead::factory()->create(['client_name' => 'Kanzlei Brenner & Partner']);
+        Lead::factory()->create(['client_name' => 'kanzlei brenner & partner']);
+        Lead::factory()->create(['client_name' => 'Acme']);
+        Lead::factory()->create(['client_name' => null]);
+
+        $response = $this->actingAs($this->user('operator'))->get(route('settings.api-tokens'));
+
+        $response->assertOk();
+        $response->assertSeeInOrder(['acme', 'Acme', 'kanzlei-brenner-partner', 'Kanzlei Brenner &amp; Partner'], false);
+        $this->assertSame(1, substr_count($response->getContent(), '>kanzlei-brenner-partner<'));
     }
 
     public function test_an_operator_revokes_a_token(): void

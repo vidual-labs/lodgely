@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Domain\Reporting\Enums\ReportEmailSendStatus;
 use App\Domain\Reporting\Services\ReportEmailComposer;
+use App\Http\Middleware\SetLocale;
 use App\Mail\ClientReportEmailMessage;
 use App\Models\ClientReportEmailSend;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Traits\Localizable;
 use Throwable;
 
 /**
@@ -24,7 +26,7 @@ use Throwable;
  */
 class SendClientReportEmail implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Localizable, Queueable, SerializesModels;
 
     public int $tries   = 3;
     public int $timeout = 120;
@@ -61,7 +63,14 @@ class SendClientReportEmail implements ShouldQueue
             $aiSummaryId = null;
 
             foreach ($recipients as $recipient) {
-                $composed = $composer->compose($send->email, $recipient);
+                // In the recipient's language, like the UI they use: the period
+                // label and column names are built here, the template renders
+                // later in the queued mailable — both need the locale.
+                $locale = in_array($recipient->locale, SetLocale::SUPPORTED, true)
+                    ? $recipient->locale
+                    : config('app.locale');
+
+                $composed = $this->withLocale($locale, fn () => $composer->compose($send->email, $recipient));
 
                 // Capture the (per-template) AI summary id from the first compose so
                 // the audit row records which summary actually went out.
@@ -70,6 +79,7 @@ class SendClientReportEmail implements ShouldQueue
                 }
 
                 Mail::to($recipient->email)
+                    ->locale($locale)
                     ->send(new ClientReportEmailMessage($send, $composed));
             }
 

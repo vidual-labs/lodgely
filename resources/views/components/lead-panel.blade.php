@@ -109,7 +109,7 @@
                 </dl>
                 <p class="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
                     {{ __('via :source · received :when', [
-                        'source' => str_replace('_', ' ', $lead->source),
+                        'source' => \App\Livewire\Inbox\InboxPage::sourceLabel($lead->source),
                         'when' => $lead->created_at?->format(\App\Support\Dates::FORMAT),
                     ]) }}
                 </p>

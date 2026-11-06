@@ -4,11 +4,26 @@ namespace Tests\Feature;
 
 use App\Support\Backup\BackupManager;
 use Illuminate\Support\Facades\Process;
+use Tests\Support\IsolatesBackupDirectory;
 use Tests\TestCase;
 use ZipArchive;
 
 class BackupManagerRestoreCommandTest extends TestCase
 {
+    use IsolatesBackupDirectory;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->setUpIsolatedBackupDirectory();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownIsolatedBackupDirectory();
+        parent::tearDown();
+    }
+
     private function makeArchive(): string
     {
         $dir = sys_get_temp_dir().'/lodgely-test-'.uniqid();
