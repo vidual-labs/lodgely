@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Leads\Services\LeadFilter;
 use App\Models\Lead;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use League\Csv\Writer;
@@ -11,6 +12,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadExportController extends Controller
 {
+    /**
+     * Every stored lead field that's meaningful outside lodgely. The lead's
+     * custom form answers come on top of these, one column per question
+     * ({@see self::customQuestions()}). Internal plumbing stays out:
+     * raw_payload, the *_normalized dedupe keys, tenant/import ids.
+     *
+     * The AI ranking fields go to clients too: the lead panel and the inbox's
+     * AI-tags column already show them to both roles.
+     */
     public const COLUMNS = [
         'id',
         'created_at',
@@ -23,6 +33,10 @@ class LeadExportController extends Controller
         'message',
         'status',
         'priority',
+        'qualified_at',
+        'called_at',
+        'mailed_at',
+        'notes',
         'duplicate_flag',
         'duplicate_of_id',
         'ad_name',
@@ -31,7 +45,27 @@ class LeadExportController extends Controller
         'form_name',
         'platform',
         'is_organic',
+        'priority_source',
+        'ai_priority',
+        'ai_reason',
+        'ai_tags',
+        'ai_ranked_at',
+        'external_id',
+        'meta_lead_id',
+        'ad_id',
+        'adset_id',
+        'form_id',
+        'retention_until',
     ];
+
+    /**
+     * Semicolon plus a UTF-8 BOM: what Excel in a German (or any comma-decimal)
+     * locale needs to split columns and render umlauts on a plain double-click.
+     * Google Sheets, Numbers and LibreOffice detect both on their own.
+     */
+    public const CSV_DELIMITER = ';';
+
+    private const UTF8_BOM = "\xEF\xBB\xBF";
 
     private const FORMATS = ['csv', 'ndjson'];
 
@@ -93,16 +127,26 @@ class LeadExportController extends Controller
         $count = 0;
         $stream = function () use ($query, $format, &$count, $visibleOriginals): void {
             $handle = fopen('php://output', 'wb');
+            $leads = (clone $query)->with('notes.user')->lazy(500);
 
             if ($format === 'csv') {
+                // The header has to name every custom question before the
+                // first row goes out, so collect them in a pass of their own.
+                $questions = $this->customQuestions($query);
+
+                fwrite($handle, self::UTF8_BOM);
                 $csv = Writer::createFromStream($handle);
-                $csv->insertOne(self::COLUMNS);
-                foreach ($query->lazy(500) as $lead) {
-                    $csv->insertOne(array_map([$this, 'escapeCsvFormula'], array_values($this->row($lead, $visibleOriginals))));
+                $csv->setDelimiter(self::CSV_DELIMITER);
+                $csv->insertOne(array_map([$this, 'escapeCsvFormula'], [
+                    ...self::COLUMNS,
+                    ...$this->questionHeaders($questions),
+                ]));
+                foreach ($leads as $lead) {
+                    $csv->insertOne(array_map([$this, 'escapeCsvFormula'], $this->csvRow($this->row($lead, $visibleOriginals), $questions)));
                     $count++;
                 }
             } else {
-                foreach ($query->lazy(500) as $lead) {
+                foreach ($leads as $lead) {
                     fwrite($handle, json_encode($this->row($lead, $visibleOriginals), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
                     $count++;
                 }
@@ -156,6 +200,77 @@ class LeadExportController extends Controller
     }
 
     /**
+     * Distinct custom-answer questions across every exported lead, in the
+     * order they first appear (oldest lead first, so a form's own question
+     * order carries over). Same trimming as the inbox column picker.
+     *
+     * @return list<string>
+     */
+    private function customQuestions(Builder $query): array
+    {
+        $questions = [];
+
+        (clone $query)
+            ->reorder()
+            ->whereNotNull('custom_answers')
+            ->select(['id', 'custom_answers'])
+            ->lazyById(1000)
+            ->each(function (Lead $lead) use (&$questions): void {
+                foreach ((array) $lead->custom_answers as $qa) {
+                    $q = is_array($qa) ? trim((string) ($qa['question'] ?? '')) : '';
+                    if ($q !== '') {
+                        $questions[$q] = true;
+                    }
+                }
+            });
+
+        return array_map('strval', array_keys($questions));
+    }
+
+    /**
+     * A question named like a built-in column ("email", "phone") would make
+     * two columns with one header; the custom one gets a suffix.
+     *
+     * @param  list<string>  $questions
+     * @return list<string>
+     */
+    private function questionHeaders(array $questions): array
+    {
+        return array_map(
+            fn (string $q) => in_array($q, self::COLUMNS, true) ? "{$q} (custom)" : $q,
+            $questions,
+        );
+    }
+
+    /**
+     * Flattens {@see self::row()} into CSV cells: lists become text, and each
+     * custom question gets its own cell (empty where the lead has no answer).
+     *
+     * @param  array<string, mixed>  $row
+     * @param  list<string>  $questions
+     * @return list<mixed>
+     */
+    private function csvRow(array $row, array $questions): array
+    {
+        $cells = [];
+        foreach (self::COLUMNS as $col) {
+            $cells[] = match ($col) {
+                'notes' => implode("\n\n", array_map(
+                    fn (array $n) => ($n['created_at'] !== null ? $n['created_at'].' · ' : '').$n['author'].': '.$n['body'],
+                    $row['notes'],
+                )),
+                'ai_tags' => implode(', ', $row['ai_tags']),
+                default => $row[$col],
+            };
+        }
+        foreach ($questions as $q) {
+            $cells[] = $row['custom_answers'][$q] ?? '';
+        }
+
+        return $cells;
+    }
+
+    /**
      * @param  array<int, int>|null  $visibleOriginals  lead ids the user may see as a duplicate's original (null: all)
      * @return array<string, mixed>
      */
@@ -164,19 +279,52 @@ class LeadExportController extends Controller
         $out = [];
         foreach (self::COLUMNS as $col) {
             $value = match ($col) {
-                'created_at' => $lead->created_at?->toIso8601String(),
-                'status' => $lead->status?->value,
-                'priority' => $lead->priority?->value,
+                'created_at', 'qualified_at', 'called_at', 'mailed_at', 'ai_ranked_at', 'retention_until'
+                    => $lead->{$col}?->toIso8601String(),
+                'status', 'priority', 'priority_source', 'ai_priority' => $lead->{$col}?->value,
                 'duplicate_flag' => (bool) $lead->duplicate_flag,
                 'duplicate_of_id' => $visibleOriginals === null || isset($visibleOriginals[$lead->duplicate_of_id])
                     ? $lead->duplicate_of_id
                     : null,
                 'is_organic' => $lead->is_organic === null ? null : (bool) $lead->is_organic,
+                'notes' => $lead->notes->map(fn ($note) => [
+                    'created_at' => $note->created_at?->format('Y-m-d H:i'),
+                    'author' => $note->user?->name ?? 'system',
+                    'body' => (string) $note->body,
+                ])->values()->all(),
+                'ai_tags' => array_values(array_map('strval', array_filter((array) $lead->ai_tags, 'is_scalar'))),
                 default => $lead->{$col},
             };
             $out[$col] = $value;
         }
+        $out['custom_answers'] = $this->answersByQuestion($lead);
 
         return $out;
+    }
+
+    /**
+     * The lead's custom answers keyed by trimmed question. A question asked
+     * twice on one lead keeps both answers in one cell.
+     *
+     * @return array<string, string>
+     */
+    private function answersByQuestion(Lead $lead): array
+    {
+        $answers = [];
+        foreach ((array) $lead->custom_answers as $qa) {
+            $q = is_array($qa) ? trim((string) ($qa['question'] ?? '')) : '';
+            if ($q === '') {
+                continue;
+            }
+            $answer = $qa['answer'] ?? '';
+            $answer = match (true) {
+                is_array($answer) => implode(', ', array_map('strval', array_filter($answer, 'is_scalar'))),
+                is_bool($answer) => $answer ? 'true' : 'false',
+                default => (string) $answer,
+            };
+            $answers[$q] = isset($answers[$q]) ? $answers[$q].' | '.$answer : $answer;
+        }
+
+        return $answers;
     }
 }

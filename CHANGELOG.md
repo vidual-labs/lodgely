@@ -8,6 +8,19 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Changed
 
+- **The CSV export now includes all lead data.** Every custom form question
+  (the lead panel's *Custom questions*, such as company name, zip code or
+  city) gets its own column, named after the question, and the export also
+  carries the Qualified / Called / Mailed timestamps, the lead's notes, the
+  AI ranking (priority source, AI priority, reason, tags) and the ad, form
+  and Meta lead ids plus the retention date. A client's custom columns only
+  come from their own leads. The NDJSON export gains the same fields, with
+  custom answers and notes as structured data.
+- **The CSV export opens straight in Excel.** It is now semicolon-separated
+  and starts with a UTF-8 BOM, so Excel with a German locale splits the
+  columns and shows umlauts correctly on a double-click. Scripts that read
+  the CSV need to switch to `;` as the delimiter.
+
 - **Reporting counts only countable leads.** The *Lodgely leads* figures on
   `/reporting` (KPI card, trend chart, campaign table, leads by source) and
   the *Leads* column of client report views no longer count duplicates (by

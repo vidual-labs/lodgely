@@ -57,6 +57,26 @@ class LeadExportTest extends TestCase
         return (string) ob_get_clean();
     }
 
+    /** @return list<array<string, string>> */
+    private function csvRecords(string $body): array
+    {
+        $reader = Reader::createFromString($body);
+        $reader->setDelimiter(LeadExportController::CSV_DELIMITER);
+        $reader->setHeaderOffset(0);
+
+        return iterator_to_array($reader->getRecords(), false);
+    }
+
+    /** @return list<string> */
+    private function csvHeader(string $body): array
+    {
+        $reader = Reader::createFromString($body);
+        $reader->setDelimiter(LeadExportController::CSV_DELIMITER);
+        $reader->setHeaderOffset(0);
+
+        return $reader->getHeader();
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
         $this->get('/inbox/export?format=csv')->assertRedirect('/login');
@@ -94,10 +114,8 @@ class LeadExportTest extends TestCase
         $rows = function (User $user): array {
             $this->flushSession(); // a fresh login per user (the session pins the password hash)
             $body = $this->streamBody($this->actingAs($user)->get('/inbox/export?format=csv')->baseResponse);
-            $reader = Reader::createFromString($body);
-            $reader->setHeaderOffset(0);
 
-            return collect(iterator_to_array($reader->getRecords(), false))->keyBy('full_name')->all();
+            return collect($this->csvRecords($body))->keyBy('full_name')->all();
         };
 
         $forClient = $rows($client);
@@ -135,11 +153,10 @@ class LeadExportTest extends TestCase
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
 
         $body = $this->streamBody($response->baseResponse);
-        $lines = array_values(array_filter(preg_split("/\r\n|\n/", $body)));
 
-        $this->assertCount(4, $lines, 'expected header + 3 rows');
-        $header = str_getcsv($lines[0]);
-        $this->assertSame(LeadExportController::COLUMNS, $header);
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $body, 'UTF-8 BOM so Excel renders umlauts');
+        $this->assertCount(3, $this->csvRecords($body));
+        $this->assertSame(LeadExportController::COLUMNS, $this->csvHeader($body), 'no custom questions, no extra columns');
 
         $this->assertStringNotContainsString('raw_payload', $body);
         $this->assertStringNotContainsString('email_normalized', $body);
@@ -162,7 +179,7 @@ class LeadExportTest extends TestCase
         foreach ($lines as $line) {
             $decoded = json_decode($line, true);
             $this->assertIsArray($decoded);
-            $this->assertSame(LeadExportController::COLUMNS, array_keys($decoded));
+            $this->assertSame([...LeadExportController::COLUMNS, 'custom_answers'], array_keys($decoded));
         }
     }
 
@@ -226,12 +243,111 @@ class LeadExportTest extends TestCase
         Lead::factory()->create(['full_name' => '=cmd|\' /C calc\'!A1', 'message' => '+2+3']);
 
         $response = $this->actingAs($op)->get('/inbox/export?format=csv');
-        $body = $this->streamBody($response->baseResponse);
-        $lines = array_values(array_filter(preg_split("/\r\n|\n/", $body)));
-        $row = str_getcsv($lines[1]);
+        $row = $this->csvRecords($this->streamBody($response->baseResponse))[0];
 
-        $this->assertStringStartsWith("'=", $row[array_search('full_name', LeadExportController::COLUMNS)]);
-        $this->assertStringStartsWith("'+", $row[array_search('message', LeadExportController::COLUMNS)]);
+        $this->assertStringStartsWith("'=", $row['full_name']);
+        $this->assertStringStartsWith("'+", $row['message']);
+    }
+
+    public function test_csv_export_has_one_column_per_custom_question(): void
+    {
+        $op = $this->operator();
+        $start = now()->subDay();
+        Lead::factory()->create([
+            'full_name' => 'Dr. Schulze',
+            'created_at' => $start,
+            'custom_answers' => [
+                ['question' => 'company_name', 'answer' => 'Dr. Schulze Icking'],
+                ['question' => 'zip_code', 'answer' => 'z:64625'],
+                ['question' => ' city ', 'answer' => 'Bensheim'],
+            ],
+        ]);
+        Lead::factory()->create([
+            'full_name' => 'Other form',
+            'created_at' => $start->copy()->addHour(),
+            'custom_answers' => [
+                ['question' => 'budget', 'answer' => ['5k', '10k']],
+                ['question' => 'email', 'answer' => 'second@example.com'],
+                ['question' => 'city', 'answer' => 'Köln'],
+            ],
+        ]);
+        Lead::factory()->create(['full_name' => 'No answers', 'custom_answers' => null]);
+
+        $body = $this->streamBody($this->actingAs($op)->get('/inbox/export?format=csv')->baseResponse);
+
+        $this->assertSame(
+            [...LeadExportController::COLUMNS, 'company_name', 'zip_code', 'city', 'budget', 'email (custom)'],
+            $this->csvHeader($body),
+            'questions in first-seen order, trimmed, deduplicated; a clash with a built-in column is suffixed',
+        );
+
+        $rows = collect($this->csvRecords($body))->keyBy('full_name');
+        $this->assertSame('Dr. Schulze Icking', $rows['Dr. Schulze']['company_name']);
+        $this->assertSame('Bensheim', $rows['Dr. Schulze']['city']);
+        $this->assertSame('', $rows['Dr. Schulze']['budget']);
+        $this->assertSame('Köln', $rows['Other form']['city']);
+        $this->assertSame('5k, 10k', $rows['Other form']['budget']);
+        $this->assertSame('second@example.com', $rows['Other form']['email (custom)']);
+        $this->assertSame('', $rows['No answers']['company_name']);
+    }
+
+    public function test_a_clients_custom_columns_only_come_from_their_own_leads(): void
+    {
+        $client = $this->clientFor('Acme');
+        Lead::factory()->create(['client_name' => 'Acme', 'custom_answers' => [['question' => 'acme_q', 'answer' => 'a']]]);
+        Lead::factory()->create(['client_name' => 'Other', 'custom_answers' => [['question' => 'secret_q', 'answer' => 'b']]]);
+
+        $header = $this->csvHeader($this->streamBody($this->actingAs($client)->get('/inbox/export?format=csv')->baseResponse));
+
+        $this->assertContains('acme_q', $header);
+        $this->assertNotContains('secret_q', $header);
+    }
+
+    public function test_custom_question_headers_are_neutralized_against_formula_injection(): void
+    {
+        $op = $this->operator();
+        Lead::factory()->create(['custom_answers' => [['question' => '=HYPERLINK("x")', 'answer' => '=1+1']]]);
+
+        $body = $this->streamBody($this->actingAs($op)->get('/inbox/export?format=csv')->baseResponse);
+
+        $this->assertContains("'=HYPERLINK(\"x\")", $this->csvHeader($body));
+        $this->assertSame("'=1+1", $this->csvRecords($body)[0]["'=HYPERLINK(\"x\")"]);
+    }
+
+    public function test_csv_export_includes_notes_outreach_and_ai_fields(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create([
+            'full_name' => 'Full row',
+            'called_at' => '2026-11-06 13:59:00',
+            'ai_reason' => 'Fits the ideal customer',
+            'ai_tags' => ['dentist', 'hot'],
+            'meta_lead_id' => 'm-123',
+        ]);
+        $lead->notes()->create(['user_id' => $op->id, 'body' => 'Called, wants an offer']);
+
+        $row = $this->csvRecords($this->streamBody($this->actingAs($op)->get('/inbox/export?format=csv')->baseResponse))[0];
+
+        $this->assertStringStartsWith('2026-11-06T13:59:00', $row['called_at']);
+        $this->assertSame('', $row['mailed_at']);
+        $this->assertStringContainsString('Op: Called, wants an offer', $row['notes']);
+        $this->assertSame('Fits the ideal customer', $row['ai_reason']);
+        $this->assertSame('dentist, hot', $row['ai_tags']);
+        $this->assertSame('m-123', $row['meta_lead_id']);
+    }
+
+    public function test_ndjson_export_carries_custom_answers_and_notes_as_structured_data(): void
+    {
+        $op = $this->operator();
+        $lead = Lead::factory()->create(['custom_answers' => [['question' => 'city', 'answer' => 'Bensheim']]]);
+        $lead->notes()->create(['user_id' => $op->id, 'body' => 'hi']);
+
+        $body = $this->streamBody($this->actingAs($op)->get('/inbox/export?format=ndjson')->baseResponse);
+        $decoded = json_decode(trim($body), true);
+
+        $this->assertSame(['city' => 'Bensheim'], $decoded['custom_answers']);
+        $this->assertSame('hi', $decoded['notes'][0]['body']);
+        $this->assertSame('Op', $decoded['notes'][0]['author']);
     }
 
     /**
@@ -267,9 +383,7 @@ class LeadExportTest extends TestCase
             $body = $this->streamBody($response->baseResponse);
 
             if ($format === 'csv') {
-                $reader = Reader::createFromString($body);
-                $reader->setHeaderOffset(0);
-                $ids = array_map(fn (array $r) => (int) $r['id'], iterator_to_array($reader->getRecords(), false));
+                $ids = array_map(fn (array $r) => (int) $r['id'], $this->csvRecords($body));
             } else {
                 $ids = array_map(
                     fn (string $line) => (int) json_decode($line, true)['id'],

@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.61.5-6366F1" alt="Version 0.61.5">
+  <img src="https://img.shields.io/badge/version-0.62.0-6366F1" alt="Version 0.62.0">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -107,7 +107,10 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
   reminder to confirm the outcome yourself, since opening a dialer or mail
   compose window doesn't mean the call connected or the email was sent.
 - ☑️ Bulk actions — status/priority change or delete across selected leads.
-- ⬇️ CSV / NDJSON export of the filtered inbox, streamed and audited.
+- ⬇️ CSV / NDJSON export of the filtered inbox, streamed and audited. The CSV
+  carries every lead field (outreach timestamps, notes, AI ranking, ad and
+  form ids) plus one column per custom form question, and opens straight in
+  Excel (semicolon-separated, UTF-8 with BOM).
 - 🔖 Saved filters & a starred default view per user.
 - 🧱 Per-user column picker, including auto-discovered custom-answer columns.
 
