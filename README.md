@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href=".github/media/lodgely-tour.mp4" title="Watch the 44-second lodgely tour">
+  <a href="https://vidual.org/media/lodgely-tour.mp4" title="Watch the 44-second lodgely tour">
     <img src=".github/media/lodgely-tour-poster.png" alt="Watch the 44-second lodgely tour: every lead, one inbox" width="480" />
   </a>
   <br>
