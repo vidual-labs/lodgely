@@ -483,5 +483,12 @@
     "Client keys": "Client keys",
     "Client key": "Client key",
     "Enter a client's key in vigilo (client settings → lodgely client key). It is derived from the client name, so renaming a client changes its key.": "Enter a client's key in vigilo (client settings → lodgely client key). It is derived from the client name, so renaming a client changes its key.",
-    "No clients yet — keys appear once leads carry a client name.": "No clients yet — keys appear once leads carry a client name."
+    "No clients yet — keys appear once leads carry a client name.": "No clients yet — keys appear once leads carry a client name.",
+    "Lead forms always belong to a Facebook Page, even when the ad runs only on Instagram, so Instagram leads come in through this page too. All active forms on the page are pulled unless you pin one.": "Lead forms always belong to a Facebook Page, even when the ad runs only on Instagram, so Instagram leads come in through this page too. All active forms on the page are pulled unless you pin one.",
+    "Where to find it: Meta Business Settings → Accounts → Pages (the ID is under the page name), or on the Page itself under About → Page transparency.": "Where to find it: Meta Business Settings → Accounts → Pages (the ID is under the page name), or on the Page itself under About → Page transparency.",
+    "Leave empty to pull every active form. No need to look up the ID: “Load forms” below lists the forms on the page so you can pin one.": "Leave empty to pull every active form. No need to look up the ID: “Load forms” below lists the forms on the page so you can pin one.",
+    "Forms load but no leads arrive? Check Meta Business Settings → Integrations → Leads Access: the user behind the access token must be allowed to retrieve leads for this page.": "Forms load but no leads arrive? Check Meta Business Settings → Integrations → Leads Access: the user behind the access token must be allowed to retrieve leads for this page.",
+    "first — the access token needs the leads_retrieval, pages_manage_ads, pages_read_engagement and pages_show_list permissions and access to the Facebook Page that owns your lead forms.": "first — the access token needs the leads_retrieval, pages_manage_ads, pages_read_engagement and pages_show_list permissions and access to the Facebook Page that owns your lead forms.",
+    "Meta is not connected yet.": "Meta is not connected yet.",
+    "Connect Meta under Settings → Ad platforms": "Connect Meta under Settings → Ad platforms"
 }
