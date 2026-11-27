@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.4+">
   <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?logo=livewire&logoColor=white" alt="Livewire 3">
-  <img src="https://img.shields.io/badge/version-0.62.0-6366F1" alt="Version 0.62.0">
+  <img src="https://img.shields.io/badge/version-0.62.1-6366F1" alt="Version 0.62.1">
   <a href="https://github.com/vidual-labs/lodgely/stargazers"><img src="https://img.shields.io/github/stars/vidual-labs/lodgely?style=social" alt="GitHub Stars"></a>
 </p>
 
@@ -121,7 +121,7 @@ cases and gotchas — lives in **[docs/FEATURES.md](docs/FEATURES.md)**.
 - 🔗 Signed-token webhook importer for any HTTP client.
 - ✍️ Manual entry for phone calls and walk-ins.
 - 📊 Google Sheets recurring lead source with auto column-mapping and idempotent re-fetches.
-- 📥 Meta Lead Ads (API) recurring lead source, idempotent on the Meta lead id.
+- 📥 Meta Lead Ads (API) recurring lead source, idempotent on the Meta lead id. Connected by Facebook Page ID, which also covers Instagram lead ads.
 - 🌊 OpenFlow recurring lead source — add as many OpenFlow sources as you need
   (any mix of forms and self-hosted installs), each pulling submissions into a
   specific client with its own operator-defined field mapping. Idempotent on

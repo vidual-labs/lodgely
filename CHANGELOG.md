@@ -55,6 +55,15 @@ semantic-ish versioning once a 1.0 is tagged.
 
 ### Fixed
 
+- **Clearer help on the Meta Lead Ads form.** The Page ID field now explains
+  that lead forms always belong to a Facebook Page, so Instagram lead ads are
+  covered by the same Page ID, and says where to find the ID (Business Settings
+  → Accounts → Pages, or About → Page transparency on the Page). The Form ID
+  field points to "Load forms" instead of a manual lookup, a hint names Leads
+  Access as the usual cause when forms load but no leads arrive, and the
+  "Meta is not connected" notice lists every token permission needed. The new
+  texts and that notice are translated into German.
+
 - **OpenFlow file uploads no longer fill a lead's custom answers with the
   file itself.** An unmapped *File Upload* answer was stored as its file name,
   type, size and the whole file as base64 text, which could be megabytes in

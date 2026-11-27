@@ -25,7 +25,7 @@
             <div class="rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
                 {{ __('Meta is not connected yet.') }}
                 <a href="{{ $adPlatformsUrl }}" class="font-medium underline hover:no-underline">{{ __('Connect Meta under Settings → Ad platforms') }}</a>
-                {{ __('first — the access token must include the leads_retrieval permission and access to the page that owns your lead forms.') }}
+                {{ __('first — the access token needs the leads_retrieval, pages_manage_ads, pages_read_engagement and pages_show_list permissions and access to the Facebook Page that owns your lead forms.') }}
             </div>
         @endunless
 
@@ -190,7 +190,8 @@
                         <input wire:model="form.page_id" type="text"
                                placeholder="123456789012345"
                                class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
-                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('All active lead forms on this page are pulled, unless you pin one below.') }}</p>
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Lead forms always belong to a Facebook Page, even when the ad runs only on Instagram, so Instagram leads come in through this page too. All active forms on the page are pulled unless you pin one.') }}</p>
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Where to find it: Meta Business Settings → Accounts → Pages (the ID is under the page name), or on the Page itself under About → Page transparency.') }}</p>
                         @error('form.page_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -200,6 +201,7 @@
                         <input wire:model="form.form_id" type="text"
                                placeholder="{{ __('Pin a single lead form') }}"
                                class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm font-mono focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Leave empty to pull every active form. No need to look up the ID: “Load forms” below lists the forms on the page so you can pin one.') }}</p>
                         @error('form.form_id') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -208,6 +210,7 @@
                 <div class="flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                     <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ __('Load the lead forms on this page to confirm the connection works and optionally pick one.') }}
+                        <span class="block mt-1 text-slate-400 dark:text-slate-500">{{ __('Forms load but no leads arrive? Check Meta Business Settings → Integrations → Leads Access: the user behind the access token must be allowed to retrieve leads for this page.') }}</span>
                     </p>
                     <button type="button"
                             wire:click="loadForms"

@@ -96,7 +96,13 @@ below.
   interval and active toggle; "Fetch now" runs an immediate import, and the
   scheduler sweeps due connections hourly via `lodgely:meta-leads:fetch`. Reuses
   the existing Meta access token — it must additionally carry the
-  `leads_retrieval` permission and access to the page that owns the forms.
+  `leads_retrieval`, `pages_manage_ads`, `pages_read_engagement` and
+  `pages_show_list` permissions and access to the page that owns the forms.
+  Lead forms always belong to a Facebook Page, even for Instagram-only ads, so
+  there is no separate Instagram ID: Instagram leads arrive through the Page and
+  carry `platform = instagram`. The Page ID is in Meta Business Settings →
+  Accounts → Pages, or on the Page under About → Page transparency. If forms load
+  but no leads arrive, check Business Settings → Integrations → Leads Access.
   **Set the Google OAuth consent screen to "In production"** — apps left in
   Testing status get their refresh tokens expired by Google after 7 days,
   which silently breaks the connection every week.
